@@ -30,12 +30,18 @@
     <ClInclude Include="RF-Lab_Win32.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="Srv.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="RF-Lab_Win32.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="Srv.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
@@ -51,5 +57,8 @@
     <Image Include="RF-Lab_Win32.ico">
       <Filter>Ressourcendateien</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

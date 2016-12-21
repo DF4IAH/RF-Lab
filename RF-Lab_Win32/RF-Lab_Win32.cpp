@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "RF-Lab_Win32.h"
+#include "Srv.h"
 
 #define MAX_LOADSTRING 100
 
@@ -26,6 +27,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Hier Code einfügen.
+	Srv::SrvStart();
 
     // Globale Zeichenfolgen initialisieren
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -137,6 +139,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
+//			case IDM_XXX:
+//				SrvCmdXxx(hWnd);
             default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -147,10 +151,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             //TODO: Zeichencode, der hdc verwendet, hier einfügen...
+			Srv::SrvPaint(hWnd, &ps, hdc);
             EndPaint(hWnd, &ps);
         }
         break;
     case WM_DESTROY:
+		Srv::SrvStop();
         PostQuitMessage(0);
         break;
     default:

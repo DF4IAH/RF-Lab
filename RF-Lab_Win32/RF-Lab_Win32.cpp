@@ -2,8 +2,19 @@
 //
 
 #include "stdafx.h"
+
+// COM-style
+#include <shobjidl.h>
+
+// STL-enhancements
+//#include <atlbase.h>
+
+// D2Draw-style
+//#include <d2d1.h>
+//#pragma comment(lib, "d2d1")
+
 #include "RF-Lab_Win32.h"
-#include "Srv.h"
+#include "WinSrv.h"
 
 #define MAX_LOADSTRING 100
 
@@ -18,6 +29,8 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
+
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
@@ -26,8 +39,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: Hier Code einfügen.
-	Srv::SrvStart();
+	// Windows-Kommunikationsserver anstarten
+	WinSrv::srvStart();
 
     // Globale Zeichenfolgen initialisieren
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -58,7 +71,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 }
 
 
-
 //
 //  FUNKTION: MyRegisterClass()
 //
@@ -85,6 +97,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
+
 //
 //   FUNKTION: InitInstance(HINSTANCE, int)
 //
@@ -107,11 +120,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
+   // Windows-Kommunikationsserver neues Window-Instanzenhandle mitteilen
+   WinSrv::srvSetWindow(hWnd);
+
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
    return TRUE;
 }
+
 
 //
 //  FUNKTION: WndProc(HWND, UINT, WPARAM, LPARAM)
@@ -141,29 +158,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
 //			case IDM_XXX:
 //				SrvCmdXxx(hWnd);
-            default:
+
+			default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
         }
         break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            //TODO: Zeichencode, der hdc verwendet, hier einfügen...
-			Srv::SrvPaint(hWnd, &ps, hdc);
-            EndPaint(hWnd, &ps);
-        }
+
+	case WM_PAINT:
+		// Windows-Kommunikationsserver Zeichen-Code, der hdc verwendet
+		WinSrv::srvPaint();
         break;
-    case WM_DESTROY:
-		Srv::SrvStop();
+	case WM_SIZE:
+		WinSrv::srvResize();
+		break;
+
+	case WM_CREATE:
+		return WinSrv::srvSetWindow(hWnd);
+	case WM_DESTROY:
+		// Windows - Kommunikationsserver abmelden
+		WinSrv::srvStop();
+
         PostQuitMessage(0);
         break;
-    default:
+
+	default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
 }
+
 
 // Meldungshandler für Infofeld.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

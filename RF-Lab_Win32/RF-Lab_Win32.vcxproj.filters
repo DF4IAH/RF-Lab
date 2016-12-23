@@ -30,7 +30,7 @@
     <ClInclude Include="RF-Lab_Win32.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Srv.h">
+    <ClInclude Include="WinSrv.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,7 +41,7 @@
     <ClCompile Include="RF-Lab_Win32.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="Srv.cpp">
+    <ClCompile Include="WinSrv.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

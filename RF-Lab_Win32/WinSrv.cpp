@@ -1,5 +1,4 @@
 #include "stdafx.h"
-#include "afxwin.h"  // Threading
 
 // COM-style
 #include <shobjidl.h>
@@ -27,12 +26,6 @@ template <class T>  void SafeRelease(T **ppT)
 }
 
 
-void CThreadCom::send(UINT cmd)
-{
-	state = cmd;
-}
-
-
 class DPIScale
 {
 	static float scaleX;
@@ -56,7 +49,6 @@ public:
 
 float DPIScale::scaleX = 1.0f;
 float DPIScale::scaleY = 1.0f;
-
 
 
 WinSrv::WinSrv() : hWnd(nullptr),
@@ -87,33 +79,39 @@ WinSrv::~WinSrv()
 
 void WinSrv::threadsStart()
 {
-	pThreadCom = new CThreadCom;
-	AfxBeginThread(WinSrv::threadCom, pThreadCom);
-}
+	// Step 1: Create two message buffers to serve as communication channels
+	// between the agents.
 
-UINT WinSrv::threadCom(LPVOID pCtx)
-{
-	CThreadCom* pCtx = (CThreadCom*)pCtx;
+	// The first agent writes messages to this buffer; the second
+	// agents reads messages from this buffer.
+	unbounded_buffer<wstring> buffer1;
 
-	if (pCtx == NULL ||
-		!pCtx->IsKindOf(RUNTIME_CLASS(CThreadCom)))
-		return 1;   // if pObject is not valid  
+	// The first agent reads messages from this buffer; the second
+	// agents writes messages to this buffer.
+	overwrite_buffer<int> buffer2;
 
-	// do something with 'pCtx'
-	while (pCtx->cmd != C_THREAD_COM_END) {
-		Sleep(10);
-	}
+	// Step 2: Create the agents.
+	agentModel first_agent(buffer2, buffer1);
+	agentCom   second_agent(buffer1, buffer2);
 
-	return 0; // thread completed successfully  
+	// Step 3: Start the agents. The runtime calls the run method on
+	// each agent.
+	first_agent.start();
+	second_agent.start();
+
+	// Step 4: Wait for both agents to finish.
+	// REMOVE_ME_LATER
+	agent::wait(&first_agent);
+	agent::wait(&second_agent);
 }
 
 void WinSrv::threadsStop()
 {
-	pThreadComCtx->send(C_THREAD_COM_END);
+	// signaling
 
-	//wait();
-	pWinThreadCom->
-	//pCWinThreadCom = NULL;
+	// Step 4: Wait for both agents to finish.
+//	agent::wait(&first_agent);
+//	agent::wait(&second_agent);
 }
 
 bool WinSrv::isReady()

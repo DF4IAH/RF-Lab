@@ -3,6 +3,22 @@
 // D2Draw-style
 #include <d2d1.h>
 
+
+enum C_THREAD_COM_CMDS { 
+	C_THREAD_COM_END
+};
+
+
+class CThreadCom:CWinThread
+{
+private:
+	UINT state;
+
+public:
+	void send(UINT cmd);
+
+};
+
 class WinSrv
 {
 private:
@@ -16,11 +32,20 @@ private:
 
 	bool					 ready;
 
+	CThreadCom              *pThreadCom = NULL;
+
 
 public:
 	WinSrv();
 	~WinSrv();
 
+private:
+	void threadsStart();
+	void threadsStop();
+
+	static UINT threadCom(LPVOID pParam);
+
+public:
 	bool isReady();
 
 	LRESULT setWindow(HWND hWnd);
@@ -31,7 +56,6 @@ private:
 	void calculateLayout();
 	HRESULT createGraphicsResources();
 	void discardGraphicsResources();
-
 
 public:
 	static void srvStart();

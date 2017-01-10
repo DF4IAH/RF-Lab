@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "afxwin.h"  // Threading
 
 // COM-style
 #include <shobjidl.h>
@@ -23,6 +24,12 @@ template <class T>  void SafeRelease(T **ppT)
 		(*ppT)->Release();
 		*ppT = nullptr;
 	}
+}
+
+
+void CThreadCom::send(UINT cmd)
+{
+	state = cmd;
 }
 
 
@@ -61,12 +68,15 @@ WinSrv::WinSrv() : hWnd(nullptr),
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr)) {
+		threadsStart();
 	}
 }
 
 
 WinSrv::~WinSrv()
 {
+	threadsStop();
+
 	SafeRelease(&pBrush);
 	SafeRelease(&pRenderTarget);
 	SafeRelease(&pFactory);
@@ -74,6 +84,37 @@ WinSrv::~WinSrv()
 	CoUninitialize();
 }
 
+
+void WinSrv::threadsStart()
+{
+	pThreadCom = new CThreadCom;
+	AfxBeginThread(WinSrv::threadCom, pThreadCom);
+}
+
+UINT WinSrv::threadCom(LPVOID pCtx)
+{
+	CThreadCom* pCtx = (CThreadCom*)pCtx;
+
+	if (pCtx == NULL ||
+		!pCtx->IsKindOf(RUNTIME_CLASS(CThreadCom)))
+		return 1;   // if pObject is not valid  
+
+	// do something with 'pCtx'
+	while (pCtx->cmd != C_THREAD_COM_END) {
+		Sleep(10);
+	}
+
+	return 0; // thread completed successfully  
+}
+
+void WinSrv::threadsStop()
+{
+	pThreadComCtx->send(C_THREAD_COM_END);
+
+	//wait();
+	pWinThreadCom->
+	//pCWinThreadCom = NULL;
+}
 
 bool WinSrv::isReady()
 {

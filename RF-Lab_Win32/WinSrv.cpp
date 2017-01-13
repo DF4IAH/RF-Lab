@@ -10,6 +10,10 @@
 //#include <d2d1.h>
 #pragma comment(lib, "d2d1")
 
+// sub-module agents
+#include "agentModel.h"
+#include "agentCom.h"
+
 #include "WinSrv.h"
 
 
@@ -108,7 +112,7 @@ void WinSrv::threadsStart()
 void WinSrv::threadsStop()
 {
 	// signaling
-
+	
 	// Step 4: Wait for both agents to finish.
 //	agent::wait(&first_agent);
 //	agent::wait(&second_agent);

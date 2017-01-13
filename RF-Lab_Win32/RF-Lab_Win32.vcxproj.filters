@@ -33,6 +33,12 @@
     <ClInclude Include="WinSrv.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="agentModel.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="agentCom.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -42,6 +48,12 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="WinSrv.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="agentModel.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="agentCom.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "agentCom.h"
+
 /* Agents Library */
 #include <agents.h>
 #include <string>
@@ -10,8 +12,23 @@ using namespace concurrency;
 using namespace std;
 
 
-enum C_AGENTMODELMSG_ENUM {
-	C_AGENTMODELMSG_END
+enum C_MODELREQ_ENUM {
+	C_MODELREQ_END = 0
+};
+
+enum C_MODELRSP_ENUM {
+	C_MODELRSP_END = 0
+};
+
+
+struct agentModelReq
+{
+	SHORT				cmd;
+};
+
+struct agentModelRsp
+{
+	SHORT				stat;
 };
 
 
@@ -19,15 +36,16 @@ enum C_AGENTMODELMSG_ENUM {
 class agentModel : public agent
 {
 private:
-	ISource<int>&		_source;
-	ITarget<wstring>&	_target;
+	bool						_running;
+	ISource<agentComRsp>&		_comSrc;
+	ITarget<agentComReq>&		_comTgt;
 
 
 public:
-	explicit agentModel(ISource<int>& source, ITarget<wstring>& target);
+	explicit agentModel(ISource<agentComRsp>& comSrc, ITarget<agentComReq>& comTgt);
+	bool shutdown();
 
 protected:
 	void run();
 
 };
-

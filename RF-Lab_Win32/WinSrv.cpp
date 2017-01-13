@@ -83,39 +83,36 @@ WinSrv::~WinSrv()
 
 void WinSrv::threadsStart()
 {
-	// Step 1: Create two message buffers to serve as communication channels
-	// between the agents.
+	//unbounded_buffer<agentModelReq> ub_agtModel_req;
+	//overwrite_buffer<agentModelRsp> ob_agtModel_rsp;
 
-	// The first agent writes messages to this buffer; the second
-	// agents reads messages from this buffer.
-	unbounded_buffer<wstring> buffer1;
-
-	// The first agent reads messages from this buffer; the second
-	// agents writes messages to this buffer.
-	overwrite_buffer<int> buffer2;
+	unbounded_buffer<agentComReq> ub_agtCom_req;
+	overwrite_buffer<agentComRsp> ob_agtCom_rsp;
 
 	// Step 2: Create the agents.
-	agentModel first_agent(buffer2, buffer1);
-	agentCom   second_agent(buffer1, buffer2);
+	agentModel agtModel(ob_agtCom_rsp, ub_agtCom_req);
+	agentCom   agtCom(ub_agtCom_req, ob_agtCom_rsp);
 
 	// Step 3: Start the agents. The runtime calls the run method on
 	// each agent.
-	first_agent.start();
-	second_agent.start();
+	agtModel.start();
+	agtCom.start();
 
-	// Step 4: Wait for both agents to finish.
-	// REMOVE_ME_LATER
-	agent::wait(&first_agent);
-	agent::wait(&second_agent);
+	// signaling
+	agtModel.shutdown();
+
+	agent::wait(&agtCom);
+	agent::wait(&agtModel);
+
+	printf("END\n");
 }
 
 void WinSrv::threadsStop()
 {
-	// signaling
 	
 	// Step 4: Wait for both agents to finish.
-//	agent::wait(&first_agent);
-//	agent::wait(&second_agent);
+//	agent::wait(&agtModel);
+//	agent::wait(&agtCom);
 }
 
 bool WinSrv::isReady()
@@ -271,6 +268,8 @@ LRESULT WinSrv::srvSetWindow(HWND hWnd)
 	if (g_instance) {
 		return g_instance->setWindow(hWnd);
 	}
+
+	return -1;  // non-valid invocation
 }
 
 // Zeichen-Code aufrufen

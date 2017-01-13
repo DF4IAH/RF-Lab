@@ -10,21 +10,42 @@ using namespace concurrency;
 using namespace std;
 
 
-enum C_AGENTCOMMSG_ENUM {
-	C_AGENTCOMMSG_END
+enum C_COMREQ_ENUM {
+	C_COMREQ_END = 0,
+	C_COMREQ_SER_SNDRSV
 };
 
+enum C_COMRSP_ENUM {
+	C_COMRSP_END = 0,
+	C_COMRSP_FAIL,
+	C_COMRSP_OK
+};
+
+
+struct agentComReq
+{
+	SHORT				cmd;
+	wstring				parm;
+};
+
+struct agentComRsp
+{
+	SHORT				stat;
+	wstring				data;
+};
 
 
 class agentCom : public agent
 {
 private:
-	ISource<wstring>& _source;
-	ITarget<int>& _target;
+	bool					_running;
+	ISource<agentComReq>&	_comSrc;
+	ITarget<agentComRsp>&	_comTgt;
 
 
 public:
-	explicit agentCom(ISource<wstring>& source, ITarget<int>& target);
+	explicit agentCom(ISource<agentComReq>& comSrc, ITarget<agentComRsp>& comTgt);
+	bool isRunning();
 
 protected:
 	void run();

@@ -2,27 +2,36 @@
 #include "agentModel.h"
 
 
-agentModel::agentModel(ISource<int>& source, ITarget<wstring>& target)
-	: _source(source)
-	, _target(target)
+agentModel::agentModel(ISource<agentComRsp>& comSrc, ITarget<agentComReq>& comTgt)
+	: _running(FALSE)
+	, _comSrc(comSrc)
+	, _comTgt(comTgt)
 {
+}
+
+bool agentModel::shutdown()
+{
+	bool old_running = _running;
+	_running = FALSE;
+	return old_running;
 }
 
 void agentModel::run()
 {
-	// Send the request.
-	wstringstream ss;
-	ss << L"agent1: sending request..." << endl;
-	wcout << ss.str();
+	agentComReq comReq;
 
-	send(_target, wstring(L"request"));
+	_running = TRUE;
+	while (_running) {
+		// clear result buffers
+		comReq.cmd  = C_COMREQ_END;
+		comReq.parm = wstring();
 
-	// Read the response.
-	int response = receive(_source);
+		// send the request
+		send(_comTgt, comReq);
 
-	ss = wstringstream();
-	ss << L"agent1: received '" << response << L"'." << endl;
-	wcout << ss.str();
+		// read the response
+		agentComRsp comRsp = receive(_comSrc);
+	}
 
 	// Move the agent to the finished state.
 	done();

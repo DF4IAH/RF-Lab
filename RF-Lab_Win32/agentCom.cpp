@@ -2,27 +2,50 @@
 #include "agentCom.h"
 
 
-agentCom::agentCom(ISource<wstring>& source, ITarget<int>& target)
-	: _source(source)
-	, _target(target)
+agentCom::agentCom(ISource<agentComReq>& comSrc, ITarget<agentComRsp>& comTgt)
+	: _running(FALSE)
+	, _comSrc(comSrc)
+	, _comTgt(comTgt)
 {
+}
+
+inline bool agentCom::isRunning()
+{
+	return _running;
 }
 
 void agentCom::run()
 {
-	// Read the request.
-	wstring request = receive(_source);
+	agentComRsp comRsp;
 
-	wstringstream ss;
-	ss << L"agent2: received '" << request << L"'." << endl;
-	wcout << ss.str();
+	_running = TRUE;
+	while (_running) {
+		// clear result buffers
+		comRsp.stat = C_COMRSP_FAIL;
+		comRsp.data = wstring();
 
-	// Send the response.
-	ss = wstringstream();
-	ss << L"agent2: sending response..." << endl;
-	wcout << ss.str();
+		// receive the request
+		agentComReq comReq = receive(_comSrc);
 
-	send(_target, 42);
+		// command decoder
+		switch (comReq.cmd) {
+
+		case C_COMREQ_END:
+			comRsp.stat = C_COMRSP_END;
+			_running = FALSE;
+			break;
+
+		case C_COMREQ_SER_SNDRSV:
+			// send parm string via serial port and wait for result
+			//request.parm;
+			comRsp.data = wstring(L"SEND - RECEIVE");
+			comRsp.stat = C_COMRSP_OK;
+			break;
+		}
+
+		// send the response
+		send(_comTgt, comRsp);
+	}
 
 	// Move the agent to the finished state.
 	done();

@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "agentModel.h"
 
+#include "WinSrv.h"
+
 
 agentModel::agentModel(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt)
 				 : _running(FALSE)
@@ -8,6 +10,9 @@ agentModel::agentModel(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt)
 				 , _src(src)
 				 , _tgt(tgt)
 {
+	ISource<agentModelReq>& _ub_agtCom_req = (xxx) _src.xxx;
+	ITarget<agentModelRsp>& _ob_agtCom_rsp = (xxx) _src.xxx;
+	_pAgtCom = new agentCom(_ub_agtCom_req, _ob_agtCom_rsp);
 }
 
 void agentModel::Release()
@@ -34,6 +39,9 @@ void agentModel::run()
 {
 	//agentComReq comReq;
 	//pAgtCom[0] = new agentCom(ub_agtCom_req, ob_agtCom_rsp);
+	// start the antenna measure model
+	pAgtCom[C_AGT_COM_ROT]->start();
+
 
 	_running = TRUE;
 	while (_running) {

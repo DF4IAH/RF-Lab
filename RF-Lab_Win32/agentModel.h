@@ -36,10 +36,15 @@ struct agentModelRsp
 class agentModel : public agent
 {
 private:
-	bool						_running;
-	bool						_done;
-	ISource<agentModelReq>&		_src;
-	ITarget<agentModelRsp>&		_tgt;
+	bool						 _running;
+	bool						 _done;
+	ISource<agentModelReq>&		 _src;
+	ITarget<agentModelRsp>&		 _tgt;
+
+	_ub_agtCom_req;
+	_ob_agtCom_rsp;
+	agentCom					*_pAgtCom;
+
 
 
 public:

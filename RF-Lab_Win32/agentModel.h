@@ -37,12 +37,14 @@ class agentModel : public agent
 {
 private:
 	bool						_running;
-	ISource<agentComRsp>&		_comSrc;
-	ITarget<agentComReq>&		_comTgt;
+	bool						_done;
+	ISource<agentModelReq>&		_src;
+	ITarget<agentModelRsp>&		_tgt;
 
 
 public:
-	explicit agentModel(ISource<agentComRsp>& comSrc, ITarget<agentComReq>& comTgt);
+	explicit agentModel(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt);
+	void Release();
 	bool shutdown();
 
 protected:

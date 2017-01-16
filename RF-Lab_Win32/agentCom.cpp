@@ -2,12 +2,25 @@
 #include "agentCom.h"
 
 
-agentCom::agentCom(ISource<agentComReq>& comSrc, ITarget<agentComRsp>& comTgt)
-	: _running(FALSE)
-	, _comSrc(comSrc)
-	, _comTgt(comTgt)
+agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
+				 : _running(FALSE)
+				 , _done(FALSE)
+				 , _src(src)
+				 , _tgt(tgt)
 {
 }
+
+void agentCom::Release()
+{
+	if (_running) {
+		_running = FALSE;
+	}
+
+	while (!_done) {
+		Sleep(1);
+	}
+}
+
 
 inline bool agentCom::isRunning()
 {
@@ -25,7 +38,7 @@ void agentCom::run()
 		comRsp.data = wstring();
 
 		// receive the request
-		agentComReq comReq = receive(_comSrc);
+		agentComReq comReq = receive(_src);
 
 		// command decoder
 		switch (comReq.cmd) {
@@ -44,9 +57,10 @@ void agentCom::run()
 		}
 
 		// send the response
-		send(_comTgt, comRsp);
+		send(_tgt, comRsp);
 	}
 
 	// Move the agent to the finished state.
+	_done = TRUE;
 	done();
 }

@@ -55,12 +55,14 @@ float DPIScale::scaleX = 1.0f;
 float DPIScale::scaleY = 1.0f;
 
 
-WinSrv::WinSrv() : hWnd(nullptr),
-			 pFactory(nullptr), 
-			 pRenderTarget(nullptr), 
-			 pBrush(nullptr),
-			 size(D2D1_SIZE_F()),
-			 ready(FALSE)
+WinSrv::WinSrv() : hWnd(nullptr)
+				 , pFactory(nullptr)
+				 , pRenderTarget(nullptr)
+				 , pBrush(nullptr)
+				 , size(D2D1_SIZE_F())
+				 , pAgtModel(nullptr)
+				 , pAgtCom { nullptr, nullptr,nullptr }
+				 , ready(FALSE)
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr)) {
@@ -73,6 +75,13 @@ WinSrv::~WinSrv()
 {
 	threadsStop();
 
+	SafeRelease(&pAgtModel);
+	for (int i = 0; i < C_AGT_COM__COUNT; ++i) {
+		if (pAgtCom[i]) {
+			SafeRelease(&pAgtCom[i]);
+		}
+	}
+
 	SafeRelease(&pBrush);
 	SafeRelease(&pRenderTarget);
 	SafeRelease(&pFactory);
@@ -83,36 +92,28 @@ WinSrv::~WinSrv()
 
 void WinSrv::threadsStart()
 {
-	//unbounded_buffer<agentModelReq> ub_agtModel_req;
-	//overwrite_buffer<agentModelRsp> ob_agtModel_rsp;
+	unbounded_buffer<agentModelReq> ub_agtModel_req;
+	overwrite_buffer<agentModelRsp> ob_agtModel_rsp;
 
-	unbounded_buffer<agentComReq> ub_agtCom_req;
-	overwrite_buffer<agentComRsp> ob_agtCom_rsp;
-
-	// Step 2: Create the agents.
-	agentModel agtModel(ob_agtCom_rsp, ub_agtCom_req);
-	agentCom   agtCom(ub_agtCom_req, ob_agtCom_rsp);
-
-	// Step 3: Start the agents. The runtime calls the run method on
-	// each agent.
-	agtModel.start();
-	agtCom.start();
-
-	// signaling
-	agtModel.shutdown();
-
-	agent::wait(&agtCom);
-	agent::wait(&agtModel);
-
-	printf("END\n");
+	// start the antenna measure model
+	pAgtModel  = new agentModel(ub_agtModel_req, ob_agtModel_rsp);
+	pAgtModel->start();
 }
 
 void WinSrv::threadsStop()
 {
-	
-	// Step 4: Wait for both agents to finish.
-//	agent::wait(&agtModel);
-//	agent::wait(&agtCom);
+	// shutdown the antenna measure model
+	if (pAgtModel) {
+		pAgtModel->shutdown();
+		agent::wait(pAgtModel);
+	}
+
+	// shutdown each communication interface
+	for (int i = 0; i < C_AGT_COM__COUNT; ++i) {
+		if (pAgtCom[i]) {
+			agent::wait(pAgtCom[i]);
+		}
+	}
 }
 
 bool WinSrv::isReady()

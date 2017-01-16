@@ -3,6 +3,16 @@
 // D2Draw-style
 #include <d2d1.h>
 
+#include "agentModel.h"
+#include "agentCom.h"
+
+enum C_AGT_COM {
+	C_AGT_COM_ROT = 0,
+	C_AGT_COM_TX,
+	C_AGT_COM_RX,
+
+	C_AGT_COM__COUNT
+};
 
 
 class WinSrv
@@ -13,8 +23,10 @@ private:
 	ID2D1Factory            *pFactory;
 	ID2D1HwndRenderTarget   *pRenderTarget;
 	ID2D1SolidColorBrush    *pBrush;
-
 	D2D1_SIZE_F				 size;
+
+	agentModel				*pAgtModel;
+	agentCom				*pAgtCom[3];
 
 	bool					 ready;
 

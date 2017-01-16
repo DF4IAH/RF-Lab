@@ -39,12 +39,14 @@ class agentCom : public agent
 {
 private:
 	bool					_running;
-	ISource<agentComReq>&	_comSrc;
-	ITarget<agentComRsp>&	_comTgt;
+	bool					_done;
+	ISource<agentComReq>&	_src;
+	ITarget<agentComRsp>&	_tgt;
 
 
 public:
-	explicit agentCom(ISource<agentComReq>& comSrc, ITarget<agentComRsp>& comTgt);
+	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
+	void Release();
 	bool isRunning();
 
 protected:

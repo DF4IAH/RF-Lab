@@ -47,7 +47,7 @@ void agentModel::run()
 		// read the response
 		//agentComRsp comRsp = receive(_comSrc);
 
-		Sleep(10);
+		Sleep(1);
 	}
 
 	// Move the agent to the finished state.

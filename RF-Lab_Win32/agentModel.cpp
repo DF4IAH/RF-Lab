@@ -74,27 +74,47 @@ bool agentModel::shutdown()
 
 void agentModel::run()
 {
+	agentComReq comReqData;
+
 	// start the antenna measure model
 	if (pAgtCom[C_COMINST_ROT]) {
 		pAgtCom[C_COMINST_ROT]->start();
 
 		_running = TRUE;
 		while (_running) {
-			// clear result buffers
-			agentComReq comReqData;
-			comReqData.cmd  = C_COMREQ_END;
-			comReqData.parm = wstring();
-
-			// send the request
-			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-
-			// read the response
-			agentComRsp comRsp = receive(*(pAgtComRsp[C_COMINST_ROT]));
-			if (comRsp.stat == C_COMRSP_END) {
-				_running = FALSE;
-			}
+#if 0
+			// model's working loop
+#endif
 
 			Sleep(1);
+		}
+
+		// send shutdown message
+		{
+			// clear result buffers
+			agentComReq comReqData;
+			comReqData.cmd = C_COMREQ_END;
+			comReqData.parm = wstring();
+
+			// send shutdown request for each active agent
+			for (int i = 0; i < C_COMINST__COUNT; i++) {
+				if (pAgtComReq[i]) {
+					send(*(pAgtComReq[i]), comReqData);
+				}
+			}
+
+			// wait for each reply message
+			for (int i = 0; i < C_COMINST__COUNT; i++) {
+				if (pAgtComReq[i]) {
+					agentComRsp comRsp;
+
+					// consume until END response is received
+					do {
+						comRsp = receive(*(pAgtComRsp[i]));
+					} while (comRsp.stat != C_COMRSP_END);
+				}
+			}
+
 		}
 	}
 

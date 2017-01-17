@@ -23,6 +23,7 @@ private:
 
 	agentCom							*pAgtCom[3];
 
+	bool								 _winExitReceived;
 	bool								 _ready;
 
 
@@ -45,6 +46,7 @@ private:
 public:
 	static void srvStart();
 	static void srvStop();
+	static void srvWinExit();
 	static LRESULT srvSetWindow(HWND hWnd);
 	static void srvPaint();
 	static void srvResize();

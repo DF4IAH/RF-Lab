@@ -62,6 +62,7 @@ WinSrv::WinSrv() : hWnd(nullptr)
 				 , _size(D2D1_SIZE_F())
 				 , pAgtModel(nullptr)
 				 , pAgtCom { nullptr, nullptr,nullptr }
+				 , _winExitReceived(FALSE)
 				 , _ready(FALSE)
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -114,6 +115,19 @@ void WinSrv::threadsStop()
 		}
 	}
 }
+
+
+void WinSrv::srvWinExit()
+{
+	if (g_instance) {
+		g_instance->_winExitReceived = TRUE;
+
+		if (g_instance->pAgtModel) {
+			g_instance->pAgtModel->shutdown();
+		}
+	}
+}
+
 
 bool WinSrv::isReady()
 {

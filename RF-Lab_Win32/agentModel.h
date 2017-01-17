@@ -23,32 +23,31 @@ enum C_MODELRSP_ENUM {
 
 struct agentModelReq
 {
-	SHORT				cmd;
+	SHORT								 cmd;
 };
 
 struct agentModelRsp
 {
-	SHORT				stat;
+	SHORT								 stat;
 };
-
 
 
 class agentModel : public agent
 {
 private:
-	bool						 _running;
-	bool						 _done;
-	ISource<agentModelReq>&		 _src;
-	ITarget<agentModelRsp>&		 _tgt;
+	bool								 _running;
+	bool								 _done;
+	ISource<agentModelReq>&				 _src;
+	ITarget<agentModelRsp>&				 _tgt;
 
-	_ub_agtCom_req;
-	_ob_agtCom_rsp;
-	agentCom					*_pAgtCom;
-
+	unbounded_buffer<agentComReq>		*pAgtComReq[C_COMINST__COUNT];
+	overwrite_buffer<agentComRsp>		*pAgtComRsp[C_COMINST__COUNT];
+	agentCom							*pAgtCom[C_COMINST__COUNT];
 
 
 public:
 	explicit agentModel(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt);
+	bool isRunning();
 	void Release();
 	bool shutdown();
 

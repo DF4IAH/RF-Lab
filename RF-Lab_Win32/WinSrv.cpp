@@ -59,10 +59,10 @@ WinSrv::WinSrv() : hWnd(nullptr)
 				 , pFactory(nullptr)
 				 , pRenderTarget(nullptr)
 				 , pBrush(nullptr)
-				 , size(D2D1_SIZE_F())
+				 , _size(D2D1_SIZE_F())
 				 , pAgtModel(nullptr)
 				 , pAgtCom { nullptr, nullptr,nullptr }
-				 , ready(FALSE)
+				 , _ready(FALSE)
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr)) {
@@ -76,7 +76,7 @@ WinSrv::~WinSrv()
 	threadsStop();
 
 	SafeRelease(&pAgtModel);
-	for (int i = 0; i < C_AGT_COM__COUNT; ++i) {
+	for (int i = 0; i < C_COMINST__COUNT; ++i) {
 		if (pAgtCom[i]) {
 			SafeRelease(&pAgtCom[i]);
 		}
@@ -92,11 +92,9 @@ WinSrv::~WinSrv()
 
 void WinSrv::threadsStart()
 {
-	unbounded_buffer<agentModelReq> ub_agtModel_req;
-	overwrite_buffer<agentModelRsp> ob_agtModel_rsp;
 
 	// start the antenna measure model
-	pAgtModel  = new agentModel(ub_agtModel_req, ob_agtModel_rsp);
+	pAgtModel  = new agentModel(_ub_agtModel_req, _ob_agtModel_rsp);
 	pAgtModel->start();
 }
 
@@ -104,12 +102,13 @@ void WinSrv::threadsStop()
 {
 	// shutdown the antenna measure model
 	if (pAgtModel) {
-		pAgtModel->shutdown();
+		//_ub_agtModel_req.send();
+		//pAgtModel->shutdown();
 		agent::wait(pAgtModel);
 	}
 
 	// shutdown each communication interface
-	for (int i = 0; i < C_AGT_COM__COUNT; ++i) {
+	for (int i = 0; i < C_COMINST__COUNT; ++i) {
 		if (pAgtCom[i]) {
 			agent::wait(pAgtCom[i]);
 		}
@@ -118,20 +117,20 @@ void WinSrv::threadsStop()
 
 bool WinSrv::isReady()
 {
-	return ready ?  TRUE : FALSE;
+	return _ready ?  TRUE : FALSE;
 }
 
 
 LRESULT WinSrv::setWindow(HWND hWnd)
 {
-	ready = FALSE;
+	_ready = FALSE;
 
 	this->hWnd = hWnd;
 	if (this->hWnd) {
 		if (SUCCEEDED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
 		{
 			if (SUCCEEDED(createGraphicsResources())) {
-				ready = TRUE;
+				_ready = TRUE;
 				return 0;
 			}
 
@@ -161,7 +160,7 @@ void WinSrv::paint()
 		pRenderTarget->BeginDraw();
 
 		pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
-		pRenderTarget->DrawLine(D2D1::Point2F(0, 0), D2D1::Point2F(size.width, size.height), pBrush);
+		pRenderTarget->DrawLine(D2D1::Point2F(0, 0), D2D1::Point2F(_size.width, _size.height), pBrush);
 		//ClientToScreen(hWnd, &pt);
 
 		//pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
@@ -198,7 +197,7 @@ void WinSrv::calculateLayout()
 {
 	if (pRenderTarget != NULL)
 	{
-		size = D2D1_SIZE_F(pRenderTarget->GetSize());
+		_size = D2D1_SIZE_F(pRenderTarget->GetSize());
 		//const float x = size.width / 2;
 		//const float y = size.height / 2;
 		//const float radius = min(x, y);

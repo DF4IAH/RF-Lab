@@ -2,6 +2,17 @@
 #include "agentCom.h"
 
 
+template <class T>  void SafeRelease(T **ppT)
+{
+	if (*ppT)
+	{
+		//(*ppT)->Release();
+		*ppT = nullptr;
+	}
+}
+
+
+
 agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
 				 : _running(FALSE)
 				 , _done(FALSE)
@@ -10,22 +21,40 @@ agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
 {
 }
 
-void agentCom::Release()
-{
-	if (_running) {
-		_running = FALSE;
-	}
-
-	while (!_done) {
-		Sleep(1);
-	}
-}
-
 
 inline bool agentCom::isRunning()
 {
 	return _running;
 }
+
+
+void agentCom::Release()
+{
+	// signaling
+	if (_running) {
+		(void) shutdown();
+	}
+
+	// wait until all threads are done
+	while (!_done) {
+		Sleep(1);
+	}
+
+	// release objects
+	// ... none
+}
+
+
+bool agentCom::shutdown()
+{
+	bool old_running = _running;
+
+	// signal to shutdown
+	_running = FALSE;
+
+	return old_running;
+}
+
 
 void agentCom::run()
 {

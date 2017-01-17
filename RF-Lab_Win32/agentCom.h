@@ -10,6 +10,13 @@ using namespace concurrency;
 using namespace std;
 
 
+enum C_COMINST_ENUM {
+	C_COMINST_ROT = 0,
+	C_COMINST_TX,
+	C_COMINST_RX,
+	C_COMINST__COUNT
+};
+
 enum C_COMREQ_ENUM {
 	C_COMREQ_END = 0,
 	C_COMREQ_SER_SNDRSV
@@ -46,8 +53,9 @@ private:
 
 public:
 	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
-	void Release();
 	bool isRunning();
+	void Release();
+	bool shutdown();
 
 protected:
 	void run();

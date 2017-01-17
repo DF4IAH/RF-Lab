@@ -17,6 +17,7 @@ template <class T>  void SafeRelease(T **ppT)
 
 agentModel::agentModel(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt)
 				 : _running(FALSE)
+				 , _runState(C_MODEL_RUNSTATES_NOOP)
 				 , _done(FALSE)
 				 , _src(src)
 				 , _tgt(tgt)
@@ -82,9 +83,25 @@ void agentModel::run()
 
 		_running = TRUE;
 		while (_running) {
-#if 0
 			// model's working loop
-#endif
+			switch (_runState) {
+			case C_MODEL_RUNSTATES_INIT_WAIT_PARAMS:
+				break;
+
+			case C_MODEL_RUNSTATES_INIT_HAS_PARAMS:
+				break;
+
+			case C_MODEL_RUNSTATES_RUNNING:
+				break;
+
+			case C_MODEL_RUNSTATES_CLOSE_WAIT_COM:
+				break;
+
+			case C_MODEL_RUNSTATES_NOOP:
+			default:
+				Sleep(10);
+				break;
+			}
 
 			Sleep(1);
 		}

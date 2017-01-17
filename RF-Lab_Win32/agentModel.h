@@ -12,6 +12,15 @@ using namespace concurrency;
 using namespace std;
 
 
+enum C_MODEL_RUNSTATES_ENUM {
+	C_MODEL_RUNSTATES_NOOP = 0,
+	C_MODEL_RUNSTATES_INIT_WAIT_PARAMS,
+	C_MODEL_RUNSTATES_INIT_HAS_PARAMS,
+	C_MODEL_RUNSTATES_RUNNING,
+	C_MODEL_RUNSTATES_CLOSE_WAIT_COM
+};
+
+
 enum C_MODELREQ_ENUM {
 	C_MODELREQ_END = 0
 };
@@ -36,6 +45,7 @@ class agentModel : public agent
 {
 private:
 	bool								 _running;
+	short								 _runState;
 	bool								 _done;
 	ISource<agentModelReq>&				 _src;
 	ITarget<agentModelRsp>&				 _tgt;
@@ -43,6 +53,7 @@ private:
 	unbounded_buffer<agentComReq>		*pAgtComReq[C_COMINST__COUNT];
 	overwrite_buffer<agentComRsp>		*pAgtComRsp[C_COMINST__COUNT];
 	agentCom							*pAgtCom[C_COMINST__COUNT];
+
 
 
 public:

@@ -19,7 +19,9 @@ enum C_COMINST_ENUM {
 
 enum C_COMREQ_ENUM {
 	C_COMREQ_END = 0,
-	C_COMREQ_SER_SNDRSV
+	C_COMREQ_OPEN,
+	C_COMREQ_COM_SEND,
+	C_COMREQ_CLOSE
 };
 
 enum C_COMRSP_ENUM {
@@ -28,27 +30,31 @@ enum C_COMRSP_ENUM {
 	C_COMRSP_OK
 };
 
+const int C_BUF_SIZE = 256;
+
 
 struct agentComReq
 {
-	SHORT				cmd;
-	wstring				parm;
+	SHORT								 cmd;
+	string								 parm;
 };
 
 struct agentComRsp
 {
-	SHORT				stat;
-	wstring				data;
+	SHORT								 stat;
+	string								 data;
 };
 
 
 class agentCom : public agent
 {
 private:
-	bool					_running;
-	bool					_done;
-	ISource<agentComReq>&	_src;
-	ITarget<agentComRsp>&	_tgt;
+	bool								 _running;
+	bool								 _done;
+	ISource<agentComReq>&				 _src;
+	ITarget<agentComRsp>&				 _tgt;
+
+	HANDLE								 _hCom;
 
 
 public:

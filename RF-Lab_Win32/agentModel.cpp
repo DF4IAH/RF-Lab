@@ -17,7 +17,7 @@ template <class T>  void SafeRelease(T **ppT)
 
 agentModel::agentModel(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt)
 				 : _running(FALSE)
-				 , _runState(C_MODEL_RUNSTATES_NOOP)
+				 , _runState(C_MODEL_RUNSTATES_OPENCOM)
 				 , _done(FALSE)
 				 , _src(src)
 				 , _tgt(tgt)
@@ -75,9 +75,7 @@ bool agentModel::shutdown()
 
 void agentModel::run()
 {
-	agentComReq comReqData;
-
-	// start the antenna measure model
+	// start the antenna meassure model
 	if (pAgtCom[C_COMINST_ROT]) {
 		pAgtCom[C_COMINST_ROT]->start();
 
@@ -85,25 +83,91 @@ void agentModel::run()
 		while (_running) {
 			// model's working loop
 			switch (_runState) {
-			case C_MODEL_RUNSTATES_INIT_WAIT_PARAMS:
-				break;
+			case C_MODEL_RUNSTATES_OPENCOM:
+			{
+				wchar_t buf[C_BUF_SIZE];
+				agentComReq comReqData;
+				comReqData.cmd = C_COMREQ_OPEN;
+				swprintf(buf, C_BUF_SIZE, L":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+				comReqData.parm = wstring(buf);
+				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+				_runState = C_MODEL_RUNSTATES_OPENCOM_WAIT;
+			}
+			break;
 
-			case C_MODEL_RUNSTATES_INIT_HAS_PARAMS:
-				break;
+			case C_MODEL_RUNSTATES_OPENCOM_WAIT:
+			{
+				if (pAgtComRsp[C_COMINST_ROT]->has_value()) {
+					agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
+					if (comRspData.stat == C_COMRSP_OK) {
+						_runState = C_MODEL_RUNSTATES_INIT;
+					}
+					else {
+						_runState = C_MODEL_RUNSTATES_NOOP;
+					}
+				}
+			}
+			break;
+
+			case C_MODEL_RUNSTATES_INIT:
+			{
+				agentComReq comReqData;
+
+				// Zollix commands to be sent
+				comReqData.cmd = C_COMREQ_COM_SEND;
+				comReqData.parm = wstring(L"VX,20000\n");
+				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+				comReqData.parm = wstring(L"AX,30000\n");
+				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+				comReqData.parm = wstring(L"FX,2500\n");
+				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+				_runState = C_MODEL_RUNSTATES_INIT_WAIT;
+			}
+			break;
+
+			case C_MODEL_RUNSTATES_INIT_WAIT:
+			{
+				if (pAgtComRsp[C_COMINST_ROT]->has_value()) {
+					// consume each reported state
+					agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
+					if (comRspData.stat == C_COMRSP_FAIL) {
+						_runState = C_MODEL_RUNSTATES_CLOSE_COM;
+					}
+				}
+				else {
+					// no more acks
+					_runState = C_MODEL_RUNSTATES_RUNNING;
+				}
+			} 
+			break;
 
 			case C_MODEL_RUNSTATES_RUNNING:
-				break;
+			{
+			} 
+			break;
 
-			case C_MODEL_RUNSTATES_CLOSE_WAIT_COM:
-				break;
+			case C_MODEL_RUNSTATES_CLOSE_COM:
+			{
+				_runState = C_MODEL_RUNSTATES_CLOSE_COM_WAIT;
+			} 
+			break;
+
+			case C_MODEL_RUNSTATES_CLOSE_COM_WAIT:
+			{
+				_runState = C_MODEL_RUNSTATES_NOOP;
+			}
+			break;
 
 			case C_MODEL_RUNSTATES_NOOP:
 			default:
-				Sleep(10);
+				Sleep(250);
 				break;
 			}
 
-			Sleep(1);
+			Sleep(10);
 		}
 
 		// send shutdown message

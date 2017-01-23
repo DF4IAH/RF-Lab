@@ -115,13 +115,13 @@ void agentModel::run()
 
 				// Zollix commands to be sent
 				comReqData.cmd = C_COMREQ_COM_SEND;
-				comReqData.parm = string("VX,20000\n");
+				comReqData.parm = string("VX,15000\r\n");  // "VX,20000\n"
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				comReqData.parm = string("AX,30000\n");
+				comReqData.parm = string("AX,30000\r\n");
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				comReqData.parm = string("FX,2500\n");
+				comReqData.parm = string("FX,2500\r\n");
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
 				_runState = C_MODEL_RUNSTATES_INIT_WAIT;

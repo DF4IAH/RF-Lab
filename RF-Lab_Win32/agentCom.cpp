@@ -102,14 +102,24 @@ void agentCom::run()
 
 			else {
 				DCB dcbSerialParams = { 0 }; // Initializing DCB structure
+				int status = GetCommState(_hCom, &dcbSerialParams);
+
 				dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+				dcbSerialParams.BaudRate = (DWORD)data_baud;  // Setting BaudRate
+				dcbSerialParams.ByteSize = (BYTE)data_size;   // Setting ByteSize
+				dcbSerialParams.StopBits = (BYTE)data_bits;   // Setting StopBits
+				dcbSerialParams.Parity   = (BYTE)data_parity; // Setting Parity
+				dcbSerialParams.fParity = FALSE;
+				dcbSerialParams.fOutxCtsFlow = FALSE;
+				dcbSerialParams.fOutxDsrFlow = FALSE;
+				dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
+				dcbSerialParams.fDsrSensitivity = FALSE;
+				dcbSerialParams.fTXContinueOnXoff = FALSE;
+				dcbSerialParams.fOutX = TRUE;
+				dcbSerialParams.fInX = TRUE;
+				dcbSerialParams.fRtsControl = RTS_CONTROL_ENABLE;
 
-				dcbSerialParams.BaudRate = (DWORD) data_baud;   // Setting BaudRate
-				dcbSerialParams.ByteSize = (BYTE)  data_size;   // Setting ByteSize
-				dcbSerialParams.StopBits = (BYTE)  data_bits;   // Setting StopBits
-				dcbSerialParams.Parity   = (BYTE)  data_parity; // Setting Parity
-
-				int status = SetCommState(_hCom, &dcbSerialParams);
+				status = SetCommState(_hCom, &dcbSerialParams);
 				if (!status) {
 					comRsp.stat = C_COMRSP_FAIL;
 				}
@@ -120,8 +130,8 @@ void agentCom::run()
 					timeouts.ReadTotalTimeoutMultiplier  = 10;		// in milliseconds
 					timeouts.WriteTotalTimeoutConstant	 = 250;		// in milliseconds
 					timeouts.WriteTotalTimeoutMultiplier = 10;		// in milliseconds
-					status = SetCommTimeouts(_hCom, &timeouts);
-					comRsp.stat = status ? C_COMRSP_OK : C_COMRSP_FAIL;
+					status = 1; // SetCommTimeouts(_hCom, &timeouts);
+					comRsp.stat = status ?  C_COMRSP_OK : C_COMRSP_FAIL;
 				}
 			}
 		} 
@@ -134,16 +144,15 @@ void agentCom::run()
 			DWORD dNoOFBytestoWrite;         // No of bytes to write into the port
 			DWORD dNoOfBytesWritten = 0;     // No of bytes written to the port
 
-			snprintf(lpBuffer, C_BUF_SIZE, "%s", comReq.parm.c_str());
-			dNoOFBytestoWrite = sizeof(lpBuffer);
+			dNoOFBytestoWrite = snprintf(lpBuffer, C_BUF_SIZE, "%s", comReq.parm.c_str());  // XON before each command
 
 			int status = WriteFile(_hCom,	// Handle to the Serial port
 				lpBuffer,					// Data to be written to the port
-				dNoOFBytestoWrite,			//No of bytes to write
-				&dNoOfBytesWritten,			//Bytes written
+				dNoOFBytestoWrite,			// Number of bytes to write
+				&dNoOfBytesWritten,			// Bytes written
 				NULL);
 
-			comRsp.stat = C_COMRSP_OK;
+			comRsp.stat = status ?  C_COMRSP_OK : C_COMRSP_FAIL;
 		}
 		break;
 

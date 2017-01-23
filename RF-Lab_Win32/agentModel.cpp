@@ -85,11 +85,11 @@ void agentModel::run()
 			switch (_runState) {
 			case C_MODEL_RUNSTATES_OPENCOM:
 			{
-				wchar_t buf[C_BUF_SIZE];
+				char buf[C_BUF_SIZE];
 				agentComReq comReqData;
 				comReqData.cmd = C_COMREQ_OPEN;
-				swprintf(buf, C_BUF_SIZE, L":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
-				comReqData.parm = wstring(buf);
+				snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+				comReqData.parm = string(buf);
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 				_runState = C_MODEL_RUNSTATES_OPENCOM_WAIT;
 			}
@@ -115,13 +115,13 @@ void agentModel::run()
 
 				// Zollix commands to be sent
 				comReqData.cmd = C_COMREQ_COM_SEND;
-				comReqData.parm = wstring(L"VX,20000\n");
+				comReqData.parm = string("VX,20000\n");
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				comReqData.parm = wstring(L"AX,30000\n");
+				comReqData.parm = string("AX,30000\n");
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				comReqData.parm = wstring(L"FX,2500\n");
+				comReqData.parm = string("FX,2500\n");
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
 				_runState = C_MODEL_RUNSTATES_INIT_WAIT;
@@ -175,7 +175,7 @@ void agentModel::run()
 			// clear result buffers
 			agentComReq comReqData;
 			comReqData.cmd = C_COMREQ_END;
-			comReqData.parm = wstring();
+			comReqData.parm = string();
 
 			// send shutdown request for each active agent
 			for (int i = 0; i < C_COMINST__COUNT; i++) {

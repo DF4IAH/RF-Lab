@@ -79,13 +79,14 @@ void agentCom::run()
 			int data_bits = 0;
 			int data_parity = 0;
 
-			swscanf_s(comReq.parm.c_str(), L":P=%d :B=%d :I=%d :A=%d :S=%d",
+			sscanf_s(comReq.parm.c_str(), ":P=%d :B=%d :I=%d :A=%d :S=%d",
 				&data_port, 
 				&data_baud,
 				&data_size,
 				&data_parity,
-				&data_bits,
-				(unsigned) comReq.parm.length());  // COM PORT
+				&data_bits
+				// , (unsigned) comReq.parm.length()
+				);  // COM PORT
 
 			wchar_t cbuf[C_BUF_SIZE];
 			wsprintf(cbuf, L"\\\\.\\COM%d%c", data_port, 0);
@@ -133,7 +134,7 @@ void agentCom::run()
 			DWORD dNoOFBytestoWrite;         // No of bytes to write into the port
 			DWORD dNoOfBytesWritten = 0;     // No of bytes written to the port
 
-			sprintf(lpBuffer, comReq.parm.c_str());
+			snprintf(lpBuffer, C_BUF_SIZE, "%s", comReq.parm.c_str());
 			dNoOFBytestoWrite = sizeof(lpBuffer);
 
 			int status = WriteFile(_hCom,	// Handle to the Serial port

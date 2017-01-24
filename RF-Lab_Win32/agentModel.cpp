@@ -88,7 +88,7 @@ void agentModel::run()
 				char buf[C_BUF_SIZE];
 				agentComReq comReqData;
 				comReqData.cmd = C_COMREQ_OPEN;
-				snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+				 snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
 				comReqData.parm = string(buf);
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 				_runState = C_MODEL_RUNSTATES_OPENCOM_WAIT;
@@ -115,13 +115,14 @@ void agentModel::run()
 
 				// Zollix commands to be sent
 				comReqData.cmd = C_COMREQ_COM_SEND;
-				comReqData.parm = string("VX,15000\r\n");  // "VX,20000\n"
+
+				comReqData.parm = string("VX,20000\r");				// Zolix: top speed 20.000 ticks per sec
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				comReqData.parm = string("AX,30000\r\n");
+				comReqData.parm = string("AX,30000\r");				// Zolix: acceleration speed 30.000
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				comReqData.parm = string("FX,2500\r\n");
+				comReqData.parm = string("FX,2500\r");				// Zolix: initial speed 2.500 ticks per sec
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
 				_runState = C_MODEL_RUNSTATES_INIT_WAIT;

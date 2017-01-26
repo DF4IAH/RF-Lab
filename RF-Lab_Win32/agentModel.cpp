@@ -80,10 +80,7 @@ void agentModel::wmCmd(int wmId)
 	{
 	case ID_ROTOR_GOTO_0:
 		if (_runState == C_MODEL_RUNSTATES_RUNNING) {
-			agentComReq comReqData;
-			comReqData.cmd = C_COMREQ_COM_SEND;
-			comReqData.parm = string("HX\r");
-			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+			_runState = C_MODEL_RUNSTATES_GOTO0;
 		}
 		break;
 	}
@@ -147,6 +144,8 @@ void agentModel::run()
 			case C_MODEL_RUNSTATES_INIT_WAIT:
 			{
 				agentComRsp comRspData;
+
+				Sleep(100);
 				bool state = try_receive(*(pAgtComRsp[C_COMINST_ROT]), comRspData);
 				if (state) {
 					// consume each reported state
@@ -155,7 +154,6 @@ void agentModel::run()
 					}
 				}
 				else {
-					// no more acks
 					_runState = C_MODEL_RUNSTATES_RUNNING;
 				}
 			} 
@@ -165,6 +163,30 @@ void agentModel::run()
 			{
 
 				Sleep(10);
+			}
+			break;
+
+			case C_MODEL_RUNSTATES_GOTO0:
+			{
+				char cbuf[C_BUF_SIZE];
+				int pos = 0;
+
+				// request position
+				agentComReq comReqData;
+				comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+				comReqData.parm = string("?X\r");
+				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+				// command to start to 0° position
+				agentComRsp comRspData;
+				comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
+				if (comRspData.stat == C_COMRSP_DATA) {
+					sscanf_s(comRspData.data.c_str(), "?X,%d", &pos);
+					snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%d\r", (pos > 0 ? '-' : '+'), abs(pos));
+					comReqData.parm = string(cbuf);
+					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+				}
+				_runState = C_MODEL_RUNSTATES_RUNNING;
 			}
 			break;
 

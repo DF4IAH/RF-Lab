@@ -128,11 +128,11 @@ void agentCom::run()
 				}
 				else {
 					COMMTIMEOUTS timeouts = { 0 };
-					timeouts.ReadIntervalTimeout		 = 2000;	// in milliseconds
-					timeouts.ReadTotalTimeoutConstant	 = 250;		// in milliseconds
-					timeouts.ReadTotalTimeoutMultiplier  = 10;		// in milliseconds
-					timeouts.WriteTotalTimeoutConstant	 = 250;		// in milliseconds
-					timeouts.WriteTotalTimeoutMultiplier = 10;		// in milliseconds
+					timeouts.ReadIntervalTimeout		 = 10;		// in milliseconds
+					timeouts.ReadTotalTimeoutConstant	 = 10;		// in milliseconds
+					timeouts.ReadTotalTimeoutMultiplier  = 1;		// in milliseconds
+					timeouts.WriteTotalTimeoutConstant	 = 10;		// in milliseconds
+					timeouts.WriteTotalTimeoutMultiplier = 1;		// in milliseconds
 					status = SetCommTimeouts(_hCom, &timeouts);
 					comRsp.stat = status ?  C_COMRSP_OK : C_COMRSP_FAIL;
 				}
@@ -141,6 +141,7 @@ void agentCom::run()
 		break;
 
 		case C_COMREQ_COM_SEND:
+		case C_COMREQ_COM_SEND_RECEIVE:
 		{
 			// send parm string via serial port and wait for result
 			char lpBuffer[C_BUF_SIZE];
@@ -157,10 +158,35 @@ void agentCom::run()
 
 			if (!status) {
 				comRsp.stat = C_COMRSP_FAIL;
+
 			} else {
+				const DWORD dNoOFBytestoRead = C_BUF_SIZE;
+				DWORD dNoOfBytesRead = 0;
+				char lpBuffer[C_BUF_SIZE];
+
 				status = FlushFileBuffers(_hCom);
-				comRsp.stat = status ? C_COMRSP_OK : C_COMRSP_FAIL;
+				status = ReadFile(_hCom,	// Handle to the Serial port
+					lpBuffer,				// Buffer where data from the port is to be written to
+					dNoOFBytestoRead,		// Number of bytes to be read
+					&dNoOfBytesRead,		// Bytes read
+					NULL);
+
+				if (C_COMREQ_COM_SEND == comReq.cmd) {
+					// drop result of that command
+					comRsp.stat = C_COMRSP_DROP;
+
+				} else if (C_COMREQ_COM_SEND_RECEIVE == comReq.cmd) {
+					if (status) {
+						comRsp.data = string(lpBuffer, dNoOfBytesRead);
+						comRsp.stat = C_COMRSP_DATA;
+					}
+					else {
+						comRsp.stat = C_COMRSP_FAIL;
+					}
+				}
 			}
+			
+
 		}
 		break;
 
@@ -176,8 +202,11 @@ void agentCom::run()
 		break;
 
 		}
-		// send the response
-		send(_tgt, comRsp);
+
+		if (comRsp.stat != C_COMRSP_DROP) {
+			// send the response
+			send(_tgt, comRsp);
+		}
 	}
 
 	// Move the agent to the finished state.

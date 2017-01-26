@@ -128,9 +128,9 @@ void agentCom::run()
 				}
 				else {
 					COMMTIMEOUTS timeouts = { 0 };
-					timeouts.ReadIntervalTimeout		 = 10;		// in milliseconds
-					timeouts.ReadTotalTimeoutConstant	 = 10;		// in milliseconds
-					timeouts.ReadTotalTimeoutMultiplier  = 1;		// in milliseconds
+					timeouts.ReadIntervalTimeout		 = 250;		// in milliseconds  TODO
+					timeouts.ReadTotalTimeoutConstant	 = 100;		// in milliseconds  TODO
+					timeouts.ReadTotalTimeoutMultiplier  = 1;		// in milliseconds  TODO
 					timeouts.WriteTotalTimeoutConstant	 = 10;		// in milliseconds
 					timeouts.WriteTotalTimeoutMultiplier = 1;		// in milliseconds
 					status = SetCommTimeouts(_hCom, &timeouts);
@@ -164,7 +164,9 @@ void agentCom::run()
 				DWORD dNoOfBytesRead = 0;
 				char lpBuffer[C_BUF_SIZE];
 
+				Sleep(10);  // TODO
 				status = FlushFileBuffers(_hCom);
+				Sleep(10);  // TODO
 				status = ReadFile(_hCom,	// Handle to the Serial port
 					lpBuffer,				// Buffer where data from the port is to be written to
 					dNoOFBytestoRead,		// Number of bytes to be read

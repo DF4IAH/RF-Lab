@@ -255,6 +255,13 @@ void WinSrv::discardGraphicsResources()
 	SafeRelease(&pRenderTarget);
 }
 
+void WinSrv::wmCmd(HWND hWnd, int wmId)
+{
+	if (pAgtModel) {
+		pAgtModel->wmCmd(wmId);
+	}
+}
+
 
 
 // Statische Methoden folgen
@@ -299,5 +306,13 @@ void WinSrv::srvResize()
 {
 	if (g_instance && g_instance->isReady()) {
 		g_instance->resize();
+	}
+}
+
+// WM-Command verarbeiten
+void WinSrv::srvWmCmd(HWND hWnd, int wmId)
+{
+	if (g_instance && g_instance->isReady()) {
+		g_instance->wmCmd(hWnd, wmId);
 	}
 }

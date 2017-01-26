@@ -54,7 +54,8 @@ private:
 	ITarget<agentModelRsp>&				 _tgt;
 
 	unbounded_buffer<agentComReq>		*pAgtComReq[C_COMINST__COUNT];
-	overwrite_buffer<agentComRsp>		*pAgtComRsp[C_COMINST__COUNT];
+	unbounded_buffer<agentComRsp>		*pAgtComRsp[C_COMINST__COUNT];
+	//overwrite_buffer<agentComRsp>		*pAgtComRsp[C_COMINST__COUNT];
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 
 
@@ -64,6 +65,7 @@ public:
 	bool isRunning();
 	void Release();
 	bool shutdown();
+	void wmCmd(int wmId);
 
 protected:
 	void run();

@@ -157,8 +157,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				WinSrv::srvWinExit();
                 DestroyWindow(hWnd);
                 break;
-//			case IDM_XXX:
-//				SrvCmdXxx(hWnd);
+
+			case ID_ROTOR_GOTO_0:
+				WinSrv::srvWmCmd(hWnd, wmId);
+				break;
 
 			default:
                 return DefWindowProc(hWnd, message, wParam, lParam);

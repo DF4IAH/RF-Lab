@@ -18,7 +18,8 @@ private:
 	D2D1_SIZE_F							 _size;
 
 	unbounded_buffer<agentModelReq>		 _ub_agtModel_req;
-	overwrite_buffer<agentModelRsp>		 _ob_agtModel_rsp;
+	unbounded_buffer<agentModelRsp>		 _ob_agtModel_rsp;
+	//overwrite_buffer<agentModelRsp>	 _ob_agtModel_rsp;
 	agentModel							*pAgtModel;
 
 	agentCom							*pAgtCom[3];
@@ -42,6 +43,7 @@ private:
 	void discardGraphicsResources();
 	void threadsStart();
 	void threadsStop();
+	void wmCmd(HWND hWnd, int wmId);
 
 public:
 	static void srvStart();
@@ -50,4 +52,5 @@ public:
 	static LRESULT srvSetWindow(HWND hWnd);
 	static void srvPaint();
 	static void srvResize();
+	static void srvWmCmd(HWND hWnd, int wmId);
 };

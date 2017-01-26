@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "agentModel.h"
 
+#include "resource.h"
 #include "WinSrv.h"
 
 
@@ -27,7 +28,7 @@ agentModel::agentModel(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt)
 {
 	for (int i = 0; i < 1 /*C_COMINST_ENUM*/; ++i) {
 		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
-		pAgtComRsp[i] = new overwrite_buffer<agentComRsp>;
+		pAgtComRsp[i] = new unbounded_buffer<agentComRsp>;
 		if (pAgtComReq[i] && pAgtComRsp[i]) {
 			pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
 		}
@@ -67,9 +68,25 @@ bool agentModel::shutdown()
 	bool old_running = _running;
 
 	// signal to shutdown
-	_running = FALSE;
+	//_running = FALSE;
+	_runState = C_MODEL_RUNSTATES_CLOSE_COM;
 
 	return old_running;
+}
+
+void agentModel::wmCmd(int wmId)
+{
+	switch (wmId) 
+	{
+	case ID_ROTOR_GOTO_0:
+		if (_runState == C_MODEL_RUNSTATES_RUNNING) {
+			agentComReq comReqData;
+			comReqData.cmd = C_COMREQ_COM_SEND;
+			comReqData.parm = string("HX\r");
+			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+		}
+		break;
+	}
 }
 
 
@@ -97,14 +114,12 @@ void agentModel::run()
 
 			case C_MODEL_RUNSTATES_OPENCOM_WAIT:
 			{
-				if (pAgtComRsp[C_COMINST_ROT]->has_value()) {
-					agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
-					if (comRspData.stat == C_COMRSP_OK) {
-						_runState = C_MODEL_RUNSTATES_INIT;
-					}
-					else {
-						_runState = C_MODEL_RUNSTATES_NOOP;
-					}
+				agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
+				if (comRspData.stat == C_COMRSP_OK) {
+					_runState = C_MODEL_RUNSTATES_INIT;
+				}
+				else {
+					_runState = C_MODEL_RUNSTATES_CLOSE_COM;
 				}
 			}
 			break;
@@ -131,9 +146,10 @@ void agentModel::run()
 
 			case C_MODEL_RUNSTATES_INIT_WAIT:
 			{
-				if (pAgtComRsp[C_COMINST_ROT]->has_value()) {
+				agentComRsp comRspData;
+				bool state = try_receive(*(pAgtComRsp[C_COMINST_ROT]), comRspData);
+				if (state) {
 					// consume each reported state
-					agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
 					if (comRspData.stat == C_COMRSP_FAIL) {
 						_runState = C_MODEL_RUNSTATES_CLOSE_COM;
 					}
@@ -147,18 +163,42 @@ void agentModel::run()
 
 			case C_MODEL_RUNSTATES_RUNNING:
 			{
-			} 
+
+				Sleep(10);
+			}
 			break;
 
 			case C_MODEL_RUNSTATES_CLOSE_COM:
 			{
+				agentComReq comReqData;
+				comReqData.cmd = C_COMREQ_END;
+				comReqData.parm = string();
+
+				// send shutdown request for each active agent
+				for (int i = 0; i < C_COMINST__COUNT; i++) {
+					if (pAgtComReq[i]) {
+						send(*(pAgtComReq[i]), comReqData);
+					}
+				}
 				_runState = C_MODEL_RUNSTATES_CLOSE_COM_WAIT;
 			} 
 			break;
 
 			case C_MODEL_RUNSTATES_CLOSE_COM_WAIT:
 			{
+				// wait for each reply message
+				for (int i = 0; i < C_COMINST__COUNT; i++) {
+					if (pAgtComReq[i]) {
+						agentComRsp comRsp;
+
+						// consume until END response is received
+						do {
+							comRsp = receive(*(pAgtComRsp[i]));
+						} while (comRsp.stat != C_COMRSP_END);
+					}
+				}
 				_runState = C_MODEL_RUNSTATES_NOOP;
+				_running = false;
 			}
 			break;
 
@@ -167,36 +207,6 @@ void agentModel::run()
 				Sleep(250);
 				break;
 			}
-
-			Sleep(10);
-		}
-
-		// send shutdown message
-		{
-			// clear result buffers
-			agentComReq comReqData;
-			comReqData.cmd = C_COMREQ_END;
-			comReqData.parm = string();
-
-			// send shutdown request for each active agent
-			for (int i = 0; i < C_COMINST__COUNT; i++) {
-				if (pAgtComReq[i]) {
-					send(*(pAgtComReq[i]), comReqData);
-				}
-			}
-
-			// wait for each reply message
-			for (int i = 0; i < C_COMINST__COUNT; i++) {
-				if (pAgtComReq[i]) {
-					agentComRsp comRsp;
-
-					// consume until END response is received
-					do {
-						comRsp = receive(*(pAgtComRsp[i]));
-					} while (comRsp.stat != C_COMRSP_END);
-				}
-			}
-
 		}
 	}
 

@@ -102,7 +102,7 @@ void agentModel::run()
 				char buf[C_BUF_SIZE];
 				agentComReq comReqData;
 				comReqData.cmd = C_COMREQ_OPEN;
-				 snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+				snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
 				comReqData.parm = string(buf);
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 				_runState = C_MODEL_RUNSTATES_OPENCOM_WAIT;
@@ -145,7 +145,7 @@ void agentModel::run()
 			{
 				agentComRsp comRspData;
 
-				Sleep(100);
+				//Sleep(100);
 				bool state = try_receive(*(pAgtComRsp[C_COMINST_ROT]), comRspData);
 				if (state) {
 					// consume each reported state
@@ -168,23 +168,29 @@ void agentModel::run()
 
 			case C_MODEL_RUNSTATES_GOTO0:
 			{
+				agentComReq comReqData;
+				agentComRsp comRspData;
 				char cbuf[C_BUF_SIZE];
 				int pos = 0;
 
 				// request position
-				agentComReq comReqData;
 				comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
 				comReqData.parm = string("?X\r");
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
 				// command to start to 0° position
-				agentComRsp comRspData;
 				comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
 				if (comRspData.stat == C_COMRSP_DATA) {
-					sscanf_s(comRspData.data.c_str(), "?X,%d", &pos);
-					snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%d\r", (pos > 0 ? '-' : '+'), abs(pos));
-					comReqData.parm = string(cbuf);
-					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+					const char* str_start = strrchr(comRspData.data.c_str(), '?');
+					sscanf_s(str_start, "?X,%d", &pos);
+
+					// return to 0 position
+					if (pos) {
+						snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%d\r", (pos > 0 ? '-' : '+'), abs(pos));
+						comReqData.cmd = C_COMREQ_COM_SEND;
+						comReqData.parm = string(cbuf);
+						send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+					}
 				}
 				_runState = C_MODEL_RUNSTATES_RUNNING;
 			}

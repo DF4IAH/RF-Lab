@@ -97,45 +97,45 @@ void agentCom::run()
 				OPEN_EXISTING,				   // Open existing port only
 				0 /*FILE_FLAG_OVERLAPPED*/,	   // Non Overlapped I/O
 				NULL);
-			if (_hCom == INVALID_HANDLE_VALUE)
-				comRsp.stat = C_COMRSP_FAIL;
-
-			else {
+			if (_hCom != INVALID_HANDLE_VALUE) {
 				DCB dcbSerialParams;
 				SecureZeroMemory(&dcbSerialParams, sizeof(DCB));  //  Initialize the DCB structure.
 				dcbSerialParams.DCBlength = sizeof(DCB);
 
 				int status = GetCommState(_hCom, &dcbSerialParams);
 
-				dcbSerialParams.DCBlength			= sizeof(dcbSerialParams);
-				dcbSerialParams.BaudRate			= (DWORD)data_baud;  // Setting BaudRate
-				dcbSerialParams.ByteSize			= (BYTE)data_size;   // Setting ByteSize
-				dcbSerialParams.StopBits			= (BYTE)data_bits;   // Setting StopBits
-				dcbSerialParams.Parity				= (BYTE)data_parity; // Setting Parity
-				dcbSerialParams.fParity				= FALSE;
-				dcbSerialParams.fOutxCtsFlow		= FALSE;
-				dcbSerialParams.fOutxDsrFlow		= FALSE;
-				dcbSerialParams.fDtrControl			= DTR_CONTROL_ENABLE;
-				dcbSerialParams.fDsrSensitivity		= FALSE;
-				dcbSerialParams.fTXContinueOnXoff	= FALSE;
-				dcbSerialParams.fOutX				= TRUE;
-				dcbSerialParams.fInX				= TRUE;
-				dcbSerialParams.fRtsControl			= RTS_CONTROL_ENABLE;
+				dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+				dcbSerialParams.BaudRate = (DWORD)data_baud;  // Setting BaudRate
+				dcbSerialParams.ByteSize = (BYTE)data_size;   // Setting ByteSize
+				dcbSerialParams.StopBits = (BYTE)data_bits;   // Setting StopBits
+				dcbSerialParams.Parity = (BYTE)data_parity; // Setting Parity
+				dcbSerialParams.fParity = FALSE;
+				dcbSerialParams.fOutxCtsFlow = FALSE;
+				dcbSerialParams.fOutxDsrFlow = FALSE;
+				dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
+				dcbSerialParams.fDsrSensitivity = FALSE;
+				dcbSerialParams.fTXContinueOnXoff = FALSE;
+				dcbSerialParams.fOutX = TRUE;
+				dcbSerialParams.fInX = TRUE;
+				dcbSerialParams.fRtsControl = RTS_CONTROL_ENABLE;
 
 				status = SetCommState(_hCom, &dcbSerialParams);
-				if (!status) {
-					comRsp.stat = C_COMRSP_FAIL;
+				if (status) {
+					COMMTIMEOUTS timeouts = { 0 };
+					timeouts.ReadIntervalTimeout			= 0;	// in milliseconds
+					timeouts.ReadTotalTimeoutMultiplier		= 1;	// in milliseconds
+					timeouts.ReadTotalTimeoutConstant		= 1;	// in milliseconds
+					timeouts.WriteTotalTimeoutMultiplier	= 0;	// in milliseconds
+					timeouts.WriteTotalTimeoutConstant		= 0;	// in milliseconds
+					status = SetCommTimeouts(_hCom, &timeouts);
+					comRsp.stat = status ? C_COMRSP_OK : C_COMRSP_FAIL;
 				}
 				else {
-					COMMTIMEOUTS timeouts = { 0 };
-					timeouts.ReadIntervalTimeout		 = 250;		// in milliseconds  TODO
-					timeouts.ReadTotalTimeoutConstant	 = 100;		// in milliseconds  TODO
-					timeouts.ReadTotalTimeoutMultiplier  = 1;		// in milliseconds  TODO
-					timeouts.WriteTotalTimeoutConstant	 = 10;		// in milliseconds
-					timeouts.WriteTotalTimeoutMultiplier = 1;		// in milliseconds
-					status = SetCommTimeouts(_hCom, &timeouts);
-					comRsp.stat = status ?  C_COMRSP_OK : C_COMRSP_FAIL;
+					comRsp.stat = C_COMRSP_FAIL;
 				}
+			}
+			else {
+				comRsp.stat = C_COMRSP_FAIL;
 			}
 		} 
 		break;
@@ -156,17 +156,12 @@ void agentCom::run()
 				&dNoOfBytesWritten,			// Bytes written
 				NULL);
 
-			if (!status) {
-				comRsp.stat = C_COMRSP_FAIL;
-
-			} else {
+			if (status) {
 				const DWORD dNoOFBytestoRead = C_BUF_SIZE;
 				DWORD dNoOfBytesRead = 0;
-				char lpBuffer[C_BUF_SIZE];
+				char lpBuffer[C_BUF_SIZE] = { 0 };
 
-				Sleep(10);  // TODO
 				status = FlushFileBuffers(_hCom);
-				Sleep(10);  // TODO
 				status = ReadFile(_hCom,	// Handle to the Serial port
 					lpBuffer,				// Buffer where data from the port is to be written to
 					dNoOFBytestoRead,		// Number of bytes to be read
@@ -176,8 +171,8 @@ void agentCom::run()
 				if (C_COMREQ_COM_SEND == comReq.cmd) {
 					// drop result of that command
 					comRsp.stat = C_COMRSP_DROP;
-
-				} else if (C_COMREQ_COM_SEND_RECEIVE == comReq.cmd) {
+				}
+				else if (C_COMREQ_COM_SEND_RECEIVE == comReq.cmd) {
 					if (status) {
 						comRsp.data = string(lpBuffer, dNoOfBytesRead);
 						comRsp.stat = C_COMRSP_DATA;
@@ -186,6 +181,9 @@ void agentCom::run()
 						comRsp.stat = C_COMRSP_FAIL;
 					}
 				}
+			}
+			else {
+				comRsp.stat = C_COMRSP_FAIL;
 			}
 			
 

@@ -122,7 +122,7 @@ void agentCom::run()
 				status = SetCommState(_hCom, &dcbSerialParams);
 				if (status) {
 					COMMTIMEOUTS timeouts = { 0 };
-					timeouts.ReadIntervalTimeout			= 0;	// in milliseconds
+					timeouts.ReadIntervalTimeout			= 1;	// in milliseconds
 					timeouts.ReadTotalTimeoutMultiplier		= 1;	// in milliseconds
 					timeouts.ReadTotalTimeoutConstant		= 1;	// in milliseconds
 					timeouts.WriteTotalTimeoutMultiplier	= 0;	// in milliseconds

@@ -39,6 +39,9 @@
     <ClInclude Include="agentCom.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="agentModelPattern.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -54,6 +57,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="agentCom.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="agentModelPattern.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

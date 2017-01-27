@@ -1,6 +1,6 @@
 #pragma once
 
-#include "agentCom.h"
+//#include "agentModelPattern.h"
 
 /* Agents Library */
 #include <agents.h>
@@ -48,27 +48,27 @@ struct agentModelRsp
 class agentModel : public agent
 {
 private:
-	bool								 _running;
-	short								 _runState;
-	bool								 _done;
-	ISource<agentModelReq>&				 _src;
-	ITarget<agentModelRsp>&				 _tgt;
+	ISource<agentModelReq>				*_src;
+	ITarget<agentModelRsp>				*_tgt;
+	agentModel							*_curModel;
 
-	unbounded_buffer<agentComReq>		*pAgtComReq[C_COMINST__COUNT];
-	unbounded_buffer<agentComRsp>		*pAgtComRsp[C_COMINST__COUNT];
-	//overwrite_buffer<agentComRsp>		*pAgtComRsp[C_COMINST__COUNT];
-	agentCom							*pAgtCom[C_COMINST__COUNT];
-
+public:
+	static agentModel					*am;
 
 
 public:
-	explicit agentModel(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt);
-	bool isRunning();
-	void Release();
-	bool shutdown();
-	void wmCmd(int wmId);
+	explicit agentModel();
+	explicit agentModel(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt);
+	~agentModel(void);
 
 protected:
 	void run();
+
+public:
+	/* default class functions() to be overwritten */
+	static bool isRunning();
+	static void Release();
+	static bool shutdown();
+	static void wmCmd(int wmId);
 
 };

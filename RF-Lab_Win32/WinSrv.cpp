@@ -95,7 +95,7 @@ void WinSrv::threadsStart()
 {
 
 	// start the antenna measure model
-	pAgtModel  = new agentModel(_ub_agtModel_req, _ob_agtModel_rsp);
+	pAgtModel  = new agentModel(&_ub_agtModel_req, &_ob_agtModel_rsp);
 	pAgtModel->start();
 }
 

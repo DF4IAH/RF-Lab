@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClInclude Include="agentCom.h" />
     <ClInclude Include="agentModel.h" />
+    <ClInclude Include="agentModelPattern.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RF-Lab_Win32.h" />
     <ClInclude Include="WinSrv.h" />
@@ -156,6 +157,7 @@
   <ItemGroup>
     <ClCompile Include="agentCom.cpp" />
     <ClCompile Include="agentModel.cpp" />
+    <ClCompile Include="agentModelPattern.cpp" />
     <ClCompile Include="RF-Lab_Win32.cpp" />
     <ClCompile Include="WinSrv.cpp" />
     <ClCompile Include="stdafx.cpp">

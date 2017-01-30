@@ -20,6 +20,7 @@ template <class T>  void SafeRelease(T **ppT)
 agentModel *g_am = nullptr;
 
 
+#if 0
 agentModel::agentModel()
 	: _src(nullptr)
 	, _tgt(nullptr)
@@ -28,8 +29,9 @@ agentModel::agentModel()
 {
 	g_am = this;
 }
+#endif
 
-agentModel::agentModel(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt, AGENT_MODELS am_variant)
+agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant)
 				 : _src(src)
 				 , _tgt(tgt)
 				 , _am_variant(am_variant)

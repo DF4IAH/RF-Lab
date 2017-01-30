@@ -4,6 +4,9 @@
 
 
 agentModelVariant::agentModelVariant(void)
+				 : _running(FALSE)
+				 ,_runState(C_MODEL_RUNSTATES_OPENCOM)
+				 , _done(FALSE)
 {
 }
 
@@ -14,7 +17,6 @@ agentModelVariant::~agentModelVariant(void)
 
 void agentModelVariant::run(void)
 {
-
 }
 
 

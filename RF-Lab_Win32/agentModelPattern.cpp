@@ -15,15 +15,11 @@ template <class T>  void SafeRelease(T **ppT)
 }
 
 
-agentModelPattern::agentModelPattern(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt)
-	: pAgtComReq{ nullptr }
-	, pAgtComRsp{ nullptr }
-	, pAgtCom{ nullptr }
+agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt)
+				 : pAgtComReq{ nullptr }
+				 , pAgtComRsp{ nullptr }
+				 , pAgtCom{ nullptr }
 {
-	_running = FALSE;
-	_runState = C_MODEL_RUNSTATES_OPENCOM;
-	_done = FALSE;
-
 	for (int i = 0; i < 1 /*C_COMINST_ENUM*/; ++i) {
 		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
 		pAgtComRsp[i] = new unbounded_buffer<agentComRsp>;
@@ -34,58 +30,7 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq> *src, ITarget<agentM
 }
 
 
-inline bool agentModelPattern::isRunning()
-{
-	return _running;
-}
-
-
-void agentModelPattern::Release()
-{
-	// signaling
-	if (_running) {
-		(void)shutdown();
-	}
-
-	// wait until all threads are done
-	while (!_done) {
-		Sleep(1);
-	}
-
-	// release objects
-	for (int i = 0; i < C_COMINST__COUNT; i++) {
-		SafeRelease(&(pAgtCom[i]));
-		SafeRelease(&(pAgtComReq[i]));
-		SafeRelease(&(pAgtComRsp[i]));
-	}
-}
-
-
-bool agentModelPattern::shutdown()
-{
-	bool old_running = _running;
-
-	// signal to shutdown
-	//_running = FALSE;
-	_runState = C_MODEL_RUNSTATES_CLOSE_COM;
-
-	return old_running;
-}
-
-void agentModelPattern::wmCmd(int wmId)
-{
-	switch (wmId)
-	{
-	case ID_ROTOR_GOTO_0:
-		if (_runState == C_MODEL_RUNSTATES_RUNNING) {
-			_runState = C_MODEL_RUNSTATES_GOTO0;
-		}
-		break;
-	}
-}
-
-
-void agentModelPattern::run()
+void agentModelPattern::run(void)
 {
 	// start the antenna meassure model
 	if (pAgtCom[C_COMINST_ROT]) {
@@ -238,4 +183,55 @@ void agentModelPattern::run()
 
 	// Move the agent to the finished state.
 	_done = TRUE;
+}
+
+
+inline bool agentModelPattern::isRunning(void)
+{
+	return _running;
+}
+
+
+void agentModelPattern::Release(void)
+{
+	// signaling
+	if (_running) {
+		(void)shutdown();
+	}
+
+	// wait until all threads are done
+	while (!_done) {
+		Sleep(1);
+	}
+
+	// release objects
+	for (int i = 0; i < C_COMINST__COUNT; i++) {
+		SafeRelease(&(pAgtCom[i]));
+		SafeRelease(&(pAgtComReq[i]));
+		SafeRelease(&(pAgtComRsp[i]));
+	}
+}
+
+
+bool agentModelPattern::shutdown(void)
+{
+	bool old_running = _running;
+
+	// signal to shutdown
+	//_running = FALSE;
+	_runState = C_MODEL_RUNSTATES_CLOSE_COM;
+
+	return old_running;
+}
+
+void agentModelPattern::wmCmd(int wmId)
+{
+	switch (wmId)
+	{
+	case ID_ROTOR_GOTO_0:
+		if (_runState == C_MODEL_RUNSTATES_RUNNING) {
+			_runState = C_MODEL_RUNSTATES_GOTO0;
+		}
+		break;
+	}
 }

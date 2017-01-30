@@ -20,16 +20,16 @@ protected:
 
 
 public:
-	void run(void);
+	virtual void run(void);
 
 public:
 	agentModelVariant(void);
-	~agentModelVariant(void);
+	virtual ~agentModelVariant(void);
 
 	/* to be overwritten by the agentModelXXX classes */
-	bool isRunning(void);
-	void Release(void);
-	bool shutdown(void);
-	void wmCmd(int wmId);
+	virtual bool isRunning(void);
+	virtual void Release(void);
+	virtual bool shutdown(void);
+	virtual void wmCmd(int wmId);
 
 };

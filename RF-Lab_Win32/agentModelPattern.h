@@ -21,13 +21,13 @@ public:
 	explicit agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt);
 
 public:
-	/* overwriting agentModel member functions() */
-	bool isRunning();
-	void Release();
-	bool shutdown();
-	void wmCmd(int wmId);
+	void run(void);
 
-protected:
-	void run();
+public:
+	/* overwriting agentModel member functions() */
+	bool isRunning(void);
+	void Release(void);
+	bool shutdown(void);
+	void wmCmd(int wmId);
 
 };

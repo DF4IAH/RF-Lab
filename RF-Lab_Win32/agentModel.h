@@ -61,7 +61,7 @@ private:
 
 
 public:
-	explicit agentModel(void);
+	//explicit agentModel(void);
 	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant);
 	~agentModel(void);
 

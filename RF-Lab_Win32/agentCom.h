@@ -62,11 +62,11 @@ private:
 
 public:
 	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
-	bool isRunning();
-	void Release();
-	bool shutdown();
+	bool isRunning(void);
+	void Release(void);
+	bool shutdown(void);
 
 protected:
-	void run();
+	void run(void);
 
 };

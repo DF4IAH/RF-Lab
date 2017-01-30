@@ -22,13 +22,13 @@ agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
 }
 
 
-inline bool agentCom::isRunning()
+inline bool agentCom::isRunning(void)
 {
 	return _running;
 }
 
 
-void agentCom::Release()
+void agentCom::Release(void)
 {
 	// signaling
 	if (_running) {
@@ -45,7 +45,7 @@ void agentCom::Release()
 }
 
 
-bool agentCom::shutdown()
+bool agentCom::shutdown(void)
 {
 	bool old_running = _running;
 
@@ -56,7 +56,7 @@ bool agentCom::shutdown()
 }
 
 // @see: http://xanthium.in/Serial-Port-Programming-using-Win32-API
-void agentCom::run()
+void agentCom::run(void)
 {
 	agentComRsp comRsp;
 

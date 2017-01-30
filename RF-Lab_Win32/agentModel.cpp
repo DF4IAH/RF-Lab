@@ -20,17 +20,6 @@ template <class T>  void SafeRelease(T **ppT)
 agentModel *g_am = nullptr;
 
 
-#if 0
-agentModel::agentModel()
-	: _src(nullptr)
-	, _tgt(nullptr)
-	, _am_variant(AGENT_MODEL_NONE)
-	, _curModel(nullptr)
-{
-	g_am = this;
-}
-#endif
-
 agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant)
 				 : _src(src)
 				 , _tgt(tgt)
@@ -63,6 +52,7 @@ void agentModel::run(void)
 {
 	if (g_am && g_am->_curModel) {
 		g_am->_curModel->run();
+		done();
 	}
 }
 

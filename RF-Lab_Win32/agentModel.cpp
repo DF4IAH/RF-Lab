@@ -1,3 +1,5 @@
+#include <typeinfo>
+
 #include "stdafx.h"
 #include "agentModel.h"
 #include "agentModelPattern.h"
@@ -16,69 +18,89 @@ template <class T>  void SafeRelease(T **ppT)
 }
 
 
+// global
+agentModel *g_am = nullptr;
+
 
 agentModel::agentModel()
 	: _src(nullptr)
 	, _tgt(nullptr)
+	, _curModel(nullptr)
 {
-	am = this;
-	_curModel = nullptr;
+	// no sub-agentModels to be assigned
+	if (!g_am) {
+		g_am = this;
+	}
 }
 
 agentModel::agentModel(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt)
 				 : _src(src)
 				 , _tgt(tgt)
+				 , _curModel(nullptr)
 {
-	am = this;
-
-	/* default model to start: ModelPattern */
-	_curModel = new agentModelPattern();
+	// no sub-agentModels to be assigned
+	if (!g_am) {
+		g_am = this;
+	}
 }
 
 agentModel::~agentModel(void)
 {
-	if (am && am->_curModel) {
-		am->_curModel->Release();
-		delete _curModel;
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->Release();
+		delete _curModel; _curModel = nullptr;
 	}
 }
 
+
 // to be overwritten
-void agentModel::run()
+void agentModel::run(void)
 {
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->run();
+	}
 }
 
-bool agentModel::isRunning()
+void agentModel::prepare(agentModel *am)
 {
-	if (am && am->_curModel) {
-		return am->_curModel->isRunning();
+	if (g_am) {
+		if (!g_am->_curModel) {
+			g_am->_curModel = am;
+		}
+	}
+}
+
+bool agentModel::isRunning(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->isRunning();
+	} else {
+		return false;
+	}
+}
+
+
+void agentModel::Release(void)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->Release();
+	}
+}
+
+
+bool agentModel::shutdown(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->shutdown();
 	}
 	else {
 		return false;
 	}
 }
 
-
-void agentModel::Release()
-{
-	if (am && am->_curModel) {
-		return am->_curModel->Release();
-	}
-}
-
-
-bool agentModel::shutdown()
-{
-	if (am && am->_curModel) {
-		return am->_curModel->shutdown();
-	} else {
-		return false;
-	}
-}
-
 void agentModel::wmCmd(int wmId)
 {
-	if (am && am->_curModel) {
-		am->_curModel->wmCmd(wmId);
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->wmCmd(wmId);
 	}
 }

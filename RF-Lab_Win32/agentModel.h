@@ -52,23 +52,21 @@ private:
 	ITarget<agentModelRsp>				*_tgt;
 	agentModel							*_curModel;
 
-public:
-	static agentModel					*am;
-
 
 public:
-	explicit agentModel();
+	explicit agentModel(void);
 	explicit agentModel(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt);
 	~agentModel(void);
 
 protected:
-	void run();
+	void run(void);
 
 public:
 	/* default class functions() to be overwritten */
-	static bool isRunning();
-	static void Release();
-	static bool shutdown();
+	static void prepare(agentModel *am);
+	static bool isRunning(void);
+	static void Release(void);
+	static bool shutdown(void);
 	static void wmCmd(int wmId);
 
 };

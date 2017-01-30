@@ -12,6 +12,7 @@
 
 // sub-module agents
 #include "agentModel.h"
+#include "agentModelPattern.h"
 #include "agentCom.h"
 
 #include "WinSrv.h"
@@ -93,9 +94,13 @@ WinSrv::~WinSrv()
 
 void WinSrv::threadsStart()
 {
-
-	// start the antenna measure model
+	// start the master model
 	pAgtModel  = new agentModel(&_ub_agtModel_req, &_ob_agtModel_rsp);
+
+	// default antenna pattern model to be acticvated
+	pAgtModel->prepare(new agentModelPattern());
+
+	// starting agent
 	pAgtModel->start();
 }
 

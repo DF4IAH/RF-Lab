@@ -1,12 +1,11 @@
 #pragma once
 
-//#include "agentModelPattern.h"
-
 /* Agents Library */
 #include <agents.h>
 #include <string>
 #include <iostream>
 #include <sstream>
+
 
 using namespace concurrency;
 using namespace std;
@@ -34,28 +33,36 @@ enum C_MODELRSP_ENUM {
 };
 
 
-struct agentModelReq
+typedef struct agentModelReq
 {
 	SHORT								 cmd;
-};
+} agentModelReq_t;
 
-struct agentModelRsp
+typedef struct agentModelRsp
 {
 	SHORT								 stat;
-};
+} agentModelRsp_t;
 
 
 class agentModel : public agent
 {
+public:
+	enum AGENT_MODELS {
+		AGENT_MODEL_NONE = 0,
+		AGENT_MODEL_PATTERN,
+	};
+
+
 private:
-	ISource<agentModelReq>				*_src;
-	ITarget<agentModelRsp>				*_tgt;
-	agentModel							*_curModel;
+	ISource<agentModelReq_t>			*_src;
+	ITarget<agentModelRsp_t>			*_tgt;
+	AGENT_MODELS						 _am_variant;
+	class agentModelVariant				*_curModel;
 
 
 public:
 	explicit agentModel(void);
-	explicit agentModel(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt);
+	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant);
 	~agentModel(void);
 
 protected:
@@ -63,7 +70,6 @@ protected:
 
 public:
 	/* default class functions() to be overwritten */
-	static void prepare(agentModel *am);
 	static bool isRunning(void);
 	static void Release(void);
 	static bool shutdown(void);

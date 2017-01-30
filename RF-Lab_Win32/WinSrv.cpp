@@ -94,11 +94,8 @@ WinSrv::~WinSrv()
 
 void WinSrv::threadsStart()
 {
-	// start the master model
-	pAgtModel  = new agentModel(&_ub_agtModel_req, &_ob_agtModel_rsp);
-
-	// default antenna pattern model to be acticvated
-	pAgtModel->prepare(new agentModelPattern());
+	// start the master model with the antenna pattern model variant
+	pAgtModel  = new agentModel(&_ub_agtModel_req, &_ob_agtModel_rsp, agentModel::AGENT_MODEL_PATTERN);
 
 	// starting agent
 	pAgtModel->start();

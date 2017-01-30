@@ -36,17 +36,17 @@ enum C_COMRSP_ENUM {
 const int C_BUF_SIZE = 256;
 
 
-struct agentComReq
+typedef struct agentComReq
 {
 	SHORT								 cmd;
 	string								 parm;
-};
+} agentComReq_t;
 
-struct agentComRsp
+typedef struct agentComRsp
 {
 	SHORT								 stat;
 	string								 data;
-};
+} agentComRsp_t;
 
 
 class agentCom : public agent

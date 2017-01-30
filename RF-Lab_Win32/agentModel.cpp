@@ -1,5 +1,3 @@
-#include <typeinfo>
-
 #include "stdafx.h"
 #include "agentModel.h"
 #include "agentModelPattern.h"
@@ -25,22 +23,27 @@ agentModel *g_am = nullptr;
 agentModel::agentModel()
 	: _src(nullptr)
 	, _tgt(nullptr)
+	, _am_variant(AGENT_MODEL_NONE)
 	, _curModel(nullptr)
 {
-	// no sub-agentModels to be assigned
-	if (!g_am) {
-		g_am = this;
-	}
+	g_am = this;
 }
 
-agentModel::agentModel(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt)
+agentModel::agentModel(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt, AGENT_MODELS am_variant)
 				 : _src(src)
 				 , _tgt(tgt)
-				 , _curModel(nullptr)
+				 , _am_variant(am_variant)
 {
-	// no sub-agentModels to be assigned
-	if (!g_am) {
-		g_am = this;
+	g_am = this;
+
+	switch (am_variant) {
+	case AGENT_MODEL_PATTERN:
+		_curModel = new agentModelPattern(src, tgt);
+		break;
+
+	case AGENT_MODEL_NONE:
+	default:
+		_curModel = nullptr;
 	}
 }
 
@@ -48,25 +51,16 @@ agentModel::~agentModel(void)
 {
 	if (g_am && g_am->_curModel) {
 		g_am->_curModel->Release();
-		delete _curModel; _curModel = nullptr;
+		delete _curModel;
 	}
+	g_am = nullptr;
 }
 
 
-// to be overwritten
 void agentModel::run(void)
 {
 	if (g_am && g_am->_curModel) {
 		g_am->_curModel->run();
-	}
-}
-
-void agentModel::prepare(agentModel *am)
-{
-	if (g_am) {
-		if (!g_am->_curModel) {
-			g_am->_curModel = am;
-		}
 	}
 }
 

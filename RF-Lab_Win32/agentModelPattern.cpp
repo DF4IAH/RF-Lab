@@ -15,15 +15,15 @@ template <class T>  void SafeRelease(T **ppT)
 }
 
 
-agentModelPattern::agentModelPattern(void)
-//agentModelPattern::agentModelPattern(ISource<agentModelReq>& src, ITarget<agentModelRsp>& tgt)
-	: _running(FALSE)
-	, _runState(C_MODEL_RUNSTATES_OPENCOM)
-	, _done(FALSE)
-	, pAgtComReq{ nullptr }
+agentModelPattern::agentModelPattern(ISource<agentModelReq> *src, ITarget<agentModelRsp> *tgt)
+	: pAgtComReq{ nullptr }
 	, pAgtComRsp{ nullptr }
 	, pAgtCom{ nullptr }
 {
+	_running = FALSE;
+	_runState = C_MODEL_RUNSTATES_OPENCOM;
+	_done = FALSE;
+
 	for (int i = 0; i < 1 /*C_COMINST_ENUM*/; ++i) {
 		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
 		pAgtComRsp[i] = new unbounded_buffer<agentComRsp>;
@@ -238,5 +238,4 @@ void agentModelPattern::run()
 
 	// Move the agent to the finished state.
 	_done = TRUE;
-	done();
 }

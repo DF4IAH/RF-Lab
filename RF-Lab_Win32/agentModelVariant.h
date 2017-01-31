@@ -8,6 +8,11 @@ using namespace concurrency;
 using namespace std;
 
 
+enum C_MODEL_RUNSTATES_ENUM {
+	C_MODEL_RUNSTATES_NOOP = 0
+};
+
+
 class agentModelVariant
 {
 protected:
@@ -30,6 +35,6 @@ public:
 	virtual bool isRunning(void);
 	virtual void Release(void);
 	virtual bool shutdown(void);
-	virtual void wmCmd(int wmId);
+	virtual void wmCmd(int wmId, LPVOID arg);
 
 };

@@ -11,19 +11,6 @@ using namespace concurrency;
 using namespace std;
 
 
-enum C_MODEL_RUNSTATES_ENUM {
-	C_MODEL_RUNSTATES_NOOP = 0,
-	C_MODEL_RUNSTATES_OPENCOM,
-	C_MODEL_RUNSTATES_OPENCOM_WAIT,
-	C_MODEL_RUNSTATES_INIT,
-	C_MODEL_RUNSTATES_INIT_WAIT,
-	C_MODEL_RUNSTATES_RUNNING,
-	C_MODEL_RUNSTATES_GOTO0,
-	C_MODEL_RUNSTATES_CLOSE_COM,
-	C_MODEL_RUNSTATES_CLOSE_COM_WAIT
-};
-
-
 enum C_MODELREQ_ENUM {
 	C_MODELREQ_END = 0
 };
@@ -72,6 +59,6 @@ public:
 	static bool isRunning(void);
 	static void Release(void);
 	static bool shutdown(void);
-	static void wmCmd(int wmId);
+	static void wmCmd(int wmId, LPVOID arg = nullptr);
 
 };

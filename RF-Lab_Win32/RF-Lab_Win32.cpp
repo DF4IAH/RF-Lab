@@ -142,12 +142,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    switch (message)
+	static int argInt = 0;
+	
+	switch (message)
     {
     case WM_COMMAND:
         {
-            int wmId = LOWORD(wParam);
-            // Menüauswahl bearbeiten:
+			int wmId = LOWORD(wParam);
+
+			// Menüauswahl bearbeiten:
             switch (wmId)
             {
             case IDM_ABOUT:
@@ -160,6 +163,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case ID_ROTOR_GOTO_0:
 				WinSrv::srvWmCmd(hWnd, wmId);
+				break;
+
+			case ID_ROTOR_GOTO_X:
+				argInt = AskDialog_RotorPositionX();
+				WinSrv::srvWmCmd(hWnd, wmId, &argInt);
 				break;
 
 			default:
@@ -210,4 +218,13 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+
+// Dialog for Rotor Position to go to
+// returns milli-degrees
+static int AskDialog_RotorPositionX(void)
+{
+	MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);
+	return 10 * 1000;
 }

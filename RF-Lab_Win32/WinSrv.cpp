@@ -257,10 +257,10 @@ void WinSrv::discardGraphicsResources()
 	SafeRelease(&pRenderTarget);
 }
 
-void WinSrv::wmCmd(HWND hWnd, int wmId)
+void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
 {
 	if (pAgtModel) {
-		pAgtModel->wmCmd(wmId);
+		pAgtModel->wmCmd(wmId, arg);
 	}
 }
 
@@ -312,9 +312,9 @@ void WinSrv::srvResize()
 }
 
 // WM-Command verarbeiten
-void WinSrv::srvWmCmd(HWND hWnd, int wmId)
+void WinSrv::srvWmCmd(HWND hWnd, int wmId, LPVOID arg)
 {
 	if (g_instance && g_instance->isReady()) {
-		g_instance->wmCmd(hWnd, wmId);
+		g_instance->wmCmd(hWnd, wmId, arg);
 	}
 }

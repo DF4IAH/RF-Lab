@@ -5,7 +5,7 @@
 
 agentModelVariant::agentModelVariant(void)
 				 : _running(FALSE)
-				 ,_runState(C_MODEL_RUNSTATES_OPENCOM)
+				 ,_runState(C_MODEL_RUNSTATES_NOOP)
 				 , _done(FALSE)
 {
 }
@@ -34,6 +34,6 @@ bool agentModelVariant::shutdown(void)
 	return false;
 }
 
-void agentModelVariant::wmCmd(int wmId)
+void agentModelVariant::wmCmd(int wmId, LPVOID arg)
 {
 }

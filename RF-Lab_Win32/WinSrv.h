@@ -43,7 +43,7 @@ private:
 	void discardGraphicsResources();
 	void threadsStart();
 	void threadsStop();
-	void wmCmd(HWND hWnd, int wmId);
+	void wmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
 
 public:
 	static void srvStart();
@@ -52,5 +52,5 @@ public:
 	static LRESULT srvSetWindow(HWND hWnd);
 	static void srvPaint();
 	static void srvResize();
-	static void srvWmCmd(HWND hWnd, int wmId);
+	static void srvWmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
 };

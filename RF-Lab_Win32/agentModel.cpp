@@ -84,9 +84,9 @@ bool agentModel::shutdown(void)
 	}
 }
 
-void agentModel::wmCmd(int wmId)
+void agentModel::wmCmd(int wmId, LPVOID arg)
 {
 	if (g_am && g_am->_curModel) {
-		g_am->_curModel->wmCmd(wmId);
+		g_am->_curModel->wmCmd(wmId, arg);
 	}
 }

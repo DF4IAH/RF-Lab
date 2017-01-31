@@ -19,7 +19,11 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 : pAgtComReq{ nullptr }
 				 , pAgtComRsp{ nullptr }
 				 , pAgtCom{ nullptr }
+				 , _arg(nullptr)
 {
+	/* enter first step of FSM */
+	_runState = C_MODELPATTERN_RUNSTATES_OPENCOM;
+
 	for (int i = 0; i < 1 /*C_COMINST_ENUM*/; ++i) {
 		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
 		pAgtComRsp[i] = new unbounded_buffer<agentComRsp>;
@@ -40,7 +44,7 @@ void agentModelPattern::run(void)
 		while (_running) {
 			// model's working loop
 			switch (_runState) {
-			case C_MODEL_RUNSTATES_OPENCOM:
+			case C_MODELPATTERN_RUNSTATES_OPENCOM:
 			{
 				char buf[C_BUF_SIZE];
 				agentComReq comReqData;
@@ -48,23 +52,23 @@ void agentModelPattern::run(void)
 				snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
 				comReqData.parm = string(buf);
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-				_runState = C_MODEL_RUNSTATES_OPENCOM_WAIT;
+				_runState = C_MODELPATTERN_RUNSTATES_OPENCOM_WAIT;
 			}
 			break;
 
-			case C_MODEL_RUNSTATES_OPENCOM_WAIT:
+			case C_MODELPATTERN_RUNSTATES_OPENCOM_WAIT:
 			{
 				agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
 				if (comRspData.stat == C_COMRSP_OK) {
-					_runState = C_MODEL_RUNSTATES_INIT;
+					_runState = C_MODELPATTERN_RUNSTATES_INIT;
 				}
 				else {
-					_runState = C_MODEL_RUNSTATES_CLOSE_COM;
+					_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
 				}
 			}
 			break;
 
-			case C_MODEL_RUNSTATES_INIT:
+			case C_MODELPATTERN_RUNSTATES_INIT:
 			{
 				agentComReq comReqData;
 
@@ -80,11 +84,11 @@ void agentModelPattern::run(void)
 				comReqData.parm = string("FX,2500\r");				// Zolix: initial speed 2.500 ticks per sec
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				_runState = C_MODEL_RUNSTATES_INIT_WAIT;
+				_runState = C_MODELPATTERN_RUNSTATES_INIT_WAIT;
 			}
 			break;
 
-			case C_MODEL_RUNSTATES_INIT_WAIT:
+			case C_MODELPATTERN_RUNSTATES_INIT_WAIT:
 			{
 				agentComRsp comRspData;
 
@@ -93,53 +97,60 @@ void agentModelPattern::run(void)
 				if (state) {
 					// consume each reported state
 					if (comRspData.stat == C_COMRSP_FAIL) {
-						_runState = C_MODEL_RUNSTATES_CLOSE_COM;
+						_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
 					}
 				}
 				else {
-					_runState = C_MODEL_RUNSTATES_RUNNING;
+					_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 				}
 			}
 			break;
 
-			case C_MODEL_RUNSTATES_RUNNING:
+			case C_MODELPATTERN_RUNSTATES_RUNNING:
 			{
 
 				Sleep(10);
 			}
 			break;
 
-			case C_MODEL_RUNSTATES_GOTO0:
+			case C_MODELPATTERN_RUNSTATES_GOTO_X:
 			{
 				agentComReq comReqData;
 				agentComRsp comRspData;
 				char cbuf[C_BUF_SIZE];
 				int pos = 0;
+				int gotoMilliPos = 0;
+
+				if (_arg) {
+					gotoMilliPos = *((int*) _arg);
+					_arg = nullptr;
+				}
 
 				// request position
 				comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
 				comReqData.parm = string("?X\r");
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				// command to start to 0° position
+				// command to start to X milli-° position
 				comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
 				if (comRspData.stat == C_COMRSP_DATA) {
 					const char* str_start = strrchr(comRspData.data.c_str(), '?');
 					sscanf_s(str_start, "?X,%d", &pos);
+					int posDiff = (int) (gotoMilliPos * 0.8 - pos + 0.5);
 
-					// return to 0 position
-					if (pos) {
-						snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%d\r", (pos > 0 ? '-' : '+'), abs(pos));
+					// correct posDiff steps
+					if (posDiff) {
+						snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%d\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
 						comReqData.cmd = C_COMREQ_COM_SEND;
 						comReqData.parm = string(cbuf);
 						send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 					}
 				}
-				_runState = C_MODEL_RUNSTATES_RUNNING;
+				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 			}
 			break;
 
-			case C_MODEL_RUNSTATES_CLOSE_COM:
+			case C_MODELPATTERN_RUNSTATES_CLOSE_COM:
 			{
 				agentComReq comReqData;
 				comReqData.cmd = C_COMREQ_END;
@@ -151,11 +162,11 @@ void agentModelPattern::run(void)
 						send(*(pAgtComReq[i]), comReqData);
 					}
 				}
-				_runState = C_MODEL_RUNSTATES_CLOSE_COM_WAIT;
+				_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM_WAIT;
 			}
 			break;
 
-			case C_MODEL_RUNSTATES_CLOSE_COM_WAIT:
+			case C_MODELPATTERN_RUNSTATES_CLOSE_COM_WAIT:
 			{
 				// wait for each reply message
 				for (int i = 0; i < C_COMINST__COUNT; i++) {
@@ -168,12 +179,12 @@ void agentModelPattern::run(void)
 						} while (comRsp.stat != C_COMRSP_END);
 					}
 				}
-				_runState = C_MODEL_RUNSTATES_NOOP;
+				_runState = C_MODELPATTERN_RUNSTATES_NOOP;
 				_running = false;
 			}
 			break;
 
-			case C_MODEL_RUNSTATES_NOOP:
+			case C_MODELPATTERN_RUNSTATES_NOOP:
 			default:
 				Sleep(250);
 				break;
@@ -219,18 +230,28 @@ bool agentModelPattern::shutdown(void)
 
 	// signal to shutdown
 	//_running = FALSE;
-	_runState = C_MODEL_RUNSTATES_CLOSE_COM;
+	_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
 
 	return old_running;
 }
 
-void agentModelPattern::wmCmd(int wmId)
+void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 {
 	switch (wmId)
 	{
 	case ID_ROTOR_GOTO_0:
-		if (_runState == C_MODEL_RUNSTATES_RUNNING) {
-			_runState = C_MODEL_RUNSTATES_GOTO0;
+		if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
+			_arg = nullptr;
+			_runState = C_MODELPATTERN_RUNSTATES_GOTO_X;
+		}
+		break;
+
+	case ID_ROTOR_GOTO_X:
+		if (arg) {
+			if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
+				_arg = arg;
+				_runState = C_MODELPATTERN_RUNSTATES_GOTO_X;
+			}
 		}
 		break;
 	}

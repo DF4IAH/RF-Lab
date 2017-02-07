@@ -166,7 +166,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case ID_ROTOR_GOTO_X:
-				argInt = AskDialog_RotorPositionX();
+				argInt = AskRotorPosX(hInst, hWnd);
 				WinSrv::srvWmCmd(hWnd, wmId, &argInt);
 				break;
 
@@ -223,8 +223,42 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 // Dialog for Rotor Position to go to
 // returns milli-degrees
-static int AskDialog_RotorPositionX(void)
+static int AskRotorPosX(HINSTANCE hInst, HWND hWnd)
 {
-	MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);
+	//MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);
+	if (IDOK == DialogBox(hInst,
+							MAKEINTRESOURCE(IDD_ROTOR_POS_X),
+							hWnd,
+							(DLGPROC) RotorPosX_CB)) {
+		return 99;
+	}
+
 	return 10 * 1000;
+}
+
+BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
+							UINT   message,
+							WPARAM wParam,
+							LPARAM lParam)
+{
+	wchar_t szIdcRotorPosXNew[C_BUFSIZE] = { 0 };
+
+	switch (message) {
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDC_ROTOR_POS_X_START_BUTTON:
+			if (!GetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXNew, C_BUFSIZE - 1))
+			{
+
+				*szIdcRotorPosXNew = 0;
+			}
+			// Fall through.
+
+		case IDC_ROTOR_POS_X_CANCEL_BUTTON:
+			EndDialog(hWnd, wParam);
+			return TRUE;
+			break;
+		}
+	}
+	return FALSE;
 }

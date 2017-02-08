@@ -28,6 +28,7 @@ private:
 	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
 	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
 	agentCom							*pAgtCom[C_COMINST__COUNT];
+	int									 lastTickPos;
 
 	LPVOID								 _arg;
 
@@ -38,11 +39,17 @@ public:
 public:
 	void run(void);
 
+private:
+	int requestPos(void);
+	void sendPos(int tickPos);
+
 public:
 	/* overwriting agentModel member functions() */
 	bool isRunning(void);
 	void Release(void);
 	bool shutdown(void);
 	void wmCmd(int wmId, LPVOID arg = nullptr);
+	void setLastTickPos(int pos);
+	int  getLastTickPos(void);
 
 };

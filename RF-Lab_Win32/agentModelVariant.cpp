@@ -37,3 +37,12 @@ bool agentModelVariant::shutdown(void)
 void agentModelVariant::wmCmd(int wmId, LPVOID arg)
 {
 }
+
+void agentModelVariant::setLastTickPos(int tickPos)
+{
+}
+
+int agentModelVariant::getLastTickPos(void)
+{
+	return 0;
+}

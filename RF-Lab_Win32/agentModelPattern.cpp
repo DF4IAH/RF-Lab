@@ -20,6 +20,7 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , pAgtComRsp{ nullptr }
 				 , pAgtCom{ nullptr }
 				 , _arg(nullptr)
+				 , lastTickPos(0)
 {
 	/* enter first step of FSM */
 	_runState = C_MODELPATTERN_RUNSTATES_OPENCOM;
@@ -84,6 +85,9 @@ void agentModelPattern::run(void)
 				comReqData.parm = string("FX,2500\r");				// Zolix: initial speed 2.500 ticks per sec
 				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
+				// read current tick position of rotor and store value
+				(void) requestPos();
+
 				_runState = C_MODELPATTERN_RUNSTATES_INIT_WAIT;
 			}
 			break;
@@ -118,34 +122,15 @@ void agentModelPattern::run(void)
 				agentComReq comReqData;
 				agentComRsp comRspData;
 				char cbuf[C_BUF_SIZE];
-				int pos = 0;
-				int gotoMilliPos = 0;
 
+				int gotoMilliPos = 0;
 				if (_arg) {
-					gotoMilliPos = *((int*) _arg);
+					gotoMilliPos = *((int*)_arg);
 					_arg = nullptr;
 				}
-
-				// request position
-				comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
-				comReqData.parm = string("?X\r");
-				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-
-				// command to start to X milli-° position
-				comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
-				if (comRspData.stat == C_COMRSP_DATA) {
-					const char* str_start = strrchr(comRspData.data.c_str(), '?');
-					sscanf_s(str_start, "?X,%d", &pos);
-					int posDiff = (int) (gotoMilliPos * 0.8 - pos + 0.5);
-
-					// correct posDiff steps
-					if (posDiff) {
-						snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%d\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
-						comReqData.cmd = C_COMREQ_COM_SEND;
-						comReqData.parm = string(cbuf);
-						send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-					}
-				}
+				
+				requestPos();
+				sendPos(gotoMilliPos * 0.8);
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 			}
 			break;
@@ -196,6 +181,45 @@ void agentModelPattern::run(void)
 	_done = TRUE;
 }
 
+
+int agentModelPattern::requestPos(void)
+{
+	agentComReq comReqData;
+	agentComRsp comRspData;
+	int pos = 0;
+
+	// request position
+	comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+	comReqData.parm = string("?X\r");
+	send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+	// read current position
+	comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
+	if (comRspData.stat == C_COMRSP_DATA) {
+		int posDiff = 0;
+
+		const char* str_start = strrchr(comRspData.data.c_str(), '?');
+		if (str_start) {
+			sscanf_s(str_start, "?X,%d", &pos);
+			agentModel::setLastTickPos(pos);
+		}
+	}
+	return pos;
+}
+
+void agentModelPattern::sendPos(int tickPos)
+{
+	agentComReq comReqData;
+	int posDiff = tickPos - getLastTickPos();
+	char cbuf[C_BUF_SIZE];
+
+	snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%d\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
+	comReqData.cmd = C_COMREQ_COM_SEND;
+	comReqData.parm = string(cbuf);
+	send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+	agentModel::setLastTickPos(tickPos);
+}
 
 inline bool agentModelPattern::isRunning(void)
 {
@@ -255,4 +279,14 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		}
 		break;
 	}
+}
+
+void agentModelPattern::setLastTickPos(int pos)
+{
+	lastTickPos = pos;
+}
+
+int agentModelPattern::getLastTickPos(void)
+{
+	return lastTickPos;
 }

@@ -22,6 +22,7 @@
 HINSTANCE hInst;                                // Aktuelle Instanz
 WCHAR szTitle[MAX_LOADSTRING];                  // Titelleistentext
 WCHAR szWindowClass[MAX_LOADSTRING];            // Klassenname des Hauptfensters
+int iCbValue;
 
 // Vorwärtsdeklarationen der in diesem Codemodul enthaltenen Funktionen:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -38,6 +39,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+	// init global values
+	hInst = nullptr;
+	*szTitle = 0;
+	*szWindowClass = 0;
+	iCbValue = 0;
 
 	// Windows-Kommunikationsserver anstarten
 	WinSrv::srvStart();
@@ -225,15 +232,16 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 // returns milli-degrees
 static int AskRotorPosX(HINSTANCE hInst, HWND hWnd)
 {
+	int lastPos = agentModel::getLastTickPos() / 800;
 	//MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);
-	if (IDOK == DialogBox(hInst,
+	if (IDC_ROTOR_POS_X_START_BUTTON == DialogBox(hInst,
 							MAKEINTRESOURCE(IDD_ROTOR_POS_X),
 							hWnd,
 							(DLGPROC) RotorPosX_CB)) {
-		return 99;
+		return iCbValue * 1000;
 	}
 
-	return 10 * 1000;
+	return 0;
 }
 
 BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
@@ -244,13 +252,22 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 	wchar_t szIdcRotorPosXNew[C_BUFSIZE] = { 0 };
 
 	switch (message) {
+	case WM_INITDIALOG:
+		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_CURRENT_EDIT_RO, L"TEST");
+		return (INT_PTR)TRUE;
+		break;
+
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDC_ROTOR_POS_X_START_BUTTON:
 			if (!GetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXNew, C_BUFSIZE - 1))
 			{
-
 				*szIdcRotorPosXNew = 0;
+				iCbValue = 0;
+			}
+			else {
+				// process input
+				swscanf_s(szIdcRotorPosXNew, L"%d", &iCbValue);
 			}
 			// Fall through.
 

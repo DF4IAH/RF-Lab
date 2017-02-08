@@ -90,3 +90,20 @@ void agentModel::wmCmd(int wmId, LPVOID arg)
 		g_am->_curModel->wmCmd(wmId, arg);
 	}
 }
+
+void agentModel::setLastTickPos(int tickPos)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->setLastTickPos(tickPos);
+	}
+}
+
+int agentModel::getLastTickPos(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getLastTickPos();
+	}
+	else {
+		return 0;
+	}
+}

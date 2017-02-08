@@ -37,4 +37,7 @@ public:
 	virtual bool shutdown(void);
 	virtual void wmCmd(int wmId, LPVOID arg);
 
+	virtual void setLastTickPos(int tickPos);
+	virtual int  getLastTickPos(void);
+
 };

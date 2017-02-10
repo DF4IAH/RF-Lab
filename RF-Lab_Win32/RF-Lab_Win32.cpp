@@ -174,7 +174,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case ID_ROTOR_GOTO_X:
 				argInt = AskRotorPosX(hInst, hWnd);
-				WinSrv::srvWmCmd(hWnd, wmId, &argInt);
+				if (argInt != MAXINT16) {  // Position nur verändern, wenn gültiger Wert vorliegt
+					WinSrv::srvWmCmd(hWnd, wmId, &argInt);
+				}
 				break;
 
 			default:
@@ -233,15 +235,20 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 static int AskRotorPosX(HINSTANCE hInst, HWND hWnd)
 {
 	int lastPos = agentModel::getLastTickPos() / 800;
+	iCbValue = lastPos;
+
 	//MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);
 	if (IDC_ROTOR_POS_X_START_BUTTON == DialogBox(hInst,
 							MAKEINTRESOURCE(IDD_ROTOR_POS_X),
 							hWnd,
 							(DLGPROC) RotorPosX_CB)) {
-		return iCbValue * 1000;
+		if (iCbValue != MAXINT16) {
+			return iCbValue * 1000;
+		}
 	}
 
-	return 0;
+	// fail - no value to return
+	return MAXINT16;
 }
 
 BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
@@ -249,12 +256,42 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 							WPARAM wParam,
 							LPARAM lParam)
 {
+	wchar_t szIdcRotorPosXCurrent[C_BUFSIZE] = { 0 };
 	wchar_t szIdcRotorPosXNew[C_BUFSIZE] = { 0 };
 
 	switch (message) {
 	case WM_INITDIALOG:
-		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_CURRENT_EDIT_RO, L"TEST");
+		if (iCbValue < -180) {
+			iCbValue = -180;
+		}
+		else if (iCbValue > 180) {
+			iCbValue = 180;
+		}
+
+		swprintf_s(szIdcRotorPosXCurrent, L"%d", iCbValue);
+		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_CURRENT_EDIT_RO, szIdcRotorPosXCurrent);
+		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
+		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMIN, FALSE,   0);
+		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMAX, FALSE, 360);
+		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETTICFREQ,     45,   0);
+		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETLINESIZE,     0,   1);
+		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPAGESIZE,     0,  45);
+		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS,       TRUE, 180 + iCbValue);
 		return (INT_PTR)TRUE;
+		break;
+
+	case  WM_HSCROLL:
+		switch (LOWORD(wParam)) {
+		case TB_THUMBTRACK:
+			iCbValue = HIWORD(wParam) - 180;
+			break;
+
+		default:
+			iCbValue = SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0) - 180;
+		}
+
+		swprintf_s(szIdcRotorPosXCurrent, L"%d", iCbValue);
+		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
 		break;
 
 	case WM_COMMAND:
@@ -263,7 +300,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			if (!GetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXNew, C_BUFSIZE - 1))
 			{
 				*szIdcRotorPosXNew = 0;
-				iCbValue = 0;
+				iCbValue = MAXINT16;
 			}
 			else {
 				// process input

@@ -217,8 +217,6 @@ void agentModelPattern::sendPos(int tickPos)
 	comReqData.cmd = C_COMREQ_COM_SEND;
 	comReqData.parm = string(cbuf);
 	send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-
-	agentModel::setLastTickPos(tickPos);
 }
 
 inline bool agentModelPattern::isRunning(void)

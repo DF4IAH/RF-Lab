@@ -11,3 +11,5 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 							UINT   message,
 							WPARAM wParam,
 							LPARAM lParam);
+
+static int AskTxSettings(HINSTANCE hInst, HWND hWnd);

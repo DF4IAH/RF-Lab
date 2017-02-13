@@ -179,6 +179,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 
+			case ID_TX_SETTINGS:
+				AskTxSettings(hInst, hWnd);
+				break;
+
 			default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -325,13 +329,24 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			break;
 		}
 		break;
-
-#if 0
-	default:
-		if (0x020E <= message && message <= 0x204) {
-			printf("BREAK: 0x%04x\n", message);
-		}
-#endif
 	}
+	return FALSE;
+}
+
+// Dialog for TX settings
+static int AskTxSettings(HINSTANCE hInst, HWND hWnd)
+{
+
+
+	// fail - no value to return
+	return MAXINT16;
+}
+
+BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
+	UINT   message,
+	WPARAM wParam,
+	LPARAM lParam)
+{
+
 	return FALSE;
 }

@@ -60,6 +60,7 @@ public:
 	static void Release(void);
 	static bool shutdown(void);
 	static void wmCmd(int wmId, LPVOID arg = nullptr);
+	static int  requestPos(void);
 	static void setLastTickPos(int tickPos);
 	static int  getLastTickPos(void);
 

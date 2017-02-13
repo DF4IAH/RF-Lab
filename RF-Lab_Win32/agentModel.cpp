@@ -91,6 +91,14 @@ void agentModel::wmCmd(int wmId, LPVOID arg)
 	}
 }
 
+int agentModel::requestPos(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->requestPos();
+	}
+	return MAXINT16;
+}
+
 void agentModel::setLastTickPos(int tickPos)
 {
 	if (g_am && g_am->_curModel) {

@@ -234,7 +234,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 // returns milli-degrees
 static int AskRotorPosX(HINSTANCE hInst, HWND hWnd)
 {
-	int lastPos = agentModel::getLastTickPos() / 800;
+	int lastPos = agentModel::requestPos() / 800;
 	iCbValue = lastPos;
 
 	//MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);
@@ -280,7 +280,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 		return (INT_PTR)TRUE;
 		break;
 
-	case  WM_HSCROLL:
+	case WM_HSCROLL:
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK:
 			iCbValue = HIWORD(wParam) - 180;
@@ -292,6 +292,17 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 
 		swprintf_s(szIdcRotorPosXCurrent, L"%d", iCbValue);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
+		break;
+
+	case WM_KEYDOWN:
+		if (!GetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent, sizeof(szIdcRotorPosXCurrent) - 1)) {
+			iCbValue = MAXINT16;
+		} else {
+			// process input
+			if (swscanf_s(szIdcRotorPosXNew, L"%d", &iCbValue)) {
+				SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS, TRUE, 180 + iCbValue);
+			}
+		}
 		break;
 
 	case WM_COMMAND:
@@ -313,6 +324,14 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			return TRUE;
 			break;
 		}
+		break;
+
+#if 0
+	default:
+		if (0x020E <= message && message <= 0x204) {
+			printf("BREAK: 0x%04x\n", message);
+		}
+#endif
 	}
 	return FALSE;
 }

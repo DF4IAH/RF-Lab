@@ -38,6 +38,11 @@ void agentModelVariant::wmCmd(int wmId, LPVOID arg)
 {
 }
 
+int agentModelVariant::requestPos(void)
+{
+	return 0;
+}
+
 void agentModelVariant::setLastTickPos(int tickPos)
 {
 }

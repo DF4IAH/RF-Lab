@@ -40,8 +40,8 @@ public:
 	void run(void);
 
 private:
-	int requestPos(void);
 	void sendPos(int tickPos);
+	void setLastTickPos(int pos);
 
 public:
 	/* overwriting agentModel member functions() */
@@ -49,7 +49,7 @@ public:
 	void Release(void);
 	bool shutdown(void);
 	void wmCmd(int wmId, LPVOID arg = nullptr);
-	void setLastTickPos(int pos);
+	int  requestPos(void);
 	int  getLastTickPos(void);
 
 };

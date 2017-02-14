@@ -91,6 +91,9 @@ void agentModel::wmCmd(int wmId, LPVOID arg)
 	}
 }
 
+
+/* agentModelPattern - Rotor */
+
 int agentModel::requestPos(void)
 {
 	if (g_am && g_am->_curModel) {
@@ -102,7 +105,7 @@ int agentModel::requestPos(void)
 void agentModel::setLastTickPos(int tickPos)
 {
 	if (g_am && g_am->_curModel) {
-		return g_am->_curModel->setLastTickPos(tickPos);
+		g_am->_curModel->setLastTickPos(tickPos);
 	}
 }
 
@@ -113,5 +116,59 @@ int agentModel::getLastTickPos(void)
 	}
 	else {
 		return 0;
+	}
+}
+
+
+/* agentModelPattern - TX */
+
+void agentModel::setTxOnState(bool checked)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->setTxOnState(checked);
+	}
+}
+
+bool agentModel::getTxOnState(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getTxOnState();
+	}
+	else {
+		return false;
+	}
+}
+
+void agentModel::setTxFrequencyValue(double value)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->setTxFrequencyValue(value);
+	}
+}
+
+double agentModel::getTxFrequencyValue(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getTxFrequencyValue();
+	}
+	else {
+		return 0.;
+	}
+}
+
+void agentModel::setTxPwrValue(double value)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->setTxPwrValue(value);
+	}
+}
+
+double agentModel::getTxPwrValue(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getTxPwrValue();
+	}
+	else {
+		return 0.;
 	}
 }

@@ -38,6 +38,9 @@ void agentModelVariant::wmCmd(int wmId, LPVOID arg)
 {
 }
 
+
+/* agentModelPattern - Rotor */
+
 int agentModelVariant::requestPos(void)
 {
 	return 0;
@@ -50,4 +53,34 @@ void agentModelVariant::setLastTickPos(int tickPos)
 int agentModelVariant::getLastTickPos(void)
 {
 	return 0;
+}
+
+
+/* agentModelPattern - TX */
+
+void agentModelVariant::setTxOnState(bool checked)
+{
+}
+
+bool agentModelVariant::getTxOnState(void)
+{
+	return false;
+}
+
+void agentModelVariant::setTxFrequencyValue(double value)
+{
+}
+
+double agentModelVariant::getTxFrequencyValue(void)
+{
+	return 0.;
+}
+
+void agentModelVariant::setTxPwrValue(double value)
+{
+}
+
+double agentModelVariant::getTxPwrValue(void)
+{
+	return 0.;
 }

@@ -52,16 +52,25 @@ public:
 	~agentModel(void);
 
 protected:
-	void run(void);
+	void			run(void);
 
 public:
 	/* default class functions() to be overwritten */
-	static bool isRunning(void);
-	static void Release(void);
-	static bool shutdown(void);
-	static void wmCmd(int wmId, LPVOID arg = nullptr);
-	static int  requestPos(void);
-	static void setLastTickPos(int tickPos);
-	static int  getLastTickPos(void);
+	static bool		isRunning(void);
+	static void		Release(void);
+	static bool		shutdown(void);
+	static void		wmCmd(int wmId, LPVOID arg = nullptr);
 
+	/* agentModelPattern - Rotor */
+	static int		requestPos(void);
+	static void		setLastTickPos(int tickPos);
+	static int		getLastTickPos(void);
+
+	/* agentModelPattern - TX */
+	static void		setTxOnState(bool checked);
+	static bool		getTxOnState(void);
+	static void		setTxFrequencyValue(double value);
+	static double	getTxFrequencyValue(void);
+	static void		setTxPwrValue(double value);
+	static double	getTxPwrValue(void);
 };

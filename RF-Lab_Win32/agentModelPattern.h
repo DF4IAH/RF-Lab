@@ -28,28 +28,40 @@ private:
 	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
 	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
 	agentCom							*pAgtCom[C_COMINST__COUNT];
-	int									 lastTickPos;
-
 	LPVOID								 _arg;
 
+	int									 lastTickPos;
+
+	bool								 txOn;
+	double								 txFequency;
+	double								 txPower;
+
 
 public:
-	explicit agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt);
-
-public:
-	void run(void);
+	explicit	agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt);
+	void		run(void);
 
 private:
-	void sendPos(int tickPos);
-	void setLastTickPos(int pos);
+	void		sendPos(int tickPos);
 
 public:
 	/* overwriting agentModel member functions() */
-	bool isRunning(void);
-	void Release(void);
-	bool shutdown(void);
-	void wmCmd(int wmId, LPVOID arg = nullptr);
-	int  requestPos(void);
-	int  getLastTickPos(void);
+	bool		isRunning(void);
+	void		Release(void);
+	bool		shutdown(void);
+	void		wmCmd(int wmId, LPVOID arg = nullptr);
+
+	/* agentModelPattern - Rotor */
+	int			requestPos(void);
+	void		setLastTickPos(int pos);
+	int			getLastTickPos(void);
+
+	/* agentModelPattern - TX */
+	void		setTxOnState(bool checked);
+	bool		getTxOnState(void);
+	void		setTxFrequencyValue(double value);
+	double		getTxFrequencyValue(void);
+	void		setTxPwrValue(double value);
+	double		getTxPwrValue(void);
 
 };

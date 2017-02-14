@@ -20,16 +20,38 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , pAgtComRsp{ nullptr }
 				 , pAgtCom{ nullptr }
 				 , _arg(nullptr)
+
 				 , lastTickPos(0)
+
+				 , txOn(false)
+				 , txFequency(1e9)
+				 , txPower(-30)
 {
 	/* enter first step of FSM */
 	_runState = C_MODELPATTERN_RUNSTATES_OPENCOM;
 
-	for (int i = 0; i < 1 /*C_COMINST_ENUM*/; ++i) {
+	for (int i = 0; i < C_COMINST__COUNT; ++i) {
 		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
 		pAgtComRsp[i] = new unbounded_buffer<agentComRsp>;
 		if (pAgtComReq[i] && pAgtComRsp[i]) {
-			pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
+			switch (i) {
+			case C_COMINST_ROT:
+				pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
+				break;
+
+			case C_COMINST_TX:
+				pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
+				break;
+
+#if 0
+			case C_COMINST_RX:
+				pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
+				break;
+#endif
+
+			default:
+				pAgtCom[i] = nullptr;
+			}
 		}
 	}
 }
@@ -37,9 +59,16 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 
 void agentModelPattern::run(void)
 {
-	// start the antenna meassure model
-	if (pAgtCom[C_COMINST_ROT]) {
+	// Start Antenna Rotor
+	if (pAgtCom[C_COMINST_ROT] &&
+		pAgtCom[C_COMINST_TX ]) {
+
 		pAgtCom[C_COMINST_ROT]->start();
+		pAgtCom[C_COMINST_TX ]->start();
+		
+		if (pAgtCom[C_COMINST_RX]) {
+			pAgtCom[C_COMINST_RX]->start();
+		}
 
 		_running = TRUE;
 		while (_running) {
@@ -49,10 +78,31 @@ void agentModelPattern::run(void)
 			{
 				char buf[C_BUF_SIZE];
 				agentComReq comReqData;
-				comReqData.cmd = C_COMREQ_OPEN;
-				snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
-				comReqData.parm = string(buf);
-				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+				
+				// Open Rotor
+				if (pAgtCom[C_COMINST_ROT]) {
+					comReqData.cmd = C_COMREQ_OPEN;
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+					comReqData.parm = string(buf);
+					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+				}
+
+				// Open TX
+				if (pAgtCom[C_COMINST_TX]) {
+					comReqData.cmd = C_COMREQ_OPEN;
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+					comReqData.parm = string(buf);
+					send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+				}
+
+				// Open RX
+				if (pAgtCom[C_COMINST_RX]) {
+					comReqData.cmd = C_COMREQ_OPEN;
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 999, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+					comReqData.parm = string(buf);
+					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+				}
+
 				_runState = C_MODELPATTERN_RUNSTATES_OPENCOM_WAIT;
 			}
 			break;
@@ -61,7 +111,24 @@ void agentModelPattern::run(void)
 			{
 				agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
 				if (comRspData.stat == C_COMRSP_OK) {
-					_runState = C_MODELPATTERN_RUNSTATES_INIT;
+					comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+					if (comRspData.stat == C_COMRSP_OK) {
+						if (pAgtCom[C_COMINST_RX]) {
+							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+							if (pAgtComRsp[C_COMINST_RX]) {
+								_runState = C_MODELPATTERN_RUNSTATES_INIT;
+							}
+							else {
+								_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
+							}
+						}
+						else {
+							_runState = C_MODELPATTERN_RUNSTATES_INIT;
+						}
+					}
+					else {
+						_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
+					}
 				}
 				else {
 					_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
@@ -72,21 +139,85 @@ void agentModelPattern::run(void)
 			case C_MODELPATTERN_RUNSTATES_INIT:
 			{
 				agentComReq comReqData;
+				agentComRsp comRspData;
 
-				// Zollix commands to be sent
-				comReqData.cmd = C_COMREQ_COM_SEND;
+				// Rotor Init
+				if (pAgtCom[C_COMINST_ROT]) {
+					// Zollix commands to be sent
+					comReqData.cmd = C_COMREQ_COM_SEND;
 
-				comReqData.parm = string("VX,20000\r");				// Zolix: top speed 20.000 ticks per sec
-				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+					comReqData.parm = string("VX,20000\r");				// Zolix: top speed 20.000 ticks per sec
+					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				comReqData.parm = string("AX,30000\r");				// Zolix: acceleration speed 30.000
-				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+					comReqData.parm = string("AX,30000\r");				// Zolix: acceleration speed 30.000
+					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				comReqData.parm = string("FX,2500\r");				// Zolix: initial speed 2.500 ticks per sec
-				send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+					comReqData.parm = string("FX,2500\r");				// Zolix: initial speed 2.500 ticks per sec
+					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-				// read current tick position of rotor and store value
-				(void) requestPos();
+					// read current tick position of rotor and store value
+					(void) requestPos();
+				}
+
+				// request TX output On setting
+				if (pAgtCom[C_COMINST_TX]) {
+					{
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						//comReqData.parm = string(":SOUR:FREQ 123E6\r");  // setting OK
+						comReqData.parm = string(":OUTP?\r");
+						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+
+						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+						if (comRspData.stat == C_COMRSP_DATA) {
+							int isOn = 0;
+
+							const char* str_start = strrchr(comRspData.data.c_str(), '?');
+							if (str_start) {
+								sscanf_s(str_start, "?%d", &isOn);
+								agentModel::setTxOnState(isOn);
+							}
+						}
+					}
+
+					// request TX frequency
+					{
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						comReqData.parm = string(":SOUR:FREQ?\r");
+						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+
+						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+						if (comRspData.stat == C_COMRSP_DATA) {
+							double frequency = 0.;
+
+							const char* str_start = strrchr(comRspData.data.c_str(), '?');
+							if (str_start) {
+								sscanf_s(str_start, "?%lf", &frequency);
+								agentModel::setTxFrequencyValue(frequency);
+							}
+						}
+					}
+
+					// request TX power
+					{
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						comReqData.parm = string(":SOUR:POW?\r");
+						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+
+						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+						if (comRspData.stat == C_COMRSP_DATA) {
+							double power = 0.;
+
+							const char* str_start = strrchr(comRspData.data.c_str(), '?');
+							if (str_start) {
+								sscanf_s(str_start, "?%lf", &power);
+								agentModel::setTxFrequencyValue(power);
+							}
+						}
+					}
+				}
+
+				if (pAgtCom[C_COMINST_RX]) {
+				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_INIT_WAIT;
 			}
@@ -121,7 +252,6 @@ void agentModelPattern::run(void)
 			{
 				agentComReq comReqData;
 				agentComRsp comRspData;
-				char cbuf[C_BUF_SIZE];
 
 				int gotoMilliPos = 0;
 				if (_arg) {
@@ -130,7 +260,7 @@ void agentModelPattern::run(void)
 				}
 				
 				requestPos();
-				sendPos(gotoMilliPos * 0.8);
+				sendPos((int)(gotoMilliPos * 0.8));
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 			}
 			break;
@@ -279,6 +409,9 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 	}
 }
 
+
+/* agentModelPattern - Rotor */
+
 void agentModelPattern::setLastTickPos(int pos)
 {
 	lastTickPos = pos;
@@ -287,4 +420,64 @@ void agentModelPattern::setLastTickPos(int pos)
 int agentModelPattern::getLastTickPos(void)
 {
 	return lastTickPos;
+}
+
+
+/* agentModelPattern - TX */
+
+void agentModelPattern::setTxOnState(bool checked)
+{
+	txOn = checked;
+
+	agentComReq comReqData;
+
+	comReqData.cmd = C_COMREQ_COM_SEND;
+	comReqData.parm = checked ?  string(":OUTP ON\r") 
+							  :  string(":OUTP OFF\r");
+	send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+}
+
+bool agentModelPattern::getTxOnState(void)
+{
+	return txOn;
+}
+
+void agentModelPattern::setTxFrequencyValue(double value)
+{
+	if (10e6 < value && value <= 100e9) {
+		agentComReq comReqData;
+		char cbuf[C_BUF_SIZE];
+
+		txFequency = value;
+		snprintf(cbuf, C_BUF_SIZE - 1, ":SOUR:FREQ %f\r", value);
+
+		comReqData.cmd = C_COMREQ_COM_SEND;
+		comReqData.parm = string(cbuf);
+		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+	}
+}
+
+double agentModelPattern::getTxFrequencyValue(void)
+{
+	return txFequency;
+}
+
+void agentModelPattern::setTxPwrValue(double value)
+{
+	if (-40 <= value && value <= 20) {
+		agentComReq comReqData;
+		char cbuf[C_BUF_SIZE];
+
+		txPower = value;
+		snprintf(cbuf, C_BUF_SIZE - 1, "SOUR:POW %fdBm\r", value);
+
+		comReqData.cmd = C_COMREQ_COM_SEND;
+		comReqData.parm = string(cbuf);
+		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+	}
+}
+
+double agentModelPattern::getTxPwrValue(void)
+{
+	return txPower;
 }

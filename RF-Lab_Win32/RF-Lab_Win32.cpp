@@ -361,7 +361,7 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 	case WM_INITDIALOG:
 		CheckDlgButton(hWnd, IDC_TX_SETTINGS_ON_CHECK, agentModel::getTxOnState());
 
-		swprintf_s(szIdcTxSettingsFrequency, L"%.3f", agentModel::getTxFrequencyValue() / 1e6);
+		swprintf_s(szIdcTxSettingsFrequency, L"%.3f", agentModel::getTxFrequencyValue());
 		SetDlgItemText(hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency);
 		
 		swprintf_s(szIdcTxSettingsPower, L"%.1f", agentModel::getTxPwrValue());
@@ -378,7 +378,7 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 			if (GetDlgItemText(hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency) - 1)) {
 				// Process input
 				swscanf_s(szIdcTxSettingsFrequency, L"%lf", &lfIdcTxSettingsFrequency);
-				agentModel::setTxFrequencyValue(lfIdcTxSettingsFrequency * 1e6);
+				agentModel::setTxFrequencyValue(lfIdcTxSettingsFrequency);
 			}
 
 			if (GetDlgItemText(hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower, sizeof(szIdcTxSettingsPower) - 1)) {

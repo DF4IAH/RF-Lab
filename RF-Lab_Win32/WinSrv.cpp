@@ -280,6 +280,11 @@ void WinSrv::srvStart()
 void WinSrv::srvStop()
 {
 	if (g_instance) {
+		srvWinExit();
+		while (agentModel::isRunning()) {
+			Sleep(10);
+		}
+
 		delete g_instance;
 		g_instance = nullptr;
 	}

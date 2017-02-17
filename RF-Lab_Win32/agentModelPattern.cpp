@@ -163,17 +163,16 @@ void agentModelPattern::run(void)
 				if (pAgtCom[C_COMINST_TX]) {
 					{
 						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
-						//comReqData.parm = string(":SOUR:FREQ 123E6\r");  // setting OK
-						comReqData.parm = string(":OUTP?\r");
+						comReqData.parm = string(":OUTP:STAT?\r");
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 
 						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
 						if (comRspData.stat == C_COMRSP_DATA) {
 							int isOn = 0;
 
-							const char* str_start = strrchr(comRspData.data.c_str(), '?');
+							const char* str_start = comRspData.data.c_str();
 							if (str_start) {
-								sscanf_s(str_start, "?%d", &isOn);
+								sscanf_s(str_start - 1, "%d", &isOn);
 								agentModel::setTxOnState(isOn);
 							}
 						}
@@ -189,9 +188,9 @@ void agentModelPattern::run(void)
 						if (comRspData.stat == C_COMRSP_DATA) {
 							double frequency = 0.;
 
-							const char* str_start = strrchr(comRspData.data.c_str(), '?');
+							const char* str_start = comRspData.data.c_str();
 							if (str_start) {
-								sscanf_s(str_start, "?%lf", &frequency);
+								sscanf_s(str_start, "%lf", &frequency);
 								agentModel::setTxFrequencyValue(frequency);
 							}
 						}
@@ -207,10 +206,10 @@ void agentModelPattern::run(void)
 						if (comRspData.stat == C_COMRSP_DATA) {
 							double power = 0.;
 
-							const char* str_start = strrchr(comRspData.data.c_str(), '?');
+							const char* str_start = comRspData.data.c_str();
 							if (str_start) {
-								sscanf_s(str_start, "?%lf", &power);
-								agentModel::setTxFrequencyValue(power);
+								sscanf_s(str_start, "%lf", &power);
+								agentModel::setTxPwrValue(power);
 							}
 						}
 					}
@@ -285,7 +284,7 @@ void agentModelPattern::run(void)
 			{
 				// wait for each reply message
 				for (int i = 0; i < C_COMINST__COUNT; i++) {
-					if (pAgtComReq[i]) {
+					if (pAgtCom[i]) {
 						agentComRsp comRsp;
 
 						// consume until END response is received
@@ -427,14 +426,16 @@ int agentModelPattern::getLastTickPos(void)
 
 void agentModelPattern::setTxOnState(bool checked)
 {
-	txOn = checked;
+	if (txOn != checked) {
+		txOn = checked;
 
-	agentComReq comReqData;
+		agentComReq comReqData;
 
-	comReqData.cmd = C_COMREQ_COM_SEND;
-	comReqData.parm = checked ?  string(":OUTP ON\r") 
-							  :  string(":OUTP OFF\r");
-	send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+		comReqData.cmd = C_COMREQ_COM_SEND;
+		comReqData.parm = checked ?  string(":OUTP ON\r") 
+								  :  string(":OUTP OFF\r");
+		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+	}
 }
 
 bool agentModelPattern::getTxOnState(void)
@@ -444,7 +445,7 @@ bool agentModelPattern::getTxOnState(void)
 
 void agentModelPattern::setTxFrequencyValue(double value)
 {
-	if (10e6 < value && value <= 100e9) {
+	if ((txFequency != value) && ((10e6 < value) && (value <= 100e9))) {
 		agentComReq comReqData;
 		char cbuf[C_BUF_SIZE];
 
@@ -464,7 +465,7 @@ double agentModelPattern::getTxFrequencyValue(void)
 
 void agentModelPattern::setTxPwrValue(double value)
 {
-	if (-40 <= value && value <= 20) {
+	if ((txPower != value && (-40 <= value && value <= 20))) {
 		agentComReq comReqData;
 		char cbuf[C_BUF_SIZE];
 

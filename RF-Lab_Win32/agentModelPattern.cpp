@@ -146,7 +146,7 @@ void agentModelPattern::run(void)
 				if (pAgtCom[C_COMINST_ROT]) {
 					// Zollix commands to init device
 					{
-						comReqData.cmd = C_COMREQ_COM_SEND;
+						comReqData.cmd = C_COMREQ_COM_SEND;					// Zolix: never send a \n (LF) !!!
 
 						comReqData.parm = string("VX,20000\r");				// Zolix: top speed 20.000 ticks per sec
 						send(*(pAgtComReq[C_COMINST_ROT]), comReqData);

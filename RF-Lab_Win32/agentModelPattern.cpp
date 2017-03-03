@@ -90,8 +90,8 @@ void agentModelPattern::run(void)
 				// Open TX
 				if (pAgtCom[C_COMINST_TX]) {
 					comReqData.cmd = C_COMREQ_OPEN;
-					//snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);  // serial port - 9600 baud, 8N1
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625 - 19200 baud, 8N1
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);  // serial port - 9600 baud, 8N1
+					//snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625 - 19200 baud, 8N1
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 				}
@@ -449,8 +449,8 @@ void agentModelPattern::setTxOnState(bool checked)
 		agentComReq comReqData;
 
 		comReqData.cmd = C_COMREQ_COM_SEND;
-		comReqData.parm = checked ?  string(":OUTP ON\r") 
-								  :  string(":OUTP OFF\r");
+		comReqData.parm = checked ?  string(":OUTP ON\r\n") 
+								  :  string(":OUTP OFF\r\n");
 		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 	}
 }
@@ -467,7 +467,7 @@ void agentModelPattern::setTxFrequencyValue(double value)
 		char cbuf[C_BUF_SIZE];
 
 		txFequency = value;
-		snprintf(cbuf, C_BUF_SIZE - 1, ":SOUR:FREQ %f\r", value);
+		snprintf(cbuf, C_BUF_SIZE - 1, ":SOUR:FREQ %f\r\n", value);
 
 		comReqData.cmd = C_COMREQ_COM_SEND;
 		comReqData.parm = string(cbuf);
@@ -487,7 +487,7 @@ void agentModelPattern::setTxPwrValue(double value)
 		char cbuf[C_BUF_SIZE];
 
 		txPower = value;
-		snprintf(cbuf, C_BUF_SIZE - 1, "SOUR:POW %fdBm\r", value);
+		snprintf(cbuf, C_BUF_SIZE - 1, "SOUR:POW %fdBm\r\n", value);
 
 		comReqData.cmd = C_COMREQ_COM_SEND;
 		comReqData.parm = string(cbuf);

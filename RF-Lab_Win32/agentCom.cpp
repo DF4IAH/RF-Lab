@@ -76,7 +76,7 @@ void agentCom::run(void)
 			int data_port = 0;
 			int data_baud = 0;
 			int data_size = 0;
-			int data_bits = 0;
+			int data_stopbits = 0;
 			int data_parity = 0;
 
 			sscanf_s(comReq.parm.c_str(), ":P=%d :B=%d :I=%d :A=%d :S=%d",
@@ -84,7 +84,7 @@ void agentCom::run(void)
 				&data_baud,
 				&data_size,
 				&data_parity,
-				&data_bits
+				&data_stopbits
 				// , (unsigned) comReq.parm.length()
 				);  // COM PORT
 
@@ -105,19 +105,31 @@ void agentCom::run(void)
 				int status = GetCommState(_hCom, &dcbSerialParams);
 
 				dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
-				dcbSerialParams.BaudRate = (DWORD)data_baud;  // Setting BaudRate
-				dcbSerialParams.ByteSize = (BYTE)data_size;   // Setting ByteSize
-				dcbSerialParams.StopBits = (BYTE)data_bits;   // Setting StopBits
-				dcbSerialParams.Parity = (BYTE)data_parity; // Setting Parity
+				dcbSerialParams.BaudRate = (DWORD)data_baud;	// Setting BaudRate
+				dcbSerialParams.ByteSize = (BYTE)data_size;		// Setting ByteSize
+				dcbSerialParams.StopBits = (BYTE)data_stopbits;	// Setting StopBits
+				dcbSerialParams.Parity = (BYTE)data_parity;		// Setting Parity
 				dcbSerialParams.fParity = FALSE;
+#if 1
+				dcbSerialParams.fOutxCtsFlow = TRUE;
+				dcbSerialParams.fOutxDsrFlow = TRUE;
+				dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
+				dcbSerialParams.fDsrSensitivity = FALSE;
+				dcbSerialParams.fTXContinueOnXoff = FALSE;
+				dcbSerialParams.fOutX = FALSE;
+				dcbSerialParams.fInX = FALSE;
+				dcbSerialParams.fRtsControl = RTS_CONTROL_ENABLE;
+#else
+				/* IEC 625 - known to work */
 				dcbSerialParams.fOutxCtsFlow = FALSE;
 				dcbSerialParams.fOutxDsrFlow = FALSE;
 				dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
 				dcbSerialParams.fDsrSensitivity = FALSE;
 				dcbSerialParams.fTXContinueOnXoff = FALSE;
-				dcbSerialParams.fOutX = TRUE;
-				dcbSerialParams.fInX = TRUE;
+				dcbSerialParams.fOutX = FALSE;
+				dcbSerialParams.fInX = FALSE;
 				dcbSerialParams.fRtsControl = RTS_CONTROL_ENABLE;
+#endif
 
 				status = SetCommState(_hCom, &dcbSerialParams);
 				if (status) {

@@ -82,7 +82,7 @@ void agentModelPattern::run(void)
 				// Open Rotor
 				if (pAgtCom[C_COMINST_ROT]) {
 					comReqData.cmd = C_COMREQ_OPEN;
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // Zolix USB port - 19200 baud, 8N1
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 				}
@@ -90,7 +90,8 @@ void agentModelPattern::run(void)
 				// Open TX
 				if (pAgtCom[C_COMINST_TX]) {
 					comReqData.cmd = C_COMREQ_OPEN;
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+					//snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);  // serial port - 9600 baud, 8N1
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625 - 19200 baud, 8N1
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 				}
@@ -159,15 +160,29 @@ void agentModelPattern::run(void)
 					(void) requestPos();
 				}
 
-				// request TX output On setting
+				// TX init
 				if (pAgtCom[C_COMINST_TX]) {
+					// syncing with the device
 					{
 						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
-						comReqData.parm = string(":OUTP:STAT?\r");
+						comReqData.parm = string("*IDN?\n");
+						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+						if (!comRspData.data[0]) {
+							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+						}
+					}
+
+					// request TX output On setting
+					{
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						//comReqData.parm = string("*IDN?\r\n");
+						comReqData.parm = string(":OUTP:STAT?\r\n");
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 
 						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
-						if (comRspData.stat == C_COMRSP_DATA) {
+						if (comRspData.stat == C_COMRSP_DATA && comRspData.data[0]) {
 							int isOn = 0;
 
 							const char* str_start = comRspData.data.c_str();
@@ -181,11 +196,11 @@ void agentModelPattern::run(void)
 					// request TX frequency
 					{
 						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
-						comReqData.parm = string(":SOUR:FREQ?\r");
+						comReqData.parm = string(":SOUR:FREQ?\r\n");
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 
 						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
-						if (comRspData.stat == C_COMRSP_DATA) {
+						if (comRspData.stat == C_COMRSP_DATA && comRspData.data[0]) {
 							double frequency = 0.;
 
 							const char* str_start = comRspData.data.c_str();
@@ -199,11 +214,11 @@ void agentModelPattern::run(void)
 					// request TX power
 					{
 						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
-						comReqData.parm = string(":SOUR:POW?\r");
+						comReqData.parm = string(":SOUR:POW?\r\n");
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 
 						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
-						if (comRspData.stat == C_COMRSP_DATA) {
+						if (comRspData.stat == C_COMRSP_DATA && comRspData.data[0]) {
 							double power = 0.;
 
 							const char* str_start = comRspData.data.c_str();

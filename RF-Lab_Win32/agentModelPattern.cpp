@@ -144,17 +144,19 @@ void agentModelPattern::run(void)
 
 				// Rotor Init
 				if (pAgtCom[C_COMINST_ROT]) {
-					// Zollix commands to be sent
-					comReqData.cmd = C_COMREQ_COM_SEND;
+					// Zollix commands to init device
+					{
+						comReqData.cmd = C_COMREQ_COM_SEND;
 
-					comReqData.parm = string("VX,20000\r");				// Zolix: top speed 20.000 ticks per sec
-					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+						comReqData.parm = string("VX,20000\r");				// Zolix: top speed 20.000 ticks per sec
+						send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-					comReqData.parm = string("AX,30000\r");				// Zolix: acceleration speed 30.000
-					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+						comReqData.parm = string("AX,30000\r");				// Zolix: acceleration speed 30.000
+						send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-					comReqData.parm = string("FX,2500\r");				// Zolix: initial speed 2.500 ticks per sec
-					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+						comReqData.parm = string("FX,2500\r");				// Zolix: initial speed 2.500 ticks per sec
+						send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+					}
 
 					// read current tick position of rotor and store value
 					(void) requestPos();
@@ -165,10 +167,11 @@ void agentModelPattern::run(void)
 					// syncing with the device
 					{
 						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
-						comReqData.parm = string("*IDN?\n");
+						comReqData.parm = string("*IDN?\r\n");
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
 						if (!comRspData.data[0]) {
+							if (strncmp(&(comRspData.data[0]), "ROHDE", 5))
 							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
 						}
@@ -177,7 +180,6 @@ void agentModelPattern::run(void)
 					// request TX output On setting
 					{
 						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
-						//comReqData.parm = string("*IDN?\r\n");
 						comReqData.parm = string(":OUTP:STAT?\r\n");
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 

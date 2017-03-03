@@ -110,17 +110,8 @@ void agentCom::run(void)
 				dcbSerialParams.StopBits = (BYTE)data_stopbits;	// Setting StopBits
 				dcbSerialParams.Parity = (BYTE)data_parity;		// Setting Parity
 				dcbSerialParams.fParity = FALSE;
-#if 1
-				dcbSerialParams.fOutxCtsFlow = TRUE;
-				dcbSerialParams.fOutxDsrFlow = TRUE;
-				dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
-				dcbSerialParams.fDsrSensitivity = FALSE;
-				dcbSerialParams.fTXContinueOnXoff = FALSE;
-				dcbSerialParams.fOutX = FALSE;
-				dcbSerialParams.fInX = FALSE;
-				dcbSerialParams.fRtsControl = RTS_CONTROL_ENABLE;
-#else
-				/* IEC 625 - known to work */
+
+				/* IEC 625 & serial comm - known to work */
 				dcbSerialParams.fOutxCtsFlow = FALSE;
 				dcbSerialParams.fOutxDsrFlow = FALSE;
 				dcbSerialParams.fDtrControl = DTR_CONTROL_ENABLE;
@@ -129,14 +120,13 @@ void agentCom::run(void)
 				dcbSerialParams.fOutX = FALSE;
 				dcbSerialParams.fInX = FALSE;
 				dcbSerialParams.fRtsControl = RTS_CONTROL_ENABLE;
-#endif
 
 				status = SetCommState(_hCom, &dcbSerialParams);
 				if (status) {
 					COMMTIMEOUTS timeouts = { 0 };
-					timeouts.ReadIntervalTimeout			= 1;	// in milliseconds
+					timeouts.ReadIntervalTimeout			= 25;	// in milliseconds
 					timeouts.ReadTotalTimeoutMultiplier		= 1;	// in milliseconds
-					timeouts.ReadTotalTimeoutConstant		= 1;	// in milliseconds
+					timeouts.ReadTotalTimeoutConstant		= 500;	// in milliseconds
 					timeouts.WriteTotalTimeoutMultiplier	= 0;	// in milliseconds
 					timeouts.WriteTotalTimeoutConstant		= 0;	// in milliseconds
 					status = SetCommTimeouts(_hCom, &timeouts);

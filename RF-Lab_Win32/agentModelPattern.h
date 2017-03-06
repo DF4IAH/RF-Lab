@@ -36,6 +36,10 @@ private:
 	double								 txFequency;
 	double								 txPower;
 
+	double								 rxFequency;
+	double								 rxSpan;
+	double								 rxLevelMax;
+
 
 public:
 	explicit	agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt);
@@ -64,4 +68,9 @@ public:
 	void		setTxPwrValue(double value);
 	double		getTxPwrValue(void);
 
+	/* agentModelPattern - RX */
+	void		setRxFrequencyValue(double value);
+	void		setRxSpanValue(double value);
+	void		setRxLevelMaxValue(double value);
+	double		getRxLevelMaxValue(void);
 };

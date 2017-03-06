@@ -73,4 +73,10 @@ public:
 	static double	getTxFrequencyValue(void);
 	static void		setTxPwrValue(double value);
 	static double	getTxPwrValue(void);
+
+	/* agentModelPattern - RX */
+	static void		setRxFrequencyValue(double value);
+	static void		setRxSpanValue(double value);
+	static void		setRxLevelMaxValue(double value);
+	static double	getRxLevelMaxValue(void);
 };

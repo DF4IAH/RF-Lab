@@ -59,14 +59,26 @@ private:
 
 	HANDLE								 _hCom;
 
+	bool								 _isIec;
+	int									 _iecAddr;
+
 
 public:
 	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
 	bool isRunning(void);
+	bool isIec(void);
+	void setIecAddr(int iecAddr);
+	int  getIecAddr(void);
 	void Release(void);
 	bool shutdown(void);
 
+
 protected:
 	void run(void);
+
+
+public:
+	static string int2String(int val);
+	static string double2String(double val);
 
 };

@@ -25,7 +25,11 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 
 				 , txOn(false)
 				 , txFequency(1e9)
-				 , txPower(-30)
+				 , txPower(-30.0)
+
+				 , rxFequency(0.0)
+				 , rxSpan(0.0)
+				 , rxLevelMax(0.0)
 {
 	/* enter first step of FSM */
 	_runState = C_MODELPATTERN_RUNSTATES_OPENCOM;
@@ -43,11 +47,9 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
 				break;
 
-#if 0
 			case C_COMINST_RX:
 				pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
 				break;
-#endif
 
 			default:
 				pAgtCom[i] = nullptr;
@@ -90,8 +92,12 @@ void agentModelPattern::run(void)
 				// Open TX
 				if (pAgtCom[C_COMINST_TX]) {
 					comReqData.cmd = C_COMREQ_OPEN;
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);  // serial port - 9600 baud, 8N1
-					//snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625 - 19200 baud, 8N1
+#if 0
+					pAgtCom[C_COMINST_TX]->setIecAddr(28);																// IEC625: R&S SMR40: address == 28
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625 - 19200 baud, 8N1
+#else
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
+#endif
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 				}
@@ -99,7 +105,12 @@ void agentModelPattern::run(void)
 				// Open RX
 				if (pAgtCom[C_COMINST_RX]) {
 					comReqData.cmd = C_COMREQ_OPEN;
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 999, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // COM port and its parameters
+#if 1
+					pAgtCom[C_COMINST_RX]->setIecAddr(20);		// IEC625: R&S FSEK20: address == 20
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625 - 19200 baud, 8N1
+#else
+					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
+#endif
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 				}
@@ -167,14 +178,39 @@ void agentModelPattern::run(void)
 					// syncing with the device
 					{
 						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
-						comReqData.parm = string("*IDN?\r\n");
+						comReqData.parm = string("\r\n");
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
-						if (!comRspData.data[0]) {
-							if (strncmp(&(comRspData.data[0]), "ROHDE", 5))
+
+						if (pAgtCom[C_COMINST_TX]->isIec()) {
+							comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+							comReqData.parm = string("++addr ");
+							comReqData.parm.append(agentCom::int2String(pAgtCom[C_COMINST_TX]->getIecAddr()));
+							comReqData.parm.append("\r\n");
+							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+
+							comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+							comReqData.parm = string("++auto 1\r\n");
 							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
 						}
+
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						comReqData.parm = string("*IDN?\r\n");
+						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+						if (comRspData.data[0]) {
+							if (_strnicmp(&(comRspData.data[0]), "ROHDE", 5)) {
+								send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+								comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+							}
+						}
+
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						comReqData.parm = string("*RST\r\n");
+						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
 					}
 
 					// request TX output On setting
@@ -193,6 +229,7 @@ void agentModelPattern::run(void)
 								agentModel::setTxOnState(isOn);
 							}
 						}
+						agentModel::setTxOnState(TRUE);  // TODO: remove me!
 					}
 
 					// request TX frequency
@@ -233,6 +270,50 @@ void agentModelPattern::run(void)
 				}
 
 				if (pAgtCom[C_COMINST_RX]) {
+					// syncing with the device
+					{
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						comReqData.parm = string("\r\n");
+						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+
+						if (pAgtCom[C_COMINST_RX]->isIec()) {
+							comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+							comReqData.parm = string("++addr ");
+							comReqData.parm.append(agentCom::int2String(pAgtCom[C_COMINST_RX]->getIecAddr()));
+							comReqData.parm.append("\r\n");
+							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+
+							comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+							comReqData.parm = string("++auto 1\r\n");
+							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+						}
+
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						comReqData.parm = string("*IDN?\r\n");
+						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+						if (comRspData.data[0]) {
+							if (_strnicmp(&(comRspData.data[0]), "ROHDE", 5)) {
+								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+							}
+						}
+
+						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+						comReqData.parm = string("*RST\r\n");
+						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+					}
+
+					// set RX device parameters
+					{
+						setRxSpanValue(agentModel::getRxSpanValue());
+						setRxFrequencyValue(agentModel::getTxFrequencyValue());
+						setRxLevelMaxValue(agentModel::getTxPwrValue());
+					}
 				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_INIT_WAIT;
@@ -447,11 +528,13 @@ void agentModelPattern::setTxOnState(bool checked)
 		txOn = checked;
 
 		agentComReq comReqData;
+		agentComRsp comRspData;
 
-		comReqData.cmd = C_COMREQ_COM_SEND;
+		comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
 		comReqData.parm = checked ?  string(":OUTP ON\r\n") 
 								  :  string(":OUTP OFF\r\n");
 		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+		comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
 	}
 }
 
@@ -464,14 +547,16 @@ void agentModelPattern::setTxFrequencyValue(double value)
 {
 	if ((txFequency != value) && ((10e6 < value) && (value <= 100e9))) {
 		agentComReq comReqData;
-		char cbuf[C_BUF_SIZE];
+		agentComRsp comRspData;
 
 		txFequency = value;
-		snprintf(cbuf, C_BUF_SIZE - 1, ":SOUR:FREQ %f\r\n", value);
 
-		comReqData.cmd = C_COMREQ_COM_SEND;
-		comReqData.parm = string(cbuf);
+		comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+		comReqData.parm = string(":SOUR:FREQ ");
+		comReqData.parm.append(agentCom::double2String(value));
+		comReqData.parm.append("\r\n");
 		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+		comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
 	}
 }
 
@@ -484,18 +569,85 @@ void agentModelPattern::setTxPwrValue(double value)
 {
 	if ((txPower != value && (-40 <= value && value <= 20))) {
 		agentComReq comReqData;
-		char cbuf[C_BUF_SIZE];
+		agentComRsp comRspData;
 
 		txPower = value;
-		snprintf(cbuf, C_BUF_SIZE - 1, "SOUR:POW %fdBm\r\n", value);
 
-		comReqData.cmd = C_COMREQ_COM_SEND;
-		comReqData.parm = string(cbuf);
+		comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+		comReqData.parm = string("SOUR:POW ");
+		comReqData.parm.append(agentCom::double2String(value));
+		comReqData.parm.append("dBm\r\n");
 		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+		comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
 	}
 }
 
 double agentModelPattern::getTxPwrValue(void)
 {
 	return txPower;
+}
+
+
+/* agentModelPattern - RX */
+
+void agentModelPattern::setRxFrequencyValue(double value)
+{
+	if (pAgtComRsp[C_COMINST_RX] &&
+		(rxFequency != value) && 
+		((10e6 < value) && (value <= 100e9))) {
+		agentComReq comReqData;
+		agentComRsp comRspData;
+
+		rxFequency = value;
+
+		comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+		comReqData.parm = string(":SENS1:FREQ:CENT ");
+		comReqData.parm.append(agentCom::double2String(rxFequency));
+		comReqData.parm.append("HZ\r\n");
+		send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+		comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+	}
+}
+
+void agentModelPattern::setRxSpanValue(double value)
+{
+	if (pAgtComRsp[C_COMINST_RX] &&
+		(rxSpan != value) && 
+		(value <= 100e9)) {
+		agentComReq comReqData;
+		agentComRsp comRspData;
+
+		rxSpan = value;
+
+		comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+		comReqData.parm = string(":SENS1:FREQ:SPAN ");
+		comReqData.parm.append(agentCom::double2String(rxSpan));
+		comReqData.parm.append("HZ\r\n");
+		send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+		comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+	}
+}
+
+void agentModelPattern::setRxLevelMaxValue(double value)
+{
+	if (pAgtComRsp[C_COMINST_RX] && 
+		(rxSpan != value) && 
+		(value <= -40) && (value <= 30)) {
+		agentComReq comReqData;
+		agentComRsp comRspData;
+
+		rxLevelMax = value;
+
+		comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
+		comReqData.parm = string(":DISP:WIND1:TRAC1:Y:RLEV ");
+		comReqData.parm.append(agentCom::double2String(rxLevelMax));
+		comReqData.parm.append("DBM\r\n");
+		send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+		comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+	}
+}
+
+double agentModelPattern::getRxLevelMaxValue(void)
+{
+	return rxLevelMax;
 }

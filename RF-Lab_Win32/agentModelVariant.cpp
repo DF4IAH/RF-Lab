@@ -84,3 +84,20 @@ double agentModelVariant::getTxPwrValue(void)
 {
 	return 0.;
 }
+
+void agentModelVariant::setRxFrequencyValue(double value)
+{
+}
+
+void agentModelVariant::setRxSpanValue(double value)
+{
+}
+
+void agentModelVariant::setRxLevelMaxValue(double value)
+{
+}
+
+double agentModelVariant::getRxLevelMaxValue(void)
+{
+	return 0.;
+}

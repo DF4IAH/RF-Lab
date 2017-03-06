@@ -50,4 +50,11 @@ public:
 	virtual void	setTxPwrValue(double value);
 	virtual double	getTxPwrValue(void);
 
+	/* agentModelPattern - RX */
+	virtual void	setRxFrequencyValue(double value);
+	virtual double	getRxFrequencyValue(void);
+	virtual void	setRxSpanValue(double value);
+	virtual double	getRxSpanValue(void);
+	virtual void	setRxLevelMaxValue(double value);
+	virtual double	getRxLevelMaxValue(void);
 };

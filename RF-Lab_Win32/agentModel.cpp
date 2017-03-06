@@ -172,3 +172,34 @@ double agentModel::getTxPwrValue(void)
 		return 0.;
 	}
 }
+
+void agentModel::setRxFrequencyValue(double value)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->setRxFrequencyValue(value);
+	}
+}
+
+void agentModel::setRxSpanValue(double value)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->setRxSpanValue(value);
+	}
+}
+
+void agentModel::setRxLevelMaxValue(double value)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->setRxLevelMaxValue(value);
+	}
+}
+
+double agentModel::getRxLevelMaxValue(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getRxLevelMaxValue();
+	}
+	else {
+		return 0.;
+	}
+}

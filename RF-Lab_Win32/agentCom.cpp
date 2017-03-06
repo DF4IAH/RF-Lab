@@ -18,13 +18,37 @@ agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
 				 , _done(FALSE)
 				 , _src(src)
 				 , _tgt(tgt)
+				 , _isIec(FALSE)
+				 , _iecAddr(0)
 {
 }
 
 
-inline bool agentCom::isRunning(void)
+bool agentCom::isRunning(void)
 {
 	return _running;
+}
+
+bool agentCom::isIec(void)
+{
+	return _isIec;
+}
+
+void agentCom::setIecAddr(int iecAddr)
+{
+	if (iecAddr >= 0 && iecAddr <= 255) {
+		_iecAddr = iecAddr;
+		_isIec   = TRUE;
+	}
+	else {
+		_iecAddr = 0;
+		_isIec	 = FALSE;
+	}
+}
+
+int agentCom::getIecAddr(void)
+{
+	return _iecAddr;
 }
 
 
@@ -54,6 +78,7 @@ bool agentCom::shutdown(void)
 
 	return old_running;
 }
+
 
 // @see: http://xanthium.in/Serial-Port-Programming-using-Win32-API
 void agentCom::run(void)
@@ -214,4 +239,25 @@ void agentCom::run(void)
 	// Move the agent to the finished state.
 	_done = TRUE;
 	done();
+}
+
+
+string agentCom::int2String(int val)
+{
+	char buf[8];
+
+	int len = sprintf_s(buf, "%d", val);
+	buf[len] = 0;
+
+	return string(buf);
+}
+
+string agentCom::double2String(double val)
+{
+	char buf[64];
+
+	int len = sprintf_s(buf, "%lf", val);
+	buf[len] = 0;
+
+	return string(buf);
 }

@@ -379,12 +379,14 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 				// Process input
 				swscanf_s(szIdcTxSettingsFrequency, L"%lf", &lfIdcTxSettingsFrequency);
 				agentModel::setTxFrequencyValue(lfIdcTxSettingsFrequency);
+				agentModel::setRxFrequencyValue(lfIdcTxSettingsFrequency);
 			}
 
 			if (GetDlgItemText(hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower, sizeof(szIdcTxSettingsPower) - 1)) {
 				// Process input
 				swscanf_s(szIdcTxSettingsPower, L"%lf", &lfIdcTxSettingsPower);
 				agentModel::setTxPwrValue(lfIdcTxSettingsPower);
+				agentModel::setRxLevelMaxValue(lfIdcTxSettingsPower);
 			}
 			// Fall through.
 

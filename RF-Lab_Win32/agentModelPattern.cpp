@@ -322,8 +322,8 @@ void agentModelPattern::run(void)
 					// set RX device parameters
 					{
 						setRxSpanValue(agentModel::getRxSpanDefault());
-						setRxFrequencyValue(agentModel::getTxFrequencyValue());
-						setRxLevelMaxValue(agentModel::getTxPwrValue());
+						setRxFrequencyValue(agentModel::getTxFrequencyDefault());
+						setRxLevelMaxValue(agentModel::getTxPwrDefault());
 					}
 				}
 
@@ -561,7 +561,8 @@ bool agentModelPattern::getTxOnDefault(void)
 
 void agentModelPattern::setTxFrequencyValue(double value)
 {
-	if ((txFequency != value) && ((10e6 < value) && (value <= 100e9))) {
+	if ((txFequency != value) && 
+		((10e6 < value) && (value <= 100e9))) {
 		agentComReq comReqData;
 		agentComRsp comRspData;
 
@@ -569,7 +570,7 @@ void agentModelPattern::setTxFrequencyValue(double value)
 
 		comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
 		comReqData.parm = string(":SOUR:FREQ ");
-		comReqData.parm.append(agentCom::double2String(value));
+		comReqData.parm.append(agentCom::double2String(txFequency));
 		comReqData.parm.append("\r\n");
 		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 		comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
@@ -588,7 +589,8 @@ double agentModelPattern::getTxFrequencyDefault(void)
 
 void agentModelPattern::setTxPwrValue(double value)
 {
-	if ((txPower != value && (-40 <= value && value <= 20))) {
+	if ((txPower != value && 
+		(-40 <= value && value <= 20))) {
 		agentComReq comReqData;
 		agentComRsp comRspData;
 
@@ -596,7 +598,7 @@ void agentModelPattern::setTxPwrValue(double value)
 
 		comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
 		comReqData.parm = string("SOUR:POW ");
-		comReqData.parm.append(agentCom::double2String(value));
+		comReqData.parm.append(agentCom::double2String(txPower));
 		comReqData.parm.append("dBm\r\n");
 		send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 		comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
@@ -673,7 +675,7 @@ void agentModelPattern::setRxLevelMaxValue(double value)
 {
 	if (pAgtComRsp[C_COMINST_RX] && 
 		(rxSpan != value) && 
-		(value <= -40) && (value <= 30)) {
+		(-40 <= value) && (value <= 30)) {
 		agentComReq comReqData;
 		agentComRsp comRspData;
 

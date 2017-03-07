@@ -69,14 +69,20 @@ public:
 	/* agentModelPattern - TX */
 	static void		setTxOnState(bool checked);
 	static bool		getTxOnState(void);
+	static bool		getTxOnDefault(void);
 	static void		setTxFrequencyValue(double value);
 	static double	getTxFrequencyValue(void);
+	static double	getTxFrequencyDefault(void);
 	static void		setTxPwrValue(double value);
 	static double	getTxPwrValue(void);
+	static double	getTxPwrDefault(void);
 
 	/* agentModelPattern - RX */
 	static void		setRxFrequencyValue(double value);
+	static double	getRxFrequencyValue(void);
 	static void		setRxSpanValue(double value);
+	static double	getRxSpanValue(void);
+	static double	getRxSpanDefault(void);
 	static void		setRxLevelMaxValue(double value);
 	static double	getRxLevelMaxValue(void);
 };

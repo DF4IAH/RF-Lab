@@ -139,6 +139,16 @@ bool agentModel::getTxOnState(void)
 	}
 }
 
+bool agentModel::getTxOnDefault(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getTxOnDefault();
+	}
+	else {
+		return false;
+	}
+}
+
 void agentModel::setTxFrequencyValue(double value)
 {
 	if (g_am && g_am->_curModel) {
@@ -150,6 +160,16 @@ double agentModel::getTxFrequencyValue(void)
 {
 	if (g_am && g_am->_curModel) {
 		return g_am->_curModel->getTxFrequencyValue();
+	}
+	else {
+		return 0.;
+	}
+}
+
+double agentModel::getTxFrequencyDefault(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getTxFrequencyDefault();
 	}
 	else {
 		return 0.;
@@ -173,6 +193,19 @@ double agentModel::getTxPwrValue(void)
 	}
 }
 
+double agentModel::getTxPwrDefault(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getTxPwrDefault();
+	}
+	else {
+		return 0.;
+	}
+}
+
+
+/* agentModelPattern - RX */
+
 void agentModel::setRxFrequencyValue(double value)
 {
 	if (g_am && g_am->_curModel) {
@@ -180,10 +213,40 @@ void agentModel::setRxFrequencyValue(double value)
 	}
 }
 
+double agentModel::getRxFrequencyValue(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getRxFrequencyValue();
+	}
+	else {
+		return 0.;
+	}
+}
+
 void agentModel::setRxSpanValue(double value)
 {
 	if (g_am && g_am->_curModel) {
 		g_am->_curModel->setRxSpanValue(value);
+	}
+}
+
+double agentModel::getRxSpanValue(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getRxSpanValue();
+	}
+	else {
+		return 0.;
+	}
+}
+
+double agentModel::getRxSpanDefault(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getRxSpanDefault();
+	}
+	else {
+		return 0.;
 	}
 }
 

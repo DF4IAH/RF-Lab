@@ -67,11 +67,21 @@ bool agentModelVariant::getTxOnState(void)
 	return false;
 }
 
+bool agentModelVariant::getTxOnDefault(void)
+{
+	return false;
+}
+
 void agentModelVariant::setTxFrequencyValue(double value)
 {
 }
 
 double agentModelVariant::getTxFrequencyValue(void)
+{
+	return 0.;
+}
+
+double agentModelVariant::getTxFrequencyDefault(void)
 {
 	return 0.;
 }
@@ -85,12 +95,35 @@ double agentModelVariant::getTxPwrValue(void)
 	return 0.;
 }
 
+double agentModelVariant::getTxPwrDefault(void)
+{
+	return 0.;
+}
+
+
+/* agentModelPattern - RX */
+
 void agentModelVariant::setRxFrequencyValue(double value)
 {
 }
 
+double agentModelVariant::getRxFrequencyValue(void)
+{
+	return 0.;
+}
+
 void agentModelVariant::setRxSpanValue(double value)
 {
+}
+
+double agentModelVariant::getRxSpanValue(void)
+{
+	return 0.;
+}
+
+double agentModelVariant::getRxSpanDefault(void)
+{
+	return 0.;
 }
 
 void agentModelVariant::setRxLevelMaxValue(double value)

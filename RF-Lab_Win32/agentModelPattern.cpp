@@ -24,8 +24,8 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , lastTickPos(0)
 
 				 , txOn(false)
-				 , txFequency(1e9)
-				 , txPower(-30.0)
+				 , txFequency(0)
+				 , txPower(0)
 
 				 , rxFequency(0.0)
 				 , rxSpan(0.0)
@@ -211,8 +211,10 @@ void agentModelPattern::run(void)
 						comReqData.parm = string("*RST\r\n");
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]));
+						Sleep(1000);
 					}
 
+#if 0
 					// request TX output On setting
 					{
 						comReqData.cmd = C_COMREQ_COM_SEND_RECEIVE;
@@ -267,6 +269,14 @@ void agentModelPattern::run(void)
 							}
 						}
 					}
+#else
+					// set TX device parameters
+					{
+						setTxFrequencyValue(agentModel::getTxFrequencyDefault());
+						setTxPwrValue(agentModel::getTxPwrDefault());
+						setTxOnState(agentModel::getTxOnDefault());
+					}
+#endif
 				}
 
 				if (pAgtCom[C_COMINST_RX]) {
@@ -306,11 +316,12 @@ void agentModelPattern::run(void)
 						comReqData.parm = string("*RST\r\n");
 						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
+						Sleep(1000);
 					}
 
 					// set RX device parameters
 					{
-						setRxSpanValue(agentModel::getRxSpanValue());
+						setRxSpanValue(agentModel::getRxSpanDefault());
 						setRxFrequencyValue(agentModel::getTxFrequencyValue());
 						setRxLevelMaxValue(agentModel::getTxPwrValue());
 					}
@@ -543,6 +554,11 @@ bool agentModelPattern::getTxOnState(void)
 	return txOn;
 }
 
+bool agentModelPattern::getTxOnDefault(void)
+{
+	return AGENT_PATTERN_TX_ON_STATE_DEFAULT;
+}
+
 void agentModelPattern::setTxFrequencyValue(double value)
 {
 	if ((txFequency != value) && ((10e6 < value) && (value <= 100e9))) {
@@ -563,6 +579,11 @@ void agentModelPattern::setTxFrequencyValue(double value)
 double agentModelPattern::getTxFrequencyValue(void)
 {
 	return txFequency;
+}
+
+double agentModelPattern::getTxFrequencyDefault(void)
+{
+	return AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT;
 }
 
 void agentModelPattern::setTxPwrValue(double value)
@@ -587,6 +608,11 @@ double agentModelPattern::getTxPwrValue(void)
 	return txPower;
 }
 
+double agentModelPattern::getTxPwrDefault(void)
+{
+	return AGENT_PATTERN_TX_PWR_VALUE_DEFAULT;
+}
+
 
 /* agentModelPattern - RX */
 
@@ -609,6 +635,11 @@ void agentModelPattern::setRxFrequencyValue(double value)
 	}
 }
 
+double agentModelPattern::getRxFrequencyValue(void)
+{
+	return rxFequency;
+}
+
 void agentModelPattern::setRxSpanValue(double value)
 {
 	if (pAgtComRsp[C_COMINST_RX] &&
@@ -626,6 +657,16 @@ void agentModelPattern::setRxSpanValue(double value)
 		send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 		comRspData = receive(*(pAgtComRsp[C_COMINST_RX]));
 	}
+}
+
+double agentModelPattern::getRxSpanValue(void)
+{
+	return rxSpan;
+}
+
+double agentModelPattern::getRxSpanDefault(void)
+{
+	return AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT;
 }
 
 void agentModelPattern::setRxLevelMaxValue(double value)

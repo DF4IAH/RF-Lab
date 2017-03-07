@@ -9,6 +9,20 @@ using namespace concurrency;
 using namespace std;
 
 
+/* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter RF on/off */
+#define AGENT_PATTERN_TX_ON_STATE_DEFAULT	 TRUE
+
+/* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter frequency 18 GHz */
+#define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT  18e9
+
+/* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter power -20 dBm */
+#define AGENT_PATTERN_TX_PWR_VALUE_DEFAULT   -30
+
+
+/* RX: Rohde & Schwarz FSEK20 (spectrum analyzer) - frequency span 100 kHz */
+#define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT  100e3
+
+
 enum C_MODELPATTERN_RUNSTATES_ENUM {
 	C_MODELPATTERN_RUNSTATES_NOOP = 0,
 	C_MODELPATTERN_RUNSTATES_OPENCOM,
@@ -63,14 +77,20 @@ public:
 	/* agentModelPattern - TX */
 	void		setTxOnState(bool checked);
 	bool		getTxOnState(void);
+	bool		getTxOnDefault(void);
 	void		setTxFrequencyValue(double value);
 	double		getTxFrequencyValue(void);
+	double		getTxFrequencyDefault(void);
 	void		setTxPwrValue(double value);
 	double		getTxPwrValue(void);
+	double		getTxPwrDefault(void);
 
 	/* agentModelPattern - RX */
 	void		setRxFrequencyValue(double value);
+	double		getRxFrequencyValue(void);
 	void		setRxSpanValue(double value);
+	double		getRxSpanValue(void);
+	double		getRxSpanDefault(void);
 	void		setRxLevelMaxValue(double value);
 	double		getRxLevelMaxValue(void);
 };

@@ -12,8 +12,8 @@ using namespace std;
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter RF on/off */
 #define AGENT_PATTERN_TX_ON_STATE_DEFAULT	 TRUE
 
-/* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter frequency 18 GHz */
-#define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT  18e9
+/* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter frequency 24 GHz */
+#define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT  24e9
 
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter power -20 dBm */
 #define AGENT_PATTERN_TX_PWR_VALUE_DEFAULT   -30

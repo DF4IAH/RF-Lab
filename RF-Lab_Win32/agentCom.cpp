@@ -189,6 +189,7 @@ void agentCom::run(void)
 				char lpBuffer[C_BUF_SIZE] = { 0 };
 
 				status = FlushFileBuffers(_hCom);
+				Sleep(100);
 				status = ReadFile(_hCom,	// Handle to the Serial port
 					lpBuffer,				// Buffer where data from the port is to be written to
 					dNoOFBytestoRead,		// Number of bytes to be read

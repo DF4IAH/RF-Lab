@@ -16,7 +16,7 @@ using namespace std;
 #define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT  24e9
 
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter power -20 dBm */
-#define AGENT_PATTERN_TX_PWR_VALUE_DEFAULT   -30
+#define AGENT_PATTERN_TX_PWR_VALUE_DEFAULT   -20
 
 
 /* RX: Rohde & Schwarz FSEK20 (spectrum analyzer) - frequency span 100 kHz */

@@ -168,7 +168,6 @@ void agentCom::run(void)
 		break;
 
 		case C_COMREQ_COM_SEND:
-		case C_COMREQ_COM_SEND_RECEIVE:
 		{
 			// send parm string via serial port and wait for result
 			char lpBuffer[C_BUF_SIZE];
@@ -189,25 +188,19 @@ void agentCom::run(void)
 				char lpBuffer[C_BUF_SIZE] = { 0 };
 
 				status = FlushFileBuffers(_hCom);
-				Sleep(100);
+				Sleep(10);
 				status = ReadFile(_hCom,	// Handle to the Serial port
 					lpBuffer,				// Buffer where data from the port is to be written to
 					dNoOFBytestoRead,		// Number of bytes to be read
 					&dNoOfBytesRead,		// Bytes read
 					NULL);
 
-				if (C_COMREQ_COM_SEND == comReq.cmd) {
-					// drop result of that command
-					comRsp.stat = C_COMRSP_DROP;
+				if (status) {
+					comRsp.data = string(lpBuffer, dNoOfBytesRead);
+					comRsp.stat = C_COMRSP_DATA;
 				}
-				else if (C_COMREQ_COM_SEND_RECEIVE == comReq.cmd) {
-					if (status) {
-						comRsp.data = string(lpBuffer, dNoOfBytesRead);
-						comRsp.stat = C_COMRSP_DATA;
-					}
-					else {
-						comRsp.stat = C_COMRSP_FAIL;
-					}
+				else {
+					comRsp.stat = C_COMRSP_FAIL;
 				}
 			}
 			else {
@@ -231,10 +224,8 @@ void agentCom::run(void)
 
 		}
 
-		if (comRsp.stat != C_COMRSP_DROP) {
-			// send the response
-			send(_tgt, comRsp);
-		}
+		// send the response
+		send(_tgt, comRsp);
 	}
 
 	// Move the agent to the finished state.

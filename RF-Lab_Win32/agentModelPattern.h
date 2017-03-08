@@ -9,6 +9,8 @@ using namespace concurrency;
 using namespace std;
 
 
+#define AGENT_PATTERN_RECEIVE_TIMEOUT		 2500
+
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter RF on/off */
 #define AGENT_PATTERN_TX_ON_STATE_DEFAULT	 TRUE
 
@@ -47,10 +49,10 @@ private:
 	int									 lastTickPos;
 
 	bool								 txOn;
-	double								 txFequency;
+	double								 txFrequency;
 	double								 txPower;
 
-	double								 rxFequency;
+	double								 rxFrequency;
 	double								 rxSpan;
 	double								 rxLevelMax;
 

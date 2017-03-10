@@ -565,8 +565,20 @@ int agentModelPattern::requestPos(void)
 		// request position
 		comReqData.cmd = C_COMREQ_COM_SEND;
 		comReqData.parm = string("?X\r");
-		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-		comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+
+		comReqData.parm = string("\r");
+		do {
+			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+			comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);	// drop queue
+			Sleep(10);
+		} while (strncmp(comRspData.data.c_str(), "OK", 2));
+
+		do {
+			comReqData.parm = string("?X\r");
+			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+			comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+		} while (strncmp(comRspData.data.c_str(), "?X",2 ));
+
 		if (comRspData.stat == C_COMRSP_DATA) {
 			int posDiff = 0;
 

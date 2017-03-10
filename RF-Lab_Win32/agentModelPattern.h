@@ -95,4 +95,5 @@ public:
 	double		getRxSpanDefault(void);
 	void		setRxLevelMaxValue(double value);
 	double		getRxLevelMaxValue(void);
+	bool		getRxMarkerPeak(double* retX, double* retY);
 };

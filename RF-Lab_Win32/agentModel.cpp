@@ -92,6 +92,72 @@ void agentModel::wmCmd(int wmId, LPVOID arg)
 }
 
 
+/* Tools */
+
+bool agentModel::parseStr2Bool(bool* ret, const char* ary, const char* fmt, char delimRight)
+{
+	if (ret) {
+		const char* cmpPtr = ary;
+
+		*ret = FALSE;
+
+		if (ary && fmt) {
+			if (delimRight) {
+				cmpPtr = strrchr(ary, delimRight);
+			}
+
+			if (cmpPtr) {
+				sscanf_s(cmpPtr, fmt, ret);
+				return FALSE;					// Good
+			}
+		}
+	}
+	return TRUE;								// Error
+}
+
+bool agentModel::parseStr2Int(int* ret, const char* ary, const char* fmt, char delimRight)
+{
+	if (ret) {
+		const char* cmpPtr = ary;
+
+		*ret = 0;
+
+		if (ary && fmt) {
+			if (delimRight) {
+				cmpPtr = strrchr(ary, delimRight);
+			}
+
+			if (cmpPtr) {
+				sscanf_s(cmpPtr, fmt, ret);
+				return FALSE;					// Good
+			}
+		}
+	}
+	return TRUE;								// Error
+}
+
+bool agentModel::parseStr2Double(double* ret, const char* ary, const char* fmt, char delimRight)
+{
+	if (ret) {
+		const char* cmpPtr = ary;
+
+		*ret = 0.;
+
+		if (ary && fmt) {
+			if (delimRight) {
+				cmpPtr = strrchr(ary, delimRight);
+			}
+
+			if (cmpPtr) {
+				sscanf_s(cmpPtr, fmt, ret);
+				return FALSE;					// Good
+			}
+		}
+	}
+	return TRUE;								// Error
+}
+
+
 /* agentModelPattern - Rotor */
 
 int agentModel::requestPos(void)

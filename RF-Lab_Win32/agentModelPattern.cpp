@@ -388,27 +388,9 @@ void agentModelPattern::run(void)
 
 #if 1
 							/* Following sequence does a level metering */
-							{
-								comReqData.parm = string(":INIT:CONT OFF\r\n");
-								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-
-								comReqData.parm = string(":INIT:IMM; *WAI\r\n");
-								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-
-								comReqData.parm = string(":CALC:MARKER ON; :CALC:MARKER:MAX; *WAI\r\n");
-								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-
-								comReqData.parm = string(":CALC:MARKER:X?\r\n");
-								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-
-								comReqData.parm = string(":CALC:MARKER:Y?\r\n");
-								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-							}
+							double mkrX = 0.;
+							double mkrY = 0.;
+							bool stat = getRxMarkerPeak(&mkrX, &mkrY);
 #endif
 						}
 						catch (const Concurrency::operation_timed_out& e) {
@@ -457,7 +439,7 @@ void agentModelPattern::run(void)
 					_arg = nullptr;
 				}
 				
-				requestPos();
+				(void) requestPos();
 				sendPos((int)(gotoMilliPos * 0.8));
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 			}
@@ -584,18 +566,22 @@ int agentModelPattern::requestPos(void)
 		comReqData.cmd = C_COMREQ_COM_SEND;
 		comReqData.parm = string("?X\r");
 		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-		comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-
-		// read current position
 		comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 		if (comRspData.stat == C_COMRSP_DATA) {
 			int posDiff = 0;
 
+#if 0
 			const char* str_start = strrchr(comRspData.data.c_str(), '?');
 			if (str_start) {
 				sscanf_s(str_start, "?X,%d", &pos);
 				agentModel::setLastTickPos(pos);
 			}
+#else
+			if (!agentModel::parseStr2Int(&pos, comRspData.data.c_str(), "?X,%d", '?')) {
+				agentModel::setLastTickPos(pos);
+			}
+#endif
+
 		}
 	}
 	catch (const Concurrency::operation_timed_out& e) {
@@ -831,4 +817,46 @@ void agentModelPattern::setRxLevelMaxValue(double value)
 double agentModelPattern::getRxLevelMaxValue(void)
 {
 	return rxLevelMax;
+}
+
+bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
+{
+	if (retX && retY && pAgtComReq[C_COMINST_RX]) {
+		agentComReq comReqData;
+		agentComRsp comRspData;
+
+		*retX = *retY = 0.;
+
+		/* Following sequence does a level metering */
+		try {
+			comReqData.cmd  = C_COMREQ_COM_SEND;
+			comReqData.parm = string(":INIT:CONT OFF\r\n");
+			send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+			comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+
+			comReqData.parm = string(":INIT:IMM; *WAI\r\n");
+			send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+			comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+
+			comReqData.parm = string(":CALC:MARKER ON; :CALC:MARKER:MAX; *WAI\r\n");
+			send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+			comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+
+			comReqData.parm = string(":CALC:MARKER:X?\r\n");
+			send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+			comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			sscanf_s(comRspData.data.c_str(), "%lf", retX);
+
+			comReqData.parm = string(":CALC:MARKER:Y?\r\n");
+			send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+			comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			sscanf_s(comRspData.data.c_str(), "%lf", retY);
+
+			return FALSE;
+		}
+		catch (const Concurrency::operation_timed_out& e) {
+			(void)e;
+		}
+	}
+	return TRUE;
 }

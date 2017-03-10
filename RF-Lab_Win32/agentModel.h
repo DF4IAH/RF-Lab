@@ -55,11 +55,16 @@ protected:
 	void			run(void);
 
 public:
-	/* default class functions() to be overwritten */
+	/* Default class functions() to be overwritten */
 	static bool		isRunning(void);
 	static void		Release(void);
 	static bool		shutdown(void);
 	static void		wmCmd(int wmId, LPVOID arg = nullptr);
+
+	/* Tools */
+	static bool		parseStr2Bool(bool* ret, const char* ary, const char* fmt, char delimRight = 0);
+	static bool		parseStr2Int(int* ret, const char* ary, const char* fmt, char delimRight = 0);
+	static bool		parseStr2Double(double* ret, const char* ary, const char* fmt, char delimRight = 0);
 
 	/* agentModelPattern - Rotor */
 	static int		requestPos(void);

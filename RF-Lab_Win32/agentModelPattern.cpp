@@ -385,13 +385,6 @@ void agentModelPattern::run(void)
 							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 #endif
-
-#if 1
-							/* Following sequence does a level metering */
-							double mkrX = 0.;
-							double mkrY = 0.;
-							bool stat = getRxMarkerPeak(&mkrX, &mkrY);
-#endif
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;

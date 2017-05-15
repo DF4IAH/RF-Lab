@@ -183,6 +183,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				AskTxSettings(hInst, hWnd);
 				break;
 
+			case ID_MODELL_PATTERN_START:
+				ModelPatternStart(hInst, hWnd);
+				break;
+
 			default:
                 return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -321,8 +325,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 				// Process input
 				swscanf_s(szIdcRotorPosXNew, L"%d", &iCbValue);
 			}
-			// Fall through.
-
+			// Fall-through.
 		case IDCANCEL:
 			EndDialog(hWnd, wParam);
 			return TRUE;
@@ -388,8 +391,7 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 				agentModel::setTxPwrValue(lfIdcTxSettingsPower);
 				agentModel::setRxLevelMaxValue(lfIdcTxSettingsPower);
 			}
-			// Fall through.
-
+			// Fall-through.
 		case IDCANCEL:
 			EndDialog(hWnd, wParam);
 			return TRUE;
@@ -398,4 +400,15 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 		break;
 	}
 	return FALSE;
+}
+
+
+// Anstarten der Pattern Mess-Prozedur
+static void ModelPatternStart(HINSTANCE hInst, HWND hWnd)
+{
+	// Ausgabebereich des Modells initialisieren
+	// xxx();
+
+	// Starte die Meﬂaufnahme des Pattern-Modells
+	agentModel::runProcess();
 }

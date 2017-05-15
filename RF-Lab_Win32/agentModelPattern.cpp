@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "agentModelPattern.h"
+#include "agentModel.h"
 
 #include "resource.h"
 #include "WinSrv.h"
@@ -15,11 +16,13 @@ template <class T>  void SafeRelease(T **ppT)
 }
 
 
-agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt)
+agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_ALL_SIMUMODE_t mode)
 				 : pAgtComReq{ nullptr }
 				 , pAgtComRsp{ nullptr }
 				 , pAgtCom{ nullptr }
 				 , _arg(nullptr)
+
+				 , simuMode(mode)
 
 				 , initState(0)
 
@@ -39,6 +42,8 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 	for (int i = 0; i < C_COMINST__COUNT; ++i) {
 		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
 		pAgtComRsp[i] = new unbounded_buffer<agentComRsp>;
+		pAgtCom[i] = nullptr;
+
 		if (pAgtComReq[i] && pAgtComRsp[i]) {
 			switch (i) {
 			case C_COMINST_ROT:
@@ -46,15 +51,16 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				break;
 
 			case C_COMINST_TX:
-				pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
+				if (!(simuMode & AGENT_ALL_SIMUMODE_NO_TX)) {
+					pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
+				}
 				break;
 
 			case C_COMINST_RX:
-				pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
+				if (!(simuMode & AGENT_ALL_SIMUMODE_NO_RX)) {
+					pAgtCom[i] = new agentCom(*(pAgtComReq[i]), *(pAgtComRsp[i]));
+				}
 				break;
-
-			default:
-				pAgtCom[i] = nullptr;
 			}
 		}
 	}
@@ -64,11 +70,12 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 void agentModelPattern::run(void)
 {
 	// Start Antenna Rotor
-	if (pAgtCom[C_COMINST_ROT] &&
-		pAgtCom[C_COMINST_TX ]) {
-
+	if (pAgtCom[C_COMINST_ROT]) {
 		pAgtCom[C_COMINST_ROT]->start();
-		pAgtCom[C_COMINST_TX ]->start();
+		
+		if (pAgtCom[C_COMINST_TX]) {
+			pAgtCom[C_COMINST_TX]->start();
+		}
 		
 		if (pAgtCom[C_COMINST_RX]) {
 			pAgtCom[C_COMINST_RX]->start();
@@ -97,12 +104,13 @@ void agentModelPattern::run(void)
 				// Open TX
 				if (pAgtCom[C_COMINST_TX]) {
 					comReqData.cmd = C_COMREQ_OPEN;
-#if 0
-					pAgtCom[C_COMINST_TX]->setIecAddr(28);																// IEC625: R&S SMR40: address == 28
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625 - 19200 baud, 8N1
-#else
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
-#endif
+					if (pAgtCom[C_COMINST_TX]->isIec()) {
+						pAgtCom[C_COMINST_TX]->setIecAddr(28);																// IEC625: R&S SMR40: address == 28
+						snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625: 19200 baud, 8N1
+					}
+					else {
+						snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
+					}
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 					initState = 0x03;
@@ -111,12 +119,13 @@ void agentModelPattern::run(void)
 				// Open RX
 				if (pAgtCom[C_COMINST_RX]) {
 					comReqData.cmd = C_COMREQ_OPEN;
-#if 1
-					pAgtCom[C_COMINST_RX]->setIecAddr(20);		// IEC625: R&S FSEK20: address == 20
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625 - 19200 baud, 8N1
-#else
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
-#endif
+					if (pAgtCom[C_COMINST_RX]->isIec()) {
+						pAgtCom[C_COMINST_RX]->setIecAddr(20);																// IEC625: R&S FSEK20: address == 20
+						snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625: 19200 baud, 8N1
+					}
+					else {
+						snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
+					}
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 					initState = 0x04;
@@ -153,123 +162,119 @@ void agentModelPattern::run(void)
 						if (_strnicmp(&(comRspData.data[0]), "?X", 2)) break;
 						initState = 0x14;
 
-
 						/* receive TX opening response */
-						if (!pAgtCom[C_COMINST_TX]) break;
-						initState = 0x21;
-						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-						if (comRspData.stat != C_COMRSP_OK)	break;
-						initState = 0x22;
+						if (pAgtCom[C_COMINST_TX]) {
+							initState = 0x21;
+							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+							if (comRspData.stat != C_COMRSP_OK)	break;
+							initState = 0x22;
 
-						/* check if TX is responding */
-						if (pAgtCom[C_COMINST_TX]->isIec()) {
-							/* check if USB<-->IEC adapter is responding */
-							initState = 0x23;
+							/* check if TX is responding */
+							if (pAgtCom[C_COMINST_TX]->isIec()) {
+								/* check if USB<-->IEC adapter is responding */
+								initState = 0x23;
+								comReqData.cmd = C_COMREQ_COM_SEND;
+								comReqData.parm = string("++addr\r\n");
+								send(*(pAgtComReq[C_COMINST_TX]), comReqData);	// first request for sync purposes
+								comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+								send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+								comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+								if (comRspData.stat != C_COMRSP_DATA) break;
+								if (_strnicmp(&(comRspData.data[0]), "++", 2)) break;
+								initState = 0x24;
+
+								/* IEC adapter target address */
+								comReqData.cmd = C_COMREQ_COM_SEND;
+								comReqData.parm = string("++addr ");
+								comReqData.parm.append(agentCom::int2String(pAgtCom[C_COMINST_TX]->getIecAddr()));
+								comReqData.parm.append("\r\n");
+								send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+								comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+								if (comRspData.stat != C_COMRSP_DATA) break;
+								if (_strnicmp(&(comRspData.data[0]), "++", 2)) break;
+								initState = 0x25;
+
+								/* IEC adapter enable automatic target response handling */
+								comReqData.parm = string("++auto 1\r\n");
+								send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+								comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+								if (comRspData.stat != C_COMRSP_DATA) break;
+								if (_strnicmp(&(comRspData.data[0]), "++", 2)) break;
+								initState = 0x26;
+							}
 							comReqData.cmd = C_COMREQ_COM_SEND;
-							comReqData.parm = string("++addr\r\n");
-							send(*(pAgtComReq[C_COMINST_TX]), comReqData);	// first request for sync purposes
+							comReqData.parm = string("*IDN?\r\n");
+							send(*(pAgtComReq[C_COMINST_TX]), comReqData);		// first request for sync purposes
 							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							if (comRspData.stat != C_COMRSP_DATA) break;
-							if (_strnicmp(&(comRspData.data[0]), "++", 2)) break;
-							initState = 0x24;
-
-							/* IEC adapter target address */
-							comReqData.cmd = C_COMREQ_COM_SEND;
-							comReqData.parm = string("++addr ");
-							comReqData.parm.append(agentCom::int2String(pAgtCom[C_COMINST_TX]->getIecAddr()));
-							comReqData.parm.append("\r\n");
-							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-							if (comRspData.stat != C_COMRSP_DATA) break;
-							if (_strnicmp(&(comRspData.data[0]), "++", 2)) break;
-							initState = 0x25;
-
-							/* IEC adapter enable automatic target response handling */
-							comReqData.parm = string("++auto 1\r\n");
-							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-							if (comRspData.stat != C_COMRSP_DATA) break;
-							if (_strnicmp(&(comRspData.data[0]), "++", 2)) break;
-							initState = 0x26;
+							if (_strnicmp(&(comRspData.data[0]), "ROHDE", 5)) break;
+							initState = 0x2F;
 						}
-						comReqData.cmd = C_COMREQ_COM_SEND;
-						comReqData.parm = string("*IDN?\r\n");
-						send(*(pAgtComReq[C_COMINST_TX]), comReqData);		// first request for sync purposes
-						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-						comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-						if (comRspData.stat != C_COMRSP_DATA) break;
-						if (_strnicmp(&(comRspData.data[0]), "ROHDE", 5)) break;
-						initState = 0x27;
-
 
 						/* receive RX opening response */
-						if (!pAgtCom[C_COMINST_RX]) {
-							/* success, all devices except RX are ready */
-							initState = 0x2F;
-							_runState = C_MODELPATTERN_RUNSTATES_INIT;
-							break;
-						}
-						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-						if (comRspData.stat != C_COMRSP_OK)	break;
-						initState = 0x31;
+						if (pAgtCom[C_COMINST_RX]) {
+							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+							if (comRspData.stat != C_COMRSP_OK)	break;
+							initState = 0x31;
 
-						/* check if RX is responding */
-						if (pAgtCom[C_COMINST_RX]->isIec()) {
-							/* check if USB<-->IEC adapter is responding */
-							initState = 0x32;
+							/* check if RX is responding */
+							if (pAgtCom[C_COMINST_RX]->isIec()) {
+								/* check if USB<-->IEC adapter is responding */
+								initState = 0x32;
+								comReqData.cmd = C_COMREQ_COM_SEND;
+								comReqData.parm = string("++addr\r\n");
+								send(*(pAgtComReq[C_COMINST_RX]), comReqData);	// first request for sync purposes
+								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+								if (comRspData.stat != C_COMRSP_DATA) break;
+								if (!comRspData.data[0]) break;
+								initState = 0x33;
+								Sleep(100);
+								initState = 0x34;
+
+								/* IEC adapter target address */
+								comReqData.parm = string("++addr ");
+								initState = 0xE0;
+								comReqData.parm.append(agentCom::int2String(pAgtCom[C_COMINST_RX]->getIecAddr()));
+								initState = 0xE1;
+								comReqData.parm.append("\r\n");
+								initState = 0xE2;
+								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+								initState = 0xE3;
+								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+								initState = 0xE4;
+								if (comRspData.stat != C_COMRSP_DATA) break;
+								initState = 0x35;
+								Sleep(100);
+								initState = 0x36;
+
+								/* IEC adapter enable automatic target response handling */
+								comReqData.parm = string("++auto 1\r\n");
+								initState = 0xF1;
+								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+								initState = 0xF2;
+								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+								initState = 0xF3;
+								if (comRspData.stat != C_COMRSP_DATA) break;
+								initState = 0x36;
+							}
 							comReqData.cmd = C_COMREQ_COM_SEND;
-							comReqData.parm = string("++addr\r\n");
-							send(*(pAgtComReq[C_COMINST_RX]), comReqData);	// first request for sync purposes
+							comReqData.parm = string("*IDN?\r\n");
+							send(*(pAgtComReq[C_COMINST_RX]), comReqData);		// first request for sync purposes
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							if (comRspData.stat != C_COMRSP_DATA) break;
-							if (!comRspData.data[0]) break;
-							initState = 0x33;
-							Sleep(100);
-							initState = 0x34;
-
-							/* IEC adapter target address */
-							comReqData.parm = string("++addr ");
-							initState = 0xE0;
-							comReqData.parm.append(agentCom::int2String(pAgtCom[C_COMINST_RX]->getIecAddr()));
-							initState = 0xE1;
-							comReqData.parm.append("\r\n");
-							initState = 0xE2;
-							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-							initState = 0xE3;
-							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-							initState = 0xE4;
-							if (comRspData.stat != C_COMRSP_DATA) break;
-							initState = 0x35;
-							Sleep(100);
-							initState = 0x36;
-
-							/* IEC adapter enable automatic target response handling */
-							comReqData.parm = string("++auto 1\r\n");
-							initState = 0xF1;
-							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-							initState = 0xF2;
-							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-							initState = 0xF3;
-							if (comRspData.stat != C_COMRSP_DATA) break;
-							initState = 0x36;
+							if (_strnicmp(&(comRspData.data[0]), "ROHDE", 5)) break;
+							initState = 0x3F;
 						}
-						comReqData.cmd = C_COMREQ_COM_SEND;
-						comReqData.parm = string("*IDN?\r\n");
-						send(*(pAgtComReq[C_COMINST_RX]), comReqData);		// first request for sync purposes
-						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-						if (comRspData.stat != C_COMRSP_DATA) break;
-						if (_strnicmp(&(comRspData.data[0]), "ROHDE", 5)) break;
-						initState = 0x3F;
 
 						/* success, all devices are ready */
 						_runState = C_MODELPATTERN_RUNSTATES_INIT;
+						initState = 0xFF;
 					} while (FALSE);
 				}
 				catch (const Concurrency::operation_timed_out& e) {
@@ -711,6 +716,19 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		}
 		break;
 	}
+}
+
+
+/* agentModelPattern - GENERAL */
+
+void agentModelPattern::setSimuMode(int mode)
+{
+	simuMode = mode;
+}
+
+int agentModelPattern::getSimuMode(void)
+{
+	return simuMode;
 }
 
 

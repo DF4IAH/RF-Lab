@@ -39,6 +39,17 @@ void agentModelVariant::wmCmd(int wmId, LPVOID arg)
 }
 
 
+/* agentModelPattern - GENERAL */
+void agentModelVariant::setSimuMode(int simuMode)
+{
+}
+
+int agentModelVariant::getSimuMode(void)
+{
+	return 0;
+}
+
+
 /* agentModelPattern - Rotor */
 
 int agentModelVariant::requestPos(void)

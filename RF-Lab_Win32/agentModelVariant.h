@@ -37,6 +37,11 @@ public:
 	virtual bool	shutdown(void);
 	virtual void	wmCmd(int wmId, LPVOID arg);
 
+
+	/* agentModelPattern - GENERAL */
+	virtual void	setSimuMode(int simuMode);
+	virtual int		getSimuMode(void);
+
 	/* agentModelPattern - Rotor */
 	virtual int		requestPos(void);
 	virtual void	setLastTickPos(int tickPos);

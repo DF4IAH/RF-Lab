@@ -11,13 +11,20 @@ using namespace concurrency;
 using namespace std;
 
 
-enum C_MODELREQ_ENUM {
+typedef enum C_MODELREQ_ENUM {
 	C_MODELREQ_END = 0
-};
+} C_MODELREQ_ENUM_t;
 
-enum C_MODELRSP_ENUM {
+typedef enum C_MODELRSP_ENUM {
 	C_MODELRSP_END = 0
-};
+} C_MODELRSP_ENUM_t;
+
+typedef enum AGENT_ALL_SIMUMODE {
+	AGENT_ALL_SIMUMODE_NONE = 0x00,
+	AGENT_ALL_SIMUMODE_NO_TX = 0x01,
+	AGENT_ALL_SIMUMODE_NO_RX = 0x02,
+	AGENT_ALL_SIMUMODE_RUN_BARGRAPH = 0x10,
+} AGENT_ALL_SIMUMODE_t;
 
 
 typedef struct agentModelReq
@@ -44,11 +51,12 @@ private:
 	ISource<agentModelReq_t>			*_src;
 	ITarget<agentModelRsp_t>			*_tgt;
 	AGENT_MODELS						 _am_variant;
+	AGENT_ALL_SIMUMODE					 _simuMode;
 	class agentModelVariant				*_curModel;
 
 
 public:
-	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant);
+	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode);
 	~agentModel(void);
 
 protected:
@@ -65,6 +73,11 @@ public:
 	static bool		parseStr2Bool(bool* ret, const char* ary, const char* fmt, char delimRight = 0);
 	static bool		parseStr2Int(int* ret, const char* ary, const char* fmt, char delimRight = 0);
 	static bool		parseStr2Double(double* ret, const char* ary, const char* fmt, char delimRight = 0);
+
+
+	/* agentModelPattern - GENERAL */
+	static void		setSimuMode(int simuMode);
+	static int		getSimuMode(void);
 
 	/* agentModelPattern - Rotor */
 	static int		requestPos(void);

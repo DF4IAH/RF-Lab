@@ -20,16 +20,17 @@ template <class T>  void SafeRelease(T **ppT)
 agentModel *g_am = nullptr;
 
 
-agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant)
+agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode)
 				 : _src(src)
 				 , _tgt(tgt)
 				 , _am_variant(am_variant)
+				 , _simuMode(mode)
 {
 	g_am = this;
 
 	switch (am_variant) {
 	case AGENT_MODEL_PATTERN:
-		_curModel = new agentModelPattern(src, tgt);
+		_curModel = new agentModelPattern(src, tgt, mode);
 		break;
 
 	case AGENT_MODEL_NONE:
@@ -155,6 +156,26 @@ bool agentModel::parseStr2Double(double* ret, const char* ary, const char* fmt, 
 		}
 	}
 	return TRUE;								// Error
+}
+
+
+/* agentModelPattern - GENERAL */
+
+void agentModel::setSimuMode(int simuMode)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->setSimuMode(simuMode);
+	}
+}
+
+int agentModel::getSimuMode(void)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->getSimuMode();
+	}
+	else {
+		return 0;
+	}
 }
 
 

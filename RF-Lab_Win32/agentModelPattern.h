@@ -47,6 +47,8 @@ private:
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 	LPVOID								 _arg;
 
+	int									 simuMode;
+
 	int									 initState;
 
 	int									 lastTickPos;
@@ -61,7 +63,7 @@ private:
 
 
 public:
-	explicit	agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt);
+	explicit	agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_ALL_SIMUMODE_t mode);
 	void		run(void);
 
 private:
@@ -73,6 +75,10 @@ public:
 	void		Release(void);
 	bool		shutdown(void);
 	void		wmCmd(int wmId, LPVOID arg = nullptr);
+
+	/* agentModelPattern - GENERAL */
+	void		setSimuMode(int simuMode);
+	int			getSimuMode(void);
 
 	/* agentModelPattern - Rotor */
 	int			requestPos(void);

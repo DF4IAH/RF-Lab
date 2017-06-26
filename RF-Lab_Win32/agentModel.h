@@ -71,7 +71,7 @@ public:
 
 	/* Tools */
 	static bool		parseStr2Bool(bool* ret, const char* ary, const char* fmt, char delimRight = 0);
-	static bool		parseStr2Int(int* ret, const char* ary, const char* fmt, char delimRight = 0);
+	static bool		parseStr2Long(long* ret, const char* ary, const char* fmt, char delimRight = 0);
 	static bool		parseStr2Double(double* ret, const char* ary, const char* fmt, char delimRight = 0);
 
 
@@ -81,9 +81,9 @@ public:
 	static void		runProcess(int processID);
 
 	/* agentModelPattern - Rotor */
-	static int		requestPos(void);
-	static void		setLastTickPos(int tickPos);
-	static int		getLastTickPos(void);
+	static long		requestPos(void);
+	static void		setLastTickPos(long tickPos);
+	static long		getLastTickPos(void);
 
 	/* agentModelPattern - TX */
 	static void		setTxOnState(bool checked);

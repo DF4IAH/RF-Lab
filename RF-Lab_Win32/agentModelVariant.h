@@ -44,9 +44,9 @@ public:
 	virtual void	runProcess(int processID);
 
 	/* agentModelPattern - Rotor */
-	virtual int		requestPos(void);
-	virtual void	setLastTickPos(int tickPos);
-	virtual int		getLastTickPos(void);
+	virtual long	requestPos(void);
+	virtual void	setLastTickPos(long tickPos);
+	virtual long	getLastTickPos(void);
 
 	/* agentModelPattern - TX */
 	virtual void	setTxOnState(bool checked);

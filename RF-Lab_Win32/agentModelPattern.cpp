@@ -22,6 +22,7 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , pAgtCom{ nullptr }
 				 , _arg(nullptr)
 
+				 , processing_ID(0)
 				 , simuMode(mode)
 
 				 , initState(0)
@@ -733,24 +734,76 @@ int agentModelPattern::getSimuMode(void)
 
 void agentModelPattern::runProcess(int processID)
 {
-	printf("TEST\n\r");
+	/* STOP at once processing ID */
+	if (processID == C_MODELPATTERN_PROCESS_STOP) {
+		processing_ID = 0;
+		return;
+	}
+
+	/* Cue in process ID to be done */
+	if (!processing_ID) {
+		processing_ID = processID;
+	}
+}
+
+void agentModelPattern::processing_pattern()
+{
+	// TODO: need own thread to drive this method!
+
+	double degStartPos		=  -90.0;
+	double degEndPos		=   90.0;
+	double degResolution	=    5.0;
 
 	/* Set-up ROTOR */
-	
+	long ticksDiff = requestPos();
+	sendPos(0);
+	Sleep(calcDeg2Ms(calcTicks2Deg(ticksDiff)));
+
+	if (!processing_ID) {
+		return;
+	}
+	requestPos();
+	sendPos(calcDeg2Ticks(degStartPos));					// Go to start position
+	Sleep(calcDeg2Ms(degStartPos));
+
 	/* Set-up TX */
+
 	/* Set-up RX */
 
-	/**/
+	/* Iteration of rotor steps */
+	for (double degPosIter = degStartPos; degPosIter <= degEndPos; degPosIter += degResolution) {
+		if (!processing_ID) {
+			return;
+		}
+
+		/* advance to new position */
+		requestPos();
+		sendPos(calcDeg2Ticks(degPosIter));
+		Sleep(calcDeg2Ms(degResolution));
+
+		/* Record data */
+		//measure();
+	}
+	
+	if (!processing_ID) {
+		return;
+	}
+	/* Return ROTOR to center position */
+	requestPos();
+	sendPos(0);
+	Sleep(calcDeg2Ms(degEndPos));
+
+	printf("END OF TEST\r\n");
 }
 
 
 /* agentModelPattern - Rotor */
 
-int agentModelPattern::requestPos(void)
+long agentModelPattern::requestPos(void)
 {
 	agentComReq comReqData;
 	agentComRsp comRspData;
-	int pos = 0;
+	long pos = 0;
 
 	try {
 		// request position
@@ -780,11 +833,10 @@ int agentModelPattern::requestPos(void)
 				agentModel::setLastTickPos(pos);
 			}
 #else
-			if (!agentModel::parseStr2Int(&pos, comRspData.data.c_str(), "?X,%d", '?')) {
+			if (!agentModel::parseStr2Long(&pos, comRspData.data.c_str(), "?X,%ld", '?')) {
 				agentModel::setLastTickPos(pos);
 			}
 #endif
-
 		}
 	}
 	catch (const Concurrency::operation_timed_out& e) {
@@ -812,12 +864,12 @@ void agentModelPattern::sendPos(int tickPos)
 	}
 }
 
-void agentModelPattern::setLastTickPos(int pos)
+void agentModelPattern::setLastTickPos(long pos)
 {
 	lastTickPos = pos;
 }
 
-int agentModelPattern::getLastTickPos(void)
+long agentModelPattern::getLastTickPos(void)
 {
 	return lastTickPos;
 }
@@ -1062,4 +1114,30 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 		}
 	}
 	return TRUE;
+}
+
+
+/* TOOLS */
+
+inline double agentModelPattern::calcTicks2Deg(long ticks)
+{
+	return ((double) ticks) / AGENT_PATTERN_ROT_TICKS_PER_DEGREE;
+}
+
+inline long agentModelPattern::calcDeg2Ticks(double deg)
+{
+	if (deg >= 0.0) {
+		return (long)(deg * AGENT_PATTERN_ROT_TICKS_PER_DEGREE + 0.5);
+	}
+	else {
+		return (long)(deg * AGENT_PATTERN_ROT_TICKS_PER_DEGREE - 0.5);
+	}
+}
+
+inline DWORD agentModelPattern::calcDeg2Ms(double deg)
+{
+	if (deg < 0) {
+		deg = -deg;
+	}
+	return (DWORD) (deg * AGENT_PATTERN_ROT_MS_PER_DEGREE);
 }

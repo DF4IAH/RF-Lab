@@ -9,7 +9,14 @@ using namespace concurrency;
 using namespace std;
 
 
+
 #define AGENT_PATTERN_RECEIVE_TIMEOUT		 2500
+
+/* ROTOR: Count of ticks to turn 1° right */
+#define AGENT_PATTERN_ROT_TICKS_PER_DEGREE	  800
+
+/* ROTOR: Time in ms delay for turning 1° */
+#define AGENT_PATTERN_ROT_MS_PER_DEGREE		   70
 
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter RF on/off */
 #define AGENT_PATTERN_TX_ON_STATE_DEFAULT	 TRUE
@@ -40,6 +47,7 @@ enum C_MODELPATTERN_RUNSTATES_ENUM {
 
 enum C_MODELPATTERN_PROCESSES_ENUM {
 	C_MODELPATTERN_PROCESS_NOOP = 0,
+	C_MODELPATTERN_PROCESS_STOP,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
 };
 
@@ -52,11 +60,12 @@ private:
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 	LPVOID								 _arg;
 
+	int									 processing_ID;
 	int									 simuMode;
 
 	int									 initState;
 
-	int									 lastTickPos;
+	long								 lastTickPos;
 
 	bool								 txOn;
 	double								 txFrequency;
@@ -85,11 +94,12 @@ public:
 	void		setSimuMode(int simuMode);
 	int			getSimuMode(void);
 	void		runProcess(int processID);
+	void		processing_pattern(void);
 
 	/* agentModelPattern - Rotor */
-	int			requestPos(void);
-	void		setLastTickPos(int pos);
-	int			getLastTickPos(void);
+	long		requestPos(void);
+	void		setLastTickPos(long pos);
+	long		getLastTickPos(void);
 
 	/* agentModelPattern - TX */
 	void		setTxOnState(bool checked);
@@ -111,4 +121,9 @@ public:
 	void		setRxLevelMaxValue(double value);
 	double		getRxLevelMaxValue(void);
 	bool		getRxMarkerPeak(double* retX, double* retY);
+
+	/* Tools */
+ static double	calcTicks2Deg(long ticks);
+ static long	calcDeg2Ticks(double deg);
+ static DWORD	calcDeg2Ms(double deg);
 };

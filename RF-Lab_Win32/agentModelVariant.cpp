@@ -56,16 +56,16 @@ void agentModelVariant::runProcess(int processID)
 
 /* agentModelPattern - Rotor */
 
-int agentModelVariant::requestPos(void)
+long agentModelVariant::requestPos(void)
 {
 	return 0;
 }
 
-void agentModelVariant::setLastTickPos(int tickPos)
+void agentModelVariant::setLastTickPos(long tickPos)
 {
 }
 
-int agentModelVariant::getLastTickPos(void)
+long agentModelVariant::getLastTickPos(void)
 {
 	return 0;
 }

@@ -116,7 +116,7 @@ bool agentModel::parseStr2Bool(bool* ret, const char* ary, const char* fmt, char
 	return TRUE;								// Error
 }
 
-bool agentModel::parseStr2Int(int* ret, const char* ary, const char* fmt, char delimRight)
+bool agentModel::parseStr2Long(long* ret, const char* ary, const char* fmt, char delimRight)
 {
 	if (ret) {
 		const char* cmpPtr = ary;
@@ -188,22 +188,22 @@ void agentModel::runProcess(int processID)
 
 /* agentModelPattern - Rotor */
 
-int agentModel::requestPos(void)
+long agentModel::requestPos(void)
 {
 	if (g_am && g_am->_curModel) {
 		return g_am->_curModel->requestPos();
 	}
-	return MAXINT16;
+	return MAXINT32;
 }
 
-void agentModel::setLastTickPos(int tickPos)
+void agentModel::setLastTickPos(long tickPos)
 {
 	if (g_am && g_am->_curModel) {
 		g_am->_curModel->setLastTickPos(tickPos);
 	}
 }
 
-int agentModel::getLastTickPos(void)
+long agentModel::getLastTickPos(void)
 {
 	if (g_am && g_am->_curModel) {
 		return g_am->_curModel->getLastTickPos();

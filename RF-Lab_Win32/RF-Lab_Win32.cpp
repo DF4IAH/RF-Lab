@@ -29,7 +29,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-static void			ModelPatternStart(HINSTANCE hInst, HWND hWnd);
+static void			ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT message);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -183,8 +183,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				AskTxSettings(hInst, hWnd);
 				break;
 
-			case ID_MODELL_PATTERN_START:
-				ModelPatternStart(hInst, hWnd);
+			case ID_MODEL_PATTERN_STOP:
+			case ID_MODEL_PATTERN_START:
+				ModelPatternStart(hInst, hWnd, message);
 				break;
 
 			default:
@@ -404,11 +405,23 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 
 
 // Anstarten der Pattern Mess-Prozedur
-static void ModelPatternStart(HINSTANCE hInst, HWND hWnd)
+static void ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT message)
 {
-	// Ausgabebereich des Modells initialisieren
-	// xxx();
+	switch (message) {
+	case ID_MODEL_PATTERN_STOP:
+		{
+			agentModel::runProcess(C_MODELPATTERN_PROCESS_STOP);
+		}
+		break;
 
-	// Starte die Meﬂaufnahme des Pattern-Modells
-	agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG);
+	case ID_MODEL_PATTERN_START:
+		{
+			// Init display part
+			// xxx();
+			
+			// Start recording of pattern
+			agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG);
+		}
+		break;
+	}
 }

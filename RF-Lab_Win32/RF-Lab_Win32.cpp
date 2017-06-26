@@ -29,7 +29,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
+static void			ModelPatternStart(HINSTANCE hInst, HWND hWnd);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -376,7 +376,7 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDOK:
-			agentModel::setTxOnState(IsDlgButtonChecked(hWnd, IDC_TX_SETTINGS_ON_CHECK));
+			agentModel::setTxOnState(BST_CHECKED == IsDlgButtonChecked(hWnd, IDC_TX_SETTINGS_ON_CHECK));
 
 			if (GetDlgItemText(hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency) - 1)) {
 				// Process input
@@ -410,5 +410,5 @@ static void ModelPatternStart(HINSTANCE hInst, HWND hWnd)
 	// xxx();
 
 	// Starte die Meﬂaufnahme des Pattern-Modells
-	agentModel::runProcess();
+	agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG);
 }

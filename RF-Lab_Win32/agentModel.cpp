@@ -178,6 +178,13 @@ int agentModel::getSimuMode(void)
 	}
 }
 
+void agentModel::runProcess(int processID)
+{
+	if (g_am && g_am->_curModel) {
+		return g_am->_curModel->runProcess(processID);
+	}
+}
+
 
 /* agentModelPattern - Rotor */
 

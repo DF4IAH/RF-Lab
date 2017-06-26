@@ -731,6 +731,18 @@ int agentModelPattern::getSimuMode(void)
 	return simuMode;
 }
 
+void agentModelPattern::runProcess(int processID)
+{
+	printf("TEST\n\r");
+
+	/* Set-up ROTOR */
+	
+	/* Set-up TX */
+	/* Set-up RX */
+
+	/**/
+}
+
 
 /* agentModelPattern - Rotor */
 

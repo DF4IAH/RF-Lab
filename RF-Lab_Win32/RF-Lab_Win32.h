@@ -1,6 +1,8 @@
 #pragma once
 
 #include "resource.h"
+#include "agentModelPattern.h"
+
 
 #define C_BUFSIZE 256
 

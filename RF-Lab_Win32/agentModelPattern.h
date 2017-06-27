@@ -49,7 +49,16 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 	C_MODELPATTERN_PROCESS_NOOP = 0,
 	C_MODELPATTERN_PROCESS_STOP,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
+	C_MODELPATTERN_PROCESS_END,
 };
+
+
+class agentModelPattern;
+typedef struct threadDataProcessID_s {
+	UINT								threadNo;
+	agentModelPattern*					c;
+} threadDataProcessID_t;
+
 
 
 class agentModelPattern : public agentModelVariant
@@ -59,6 +68,9 @@ private:
 	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 	LPVOID								 _arg;
+
+	HANDLE								 hThreadProcessID;
+	threadDataProcessID_t				 sThreadDataProcessID;
 
 	int									 processing_ID;
 	int									 simuMode;
@@ -81,6 +93,8 @@ public:
 	void		run(void);
 
 private:
+	void		threadsStart(void);
+	void		threadsStop(void);
 	void		sendPos(int tickPos);
 
 public:
@@ -89,12 +103,12 @@ public:
 	void		Release(void);
 	bool		shutdown(void);
 	void		wmCmd(int wmId, LPVOID arg = nullptr);
+	static void	procThreadProcessID(void* pContext);
 
 	/* agentModelPattern - GENERAL */
 	void		setSimuMode(int simuMode);
 	int			getSimuMode(void);
 	void		runProcess(int processID);
-	void		processing_pattern(void);
 
 	/* agentModelPattern - Rotor */
 	long		requestPos(void);

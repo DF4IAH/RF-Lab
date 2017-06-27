@@ -5,6 +5,8 @@
 #include "resource.h"
 #include "WinSrv.h"
 
+#include <process.h>
+
 
 template <class T>  void SafeRelease(T **ppT)
 {
@@ -21,6 +23,9 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , pAgtComRsp{ nullptr }
 				 , pAgtCom{ nullptr }
 				 , _arg(nullptr)
+
+				 , hThreadProcessID(nullptr)
+				 , sThreadDataProcessID( { 0 } )
 
 				 , processing_ID(0)
 				 , simuMode(mode)
@@ -68,8 +73,30 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 }
 
 
+void agentModelPattern::threadsStart(void)
+{
+	//hThreadProcessID = CreateMutex(NULL, TRUE, NULL);		// Mutex is locked by the creator
+	hThreadProcessID = CreateMutex(NULL, FALSE, NULL);		// Mutex is still free
+	sThreadDataProcessID.threadNo = 1;
+	sThreadDataProcessID.c = this;
+	_beginthread(&procThreadProcessID, 0, &sThreadDataProcessID);
+}
+
+void agentModelPattern::threadsStop(void)
+{
+	/* End thread */
+	processing_ID = C_MODELPATTERN_PROCESS_END;
+	WaitForSingleObject(hThreadProcessID, INFINITE);
+	//WaitForSingleObject(hThreadProcessID, 10000L);		// Wait until the thread has ended (timeout = 10 secs
+	CloseHandle(hThreadProcessID);
+}
+
+
 void agentModelPattern::run(void)
 {
+	/* Start thread for process IDs to operate */
+	threadsStart();
+
 	// Start Antenna Rotor
 	if (pAgtCom[C_COMINST_ROT]) {
 		pAgtCom[C_COMINST_ROT]->start();
@@ -648,11 +675,14 @@ void agentModelPattern::run(void)
 
 			case C_MODELPATTERN_RUNSTATES_NOOP:
 			default:
-				Sleep(250);
+				Sleep(50);
 				break;
 			}
 		}
 	}
+
+	/* Stop the ProcessID thread */
+	threadsStop();
 
 	// Move the agent to the finished state.
 	_done = TRUE;
@@ -719,6 +749,91 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 	}
 }
 
+void agentModelPattern::procThreadProcessID(void* pContext)
+{
+	threadDataProcessID_t* m = (threadDataProcessID_t*)pContext;
+	WaitForSingleObject(m->c->hThreadProcessID, INFINITE);	// Thread now holds his mutex until the end of its method
+
+	/* loop as long no end-signalling has entered */
+	bool doLoop = true;
+	do {
+		/* different jobs to be processed */
+		switch (m->c->processing_ID)
+		{
+
+		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG:
+		{  // run a 180° antenna pattern from left = -90° to the right = +90°
+			double degStartPos = -90.0;
+			double degEndPos = 90.0;
+			double degResolution = 5.0;
+
+			/* Set-up ROTOR */
+			long ticksDiff = m->c->requestPos();
+			m->c->sendPos(0);
+			Sleep(calcDeg2Ms(calcTicks2Deg(ticksDiff)));
+
+			if (!m->c->processing_ID) {
+				break;
+			}
+			m->c->requestPos();
+			m->c->sendPos(calcDeg2Ticks(degStartPos));	// Go to start position
+			Sleep(calcDeg2Ms(degStartPos));
+
+			/* Set-up TX */
+
+			/* Set-up RX */
+
+			/* Iteration of rotor steps */
+			for (double degPosIter = degStartPos; degPosIter <= degEndPos; degPosIter += degResolution) {
+				if (!m->c->processing_ID) {
+					break;
+				}
+
+				/* advance to new position */
+				m->c->requestPos();
+				m->c->sendPos(calcDeg2Ticks(degPosIter));
+				Sleep(calcDeg2Ms(degResolution));
+
+				/* Record data */
+				//measure();
+			}
+
+			if (!m->c->processing_ID) {
+				break;
+			}
+			/* Return ROTOR to center position */
+			m->c->requestPos();
+			m->c->sendPos(0);
+			Sleep(calcDeg2Ms(degEndPos));
+
+			m->c->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
+		}
+		break;
+
+		case C_MODELPATTERN_PROCESS_STOP:
+		{  // end "STOP at once" signalling
+			m->c->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
+		}
+		break;
+
+		case C_MODELPATTERN_PROCESS_END:
+		{
+			doLoop = false;
+		}
+		break;
+
+		case C_MODELPATTERN_PROCESS_NOOP:
+		default:
+		{
+			Sleep(50L);
+		}
+
+		}  // switch(m->c->processing_ID)
+	} while (doLoop);
+
+	ReleaseMutex(m->c->hThreadProcessID);					// Thread returns mutex to signal its end
+}
+
 
 /* agentModelPattern - GENERAL */
 
@@ -744,56 +859,6 @@ void agentModelPattern::runProcess(int processID)
 	if (!processing_ID) {
 		processing_ID = processID;
 	}
-}
-
-void agentModelPattern::processing_pattern()
-{
-	// TODO: need own thread to drive this method!
-
-	double degStartPos		=  -90.0;
-	double degEndPos		=   90.0;
-	double degResolution	=    5.0;
-
-	/* Set-up ROTOR */
-	long ticksDiff = requestPos();
-	sendPos(0);
-	Sleep(calcDeg2Ms(calcTicks2Deg(ticksDiff)));
-
-	if (!processing_ID) {
-		return;
-	}
-	requestPos();
-	sendPos(calcDeg2Ticks(degStartPos));					// Go to start position
-	Sleep(calcDeg2Ms(degStartPos));
-
-	/* Set-up TX */
-
-	/* Set-up RX */
-
-	/* Iteration of rotor steps */
-	for (double degPosIter = degStartPos; degPosIter <= degEndPos; degPosIter += degResolution) {
-		if (!processing_ID) {
-			return;
-		}
-
-		/* advance to new position */
-		requestPos();
-		sendPos(calcDeg2Ticks(degPosIter));
-		Sleep(calcDeg2Ms(degResolution));
-
-		/* Record data */
-		//measure();
-	}
-	
-	if (!processing_ID) {
-		return;
-	}
-	/* Return ROTOR to center position */
-	requestPos();
-	sendPos(0);
-	Sleep(calcDeg2Ms(degEndPos));
-
-	printf("END OF TEST\r\n");
 }
 
 
@@ -1121,7 +1186,7 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 
 inline double agentModelPattern::calcTicks2Deg(long ticks)
 {
-	return ((double) ticks) / AGENT_PATTERN_ROT_TICKS_PER_DEGREE;
+	return ((double)ticks) / AGENT_PATTERN_ROT_TICKS_PER_DEGREE;
 }
 
 inline long agentModelPattern::calcDeg2Ticks(double deg)
@@ -1139,5 +1204,5 @@ inline DWORD agentModelPattern::calcDeg2Ms(double deg)
 	if (deg < 0) {
 		deg = -deg;
 	}
-	return (DWORD) (deg * AGENT_PATTERN_ROT_MS_PER_DEGREE);
+	return (DWORD)(deg * AGENT_PATTERN_ROT_MS_PER_DEGREE);
 }

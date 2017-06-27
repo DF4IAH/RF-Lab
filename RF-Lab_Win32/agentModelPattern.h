@@ -18,6 +18,11 @@ using namespace std;
 /* ROTOR: Time in ms delay for turning 1° */
 #define AGENT_PATTERN_ROT_MS_PER_DEGREE		   70
 
+/* ROTOR: Pattern is measured between these to limits */
+#define AGENT_PATTERN_POS_DEGREE_START		-90.0
+#define AGENT_PATTERN_POS_DEGREE_END		 90.0
+#define AGENT_PATTERN_POS_DEGREE_STEP		  5.0
+
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter RF on/off */
 #define AGENT_PATTERN_TX_ON_STATE_DEFAULT	 TRUE
 
@@ -40,7 +45,6 @@ enum C_MODELPATTERN_RUNSTATES_ENUM {
 	C_MODELPATTERN_RUNSTATES_INIT_WAIT,
 	C_MODELPATTERN_RUNSTATES_INIT_ERROR,
 	C_MODELPATTERN_RUNSTATES_RUNNING,
-	C_MODELPATTERN_RUNSTATES_GOTO_X,
 	C_MODELPATTERN_RUNSTATES_CLOSE_COM,
 	C_MODELPATTERN_RUNSTATES_CLOSE_COM_WAIT,
 };
@@ -49,6 +53,7 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 	C_MODELPATTERN_PROCESS_END = 0,
 	C_MODELPATTERN_PROCESS_STOP,
 	C_MODELPATTERN_PROCESS_NOOP,
+	C_MODELPATTERN_PROCESS_GOTO_X,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
 };
 
@@ -73,6 +78,7 @@ private:
 	threadDataProcessID_t				 sThreadDataProcessID;
 
 	int									 processing_ID;
+	int									 processing_arg1;
 	int									 simuMode;
 
 	int									 initState;
@@ -95,7 +101,7 @@ public:
 private:
 	void		threadsStart(void);
 	void		threadsStop(void);
-	void		sendPos(int tickPos);
+	void		sendPos(long tickPos);
 
 public:
 	/* overwriting agentModel member functions() */
@@ -108,7 +114,7 @@ public:
 	/* agentModelPattern - GENERAL */
 	void		setSimuMode(int simuMode);
 	int			getSimuMode(void);
-	void		runProcess(int processID);
+	void		runProcess(int processID, int arg);
 
 	/* agentModelPattern - Rotor */
 	long		requestPos(void);
@@ -140,4 +146,5 @@ public:
  static double	calcTicks2Deg(long ticks);
  static long	calcDeg2Ticks(double deg);
  static DWORD	calcDeg2Ms(double deg);
+ static DWORD	calcTicks2Ms(long ticks);
 };

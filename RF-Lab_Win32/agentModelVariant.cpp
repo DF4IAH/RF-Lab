@@ -49,7 +49,7 @@ int agentModelVariant::getSimuMode(void)
 	return 0;
 }
 
-void agentModelVariant::runProcess(int processID)
+void agentModelVariant::runProcess(int processID, int arg)
 {
 }
 

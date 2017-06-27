@@ -41,7 +41,7 @@ public:
 	/* agentModelPattern - GENERAL */
 	virtual void	setSimuMode(int simuMode);
 	virtual int		getSimuMode(void);
-	virtual void	runProcess(int processID);
+	virtual void	runProcess(int processID, int arg);
 
 	/* agentModelPattern - Rotor */
 	virtual long	requestPos(void);

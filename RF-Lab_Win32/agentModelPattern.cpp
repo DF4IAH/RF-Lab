@@ -259,7 +259,7 @@ void agentModelPattern::run(void)
 								if (comRspData.stat != C_COMRSP_DATA) break;
 								if (!comRspData.data[0]) break;
 								initState = 0x33;
-								Sleep(100);
+								Sleep(100L);
 								initState = 0x34;
 
 								/* IEC adapter target address */
@@ -275,7 +275,7 @@ void agentModelPattern::run(void)
 								initState = 0xE4;
 								if (comRspData.stat != C_COMRSP_DATA) break;
 								initState = 0x35;
-								Sleep(100);
+								Sleep(100L);
 								initState = 0x36;
 
 								/* IEC adapter enable automatic target response handling */
@@ -385,7 +385,7 @@ void agentModelPattern::run(void)
 							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							initState = 0x55;
-							Sleep(2500);
+							Sleep(2500L);
 							initState = 0x56;
 						}
 						catch (const Concurrency::operation_timed_out& e) {
@@ -531,7 +531,7 @@ void agentModelPattern::run(void)
 							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							initState = 0xA5;
-							Sleep(2500);
+							Sleep(2500L);
 							initState = 0xA6;
 
 							comReqData.parm = string(":INIT:CONT ON\r\n");
@@ -614,23 +614,6 @@ void agentModelPattern::run(void)
 				_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
 			}
 
-			case C_MODELPATTERN_RUNSTATES_GOTO_X:
-			{
-				agentComReq comReqData;
-				agentComRsp comRspData;
-
-				int gotoMilliPos = 0;
-				if (_arg) {
-					gotoMilliPos = *((int*)_arg);
-					_arg = nullptr;
-				}
-				
-				(void) requestPos();
-				sendPos((int)(gotoMilliPos * 0.8));
-				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
-			}
-			break;
-
 			case C_MODELPATTERN_RUNSTATES_CLOSE_COM:
 			{
 				agentComReq comReqData;
@@ -697,7 +680,7 @@ void agentModelPattern::Release(void)
 
 	// wait until all threads are done
 	while (!_done) {
-		Sleep(1);
+		Sleep(10L);
 	}
 
 	// release objects
@@ -726,16 +709,15 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 	{
 	case ID_ROTOR_GOTO_0:
 		if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
-			_arg = nullptr;
-			_runState = C_MODELPATTERN_RUNSTATES_GOTO_X;
+			runProcess(C_MODELPATTERN_PROCESS_GOTO_X, 0);
 		}
 		break;
 
 	case ID_ROTOR_GOTO_X:
 		if (arg) {
 			if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
-				_arg = arg;
-				_runState = C_MODELPATTERN_RUNSTATES_GOTO_X;
+				int* pi = (int*)arg;
+				runProcess(C_MODELPATTERN_PROCESS_GOTO_X, *pi);
 			}
 		}
 		break;
@@ -754,45 +736,61 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		switch (m->c->processing_ID)
 		{
 
+		case C_MODELPATTERN_PROCESS_GOTO_X:
+		{  // go to direction
+			int gotoMilliPos = m->c->processing_arg1;
+			m->c->processing_arg1 = 0;
+
+			long posNow = m->c->requestPos();
+			long posNext = (long)(gotoMilliPos * (AGENT_PATTERN_ROT_TICKS_PER_DEGREE / 1000.0));
+			m->c->sendPos(posNext);
+			Sleep(calcTicks2Ms(posNext - posNow));
+
+			m->c->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
+		}
+		break;
+
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG:
 		{  // run a 180° antenna pattern from left = -90° to the right = +90°
-			double degStartPos = -90.0;
-			double degEndPos = 90.0;
-			double degResolution = 5.0;
+			double degStartPos = AGENT_PATTERN_POS_DEGREE_START;
+			double degEndPos = AGENT_PATTERN_POS_DEGREE_END;
+			double degResolution = AGENT_PATTERN_POS_DEGREE_STEP;
 
 			/* Set-up ROTOR */
-			long ticksDiff = m->c->requestPos();
-			m->c->sendPos(0);
-			Sleep(calcDeg2Ms(calcTicks2Deg(ticksDiff)));
-
+			long ticksNow  = m->c->requestPos();
+			long ticksNext = calcDeg2Ticks(degStartPos);
+			m->c->sendPos(ticksNext);						// Go to start position
+			Sleep(calcTicks2Ms(ticksNext - ticksNow));
 			if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 				break;
 			}
-			m->c->requestPos();
-			m->c->sendPos(calcDeg2Ticks(degStartPos));	// Go to start position
-			Sleep(calcDeg2Ms(degStartPos));
 
 			/* Set-up TX */
 
 			/* Set-up RX */
 
 			/* Iteration of rotor steps */
-			for (double degPosIter = degStartPos; degPosIter <= degEndPos; degPosIter += degResolution) {
+			double degPosIter = degStartPos;
+			while (true) {
+				/* Record data */
+				//measure();
 				if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 					break;
 				}
 
 				/* advance to new position */
-				m->c->requestPos();
-				m->c->sendPos(calcDeg2Ticks(degPosIter));
-				Sleep(calcDeg2Ms(degResolution));
-
+				degPosIter += degResolution;
+				if (degPosIter > degEndPos) {
+					break;
+				}
+				
+				ticksNow  = m->c->requestPos();
+				ticksNext = calcDeg2Ticks(degPosIter);
+				m->c->sendPos(ticksNext);
+				Sleep(calcTicks2Ms(ticksNext - ticksNow));
 				if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 					break;
 				}
-
-				/* Record data */
-				//measure();
 			}
 
 			if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
@@ -844,16 +842,18 @@ int agentModelPattern::getSimuMode(void)
 	return simuMode;
 }
 
-void agentModelPattern::runProcess(int processID)
+void agentModelPattern::runProcess(int processID, int arg)
 {
 	/* STOP at once processing ID */
 	if (processID == C_MODELPATTERN_PROCESS_STOP) {
+		processing_arg1 = arg;
 		processing_ID = processID;
 		return;
 	}
 
 	/* Cue in process ID to be done */
 	if (processing_ID == C_MODELPATTERN_PROCESS_NOOP) {
+		processing_arg1 = arg;
 		processing_ID = processID;
 	}
 }
@@ -876,7 +876,7 @@ long agentModelPattern::requestPos(void)
 		do {
 			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 			comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);	// drop queue
-			Sleep(10);
+			Sleep(10L);
 		} while (strncmp(comRspData.data.c_str(), "OK", 2));
 
 		do {
@@ -907,15 +907,15 @@ long agentModelPattern::requestPos(void)
 	return pos;
 }
 
-void agentModelPattern::sendPos(int tickPos)
+void agentModelPattern::sendPos(long tickPos)
 {
 	agentComReq comReqData;
 	agentComRsp comRspData;
-	int posDiff = tickPos - getLastTickPos();
+	long posDiff = tickPos - getLastTickPos();
 	char cbuf[C_BUF_SIZE];
 
 	try {
-		snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%d\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
+		snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%ld\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
 		comReqData.cmd = C_COMREQ_COM_SEND;
 		comReqData.parm = string(cbuf);
 		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
@@ -1201,5 +1201,10 @@ inline DWORD agentModelPattern::calcDeg2Ms(double deg)
 	if (deg < 0) {
 		deg = -deg;
 	}
-	return (DWORD)(deg * AGENT_PATTERN_ROT_MS_PER_DEGREE);
+	return (DWORD)(500L + deg * AGENT_PATTERN_ROT_MS_PER_DEGREE);
+}
+
+inline DWORD agentModelPattern::calcTicks2Ms(long ticks)
+{
+	return calcDeg2Ms(calcTicks2Deg(ticks));
 }

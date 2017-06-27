@@ -410,7 +410,7 @@ static void ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT message)
 	switch (message) {
 	case ID_MODEL_PATTERN_STOP:
 		{
-			agentModel::runProcess(C_MODELPATTERN_PROCESS_STOP);
+			agentModel::runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
 		}
 		break;
 
@@ -420,7 +420,7 @@ static void ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT message)
 			// xxx();
 			
 			// Start recording of pattern
-			agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG);
+			agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG, 0);
 		}
 		break;
 	}

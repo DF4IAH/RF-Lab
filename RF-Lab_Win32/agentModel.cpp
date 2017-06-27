@@ -178,10 +178,10 @@ int agentModel::getSimuMode(void)
 	}
 }
 
-void agentModel::runProcess(int processID)
+void agentModel::runProcess(int processID, int arg)
 {
 	if (g_am && g_am->_curModel) {
-		return g_am->_curModel->runProcess(processID);
+		return g_am->_curModel->runProcess(processID, arg);
 	}
 }
 

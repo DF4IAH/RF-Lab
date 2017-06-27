@@ -29,7 +29,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-static void			ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT message);
+static void			ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT wmId);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -185,7 +185,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case ID_MODEL_PATTERN_STOP:
 			case ID_MODEL_PATTERN_START:
-				ModelPatternStart(hInst, hWnd, message);
+				ModelPatternStart(hInst, hWnd, wmId);
 				break;
 
 			default:

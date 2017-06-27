@@ -75,10 +75,10 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 
 void agentModelPattern::threadsStart(void)
 {
-	//hThreadProcessID = CreateMutex(NULL, TRUE, NULL);		// Mutex is locked by the creator
 	hThreadProcessID = CreateMutex(NULL, FALSE, NULL);		// Mutex is still free
 	sThreadDataProcessID.threadNo = 1;
 	sThreadDataProcessID.c = this;
+	processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 	_beginthread(&procThreadProcessID, 0, &sThreadDataProcessID);
 }
 
@@ -86,8 +86,7 @@ void agentModelPattern::threadsStop(void)
 {
 	/* End thread */
 	processing_ID = C_MODELPATTERN_PROCESS_END;
-	WaitForSingleObject(hThreadProcessID, INFINITE);
-	//WaitForSingleObject(hThreadProcessID, 10000L);		// Wait until the thread has ended (timeout = 10 secs
+	WaitForSingleObject(hThreadProcessID, 10000L);			// Wait until the thread has ended (timeout = 10 secs
 	CloseHandle(hThreadProcessID);
 }
 
@@ -615,13 +614,6 @@ void agentModelPattern::run(void)
 				_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
 			}
 
-			case C_MODELPATTERN_RUNSTATES_RUNNING:
-			{
-
-				Sleep(10);
-			}
-			break;
-
 			case C_MODELPATTERN_RUNSTATES_GOTO_X:
 			{
 				agentComReq comReqData;
@@ -673,9 +665,10 @@ void agentModelPattern::run(void)
 			}
 			break;
 
+			case C_MODELPATTERN_RUNSTATES_RUNNING:
 			case C_MODELPATTERN_RUNSTATES_NOOP:
 			default:
-				Sleep(50);
+				Sleep(25L);
 				break;
 			}
 		}
@@ -772,7 +765,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 			m->c->sendPos(0);
 			Sleep(calcDeg2Ms(calcTicks2Deg(ticksDiff)));
 
-			if (!m->c->processing_ID) {
+			if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 				break;
 			}
 			m->c->requestPos();
@@ -785,7 +778,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 			/* Iteration of rotor steps */
 			for (double degPosIter = degStartPos; degPosIter <= degEndPos; degPosIter += degResolution) {
-				if (!m->c->processing_ID) {
+				if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 					break;
 				}
 
@@ -794,11 +787,15 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				m->c->sendPos(calcDeg2Ticks(degPosIter));
 				Sleep(calcDeg2Ms(degResolution));
 
+				if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
+					break;
+				}
+
 				/* Record data */
 				//measure();
 			}
 
-			if (!m->c->processing_ID) {
+			if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 				break;
 			}
 			/* Return ROTOR to center position */
@@ -825,7 +822,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		case C_MODELPATTERN_PROCESS_NOOP:
 		default:
 		{
-			Sleep(50L);
+			Sleep(25L);
 		}
 
 		}  // switch(m->c->processing_ID)
@@ -851,12 +848,12 @@ void agentModelPattern::runProcess(int processID)
 {
 	/* STOP at once processing ID */
 	if (processID == C_MODELPATTERN_PROCESS_STOP) {
-		processing_ID = 0;
+		processing_ID = processID;
 		return;
 	}
 
 	/* Cue in process ID to be done */
-	if (!processing_ID) {
+	if (processing_ID == C_MODELPATTERN_PROCESS_NOOP) {
 		processing_ID = processID;
 	}
 }

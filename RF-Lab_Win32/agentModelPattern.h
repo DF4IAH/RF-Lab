@@ -46,16 +46,16 @@ enum C_MODELPATTERN_RUNSTATES_ENUM {
 };
 
 enum C_MODELPATTERN_PROCESSES_ENUM {
-	C_MODELPATTERN_PROCESS_NOOP = 0,
+	C_MODELPATTERN_PROCESS_END = 0,
 	C_MODELPATTERN_PROCESS_STOP,
+	C_MODELPATTERN_PROCESS_NOOP,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
-	C_MODELPATTERN_PROCESS_END,
 };
 
 
 class agentModelPattern;
 typedef struct threadDataProcessID_s {
-	UINT								threadNo;
+	int									threadNo;
 	agentModelPattern*					c;
 } threadDataProcessID_t;
 

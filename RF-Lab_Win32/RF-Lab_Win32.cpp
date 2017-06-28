@@ -184,7 +184,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case ID_MODEL_PATTERN_STOP:
-			case ID_MODEL_PATTERN_START:
+			case ID_MODEL_PATTERN_180_START:
+			case ID_MODEL_PATTERN_360_START:
 				ModelPatternStart(hInst, hWnd, wmId);
 				break;
 
@@ -408,20 +409,32 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 static void ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT message)
 {
 	switch (message) {
-	case ID_MODEL_PATTERN_STOP:
-		{
-			agentModel::runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
-		}
-		break;
 
-	case ID_MODEL_PATTERN_START:
-		{
-			// Init display part
-			// xxx();
-			
-			// Start recording of pattern
-			agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG, 0);
-		}
-		break;
+	case ID_MODEL_PATTERN_STOP:
+	{
+		agentModel::runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
 	}
+	break;
+
+	case ID_MODEL_PATTERN_180_START:
+	{
+		// Init display part
+		// xxx();
+
+		// Start recording of pattern
+		agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG, 0);
+	}
+	break;
+
+	case ID_MODEL_PATTERN_360_START:
+	{
+		// Init display part
+		// xxx();
+
+		// Start recording of pattern
+		agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG, 0);
+	}
+	break;
+
+	}  // switch (message) {
 }

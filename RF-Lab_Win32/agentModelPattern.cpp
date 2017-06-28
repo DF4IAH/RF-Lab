@@ -752,54 +752,31 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG:
 		{  // run a 180° antenna pattern from left = -90° to the right = +90°
-			double degStartPos = AGENT_PATTERN_POS_DEGREE_START;
-			double degEndPos = AGENT_PATTERN_POS_DEGREE_END;
-			double degResolution = AGENT_PATTERN_POS_DEGREE_STEP;
 
-			/* Set-up ROTOR */
-			long ticksNow  = m->c->requestPos();
-			long ticksNext = calcDeg2Ticks(degStartPos);
-			m->c->sendPos(ticksNext);						// Go to start position
-			Sleep(calcTicks2Ms(ticksNext - ticksNow));
-			if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
-				break;
+			int ret = m->c->runningProcessPattern(
+				AGENT_PATTERN_180_POS_DEGREE_START,
+				AGENT_PATTERN_180_POS_DEGREE_END,
+				AGENT_PATTERN_180_POS_DEGREE_STEP
+			);
+			if (ret == -1) {
+				break; // process STOPPED
 			}
 
-			/* Set-up TX */
+			m->c->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
+		}
+		break;
 
-			/* Set-up RX */
+		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG:
+		{  // run a 180° antenna pattern from left = -90° to the right = +90°
 
-			/* Iteration of rotor steps */
-			double degPosIter = degStartPos;
-			while (true) {
-				/* Record data */
-				//measure();
-				if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
-					break;
-				}
-
-				/* advance to new position */
-				degPosIter += degResolution;
-				if (degPosIter > degEndPos) {
-					break;
-				}
-				
-				ticksNow  = m->c->requestPos();
-				ticksNext = calcDeg2Ticks(degPosIter);
-				m->c->sendPos(ticksNext);
-				Sleep(calcTicks2Ms(ticksNext - ticksNow));
-				if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
-					break;
-				}
+			int ret = m->c->runningProcessPattern(
+				AGENT_PATTERN_360_POS_DEGREE_START,
+				AGENT_PATTERN_360_POS_DEGREE_END,
+				AGENT_PATTERN_360_POS_DEGREE_STEP
+			);
+			if (ret == -1) {
+				break; // process STOPPED
 			}
-
-			if (m->c->processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
-				break;
-			}
-			/* Return ROTOR to center position */
-			m->c->requestPos();
-			m->c->sendPos(0);
-			Sleep(calcDeg2Ms(degEndPos));
 
 			m->c->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 		}
@@ -1180,6 +1157,58 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 
 
 /* TOOLS */
+
+int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPos, double degResolution)
+{  // run a antenna pattern from left = degStartPos to the right = degEndPos
+
+	/* Set-up ROTOR */
+	long ticksNow = requestPos();
+	long ticksNext = calcDeg2Ticks(degStartPos);
+	sendPos(ticksNext);										// Go to start position
+	Sleep(calcTicks2Ms(ticksNext - ticksNow));
+	if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
+		return -1;
+	}
+
+	/* Set-up TX */
+
+	/* Set-up RX */
+
+	/* Iteration of rotor steps */
+	double degPosIter = degStartPos;
+	while (true) {
+		/* Record data */
+		//measure();
+		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
+			return -1;
+		}
+
+		/* advance to new position */
+		degPosIter += degResolution;
+		if (degPosIter > degEndPos) {
+			break;
+		}
+
+		ticksNow = requestPos();
+		ticksNext = calcDeg2Ticks(degPosIter);
+		sendPos(ticksNext);
+		Sleep(calcTicks2Ms(ticksNext - ticksNow));
+		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
+			return -1;
+		}
+	}
+
+	if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
+		return -1;
+	}
+	/* Return ROTOR to center position */
+	requestPos();
+	sendPos(0);
+	Sleep(calcDeg2Ms(degEndPos));
+
+	processing_ID = C_MODELPATTERN_PROCESS_NOOP;
+	return 0;
+}
 
 inline double agentModelPattern::calcTicks2Deg(long ticks)
 {

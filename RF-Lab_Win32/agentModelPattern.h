@@ -10,31 +10,36 @@ using namespace std;
 
 
 
-#define AGENT_PATTERN_RECEIVE_TIMEOUT		 2500
+#define AGENT_PATTERN_RECEIVE_TIMEOUT			  2500
 
 /* ROTOR: Count of ticks to turn 1° right */
-#define AGENT_PATTERN_ROT_TICKS_PER_DEGREE	  800
+#define AGENT_PATTERN_ROT_TICKS_PER_DEGREE		   800
 
 /* ROTOR: Time in ms delay for turning 1° */
-#define AGENT_PATTERN_ROT_MS_PER_DEGREE		   70
+#define AGENT_PATTERN_ROT_MS_PER_DEGREE				70
 
-/* ROTOR: Pattern is measured between these to limits */
-#define AGENT_PATTERN_POS_DEGREE_START		-90.0
-#define AGENT_PATTERN_POS_DEGREE_END		 90.0
-#define AGENT_PATTERN_POS_DEGREE_STEP		  5.0
+/* ROTOR: Pattern 180° is measured between these to limits */
+#define AGENT_PATTERN_180_POS_DEGREE_START		 -90.0
+#define AGENT_PATTERN_180_POS_DEGREE_END		  90.0
+#define AGENT_PATTERN_180_POS_DEGREE_STEP		   5.0
+
+/* ROTOR: Pattern 360° is measured between these to limits */
+#define AGENT_PATTERN_360_POS_DEGREE_START		-180.0
+#define AGENT_PATTERN_360_POS_DEGREE_END		 180.0
+#define AGENT_PATTERN_360_POS_DEGREE_STEP		   5.0
 
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter RF on/off */
-#define AGENT_PATTERN_TX_ON_STATE_DEFAULT	 TRUE
+#define AGENT_PATTERN_TX_ON_STATE_DEFAULT		TRUE
 
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter frequency 24 GHz */
-#define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT  24e9
+#define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT		  24e9
 
 /* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter power -20 dBm */
-#define AGENT_PATTERN_TX_PWR_VALUE_DEFAULT   -20
+#define AGENT_PATTERN_TX_PWR_VALUE_DEFAULT		   -20
 
 
 /* RX: Rohde & Schwarz FSEK20 (spectrum analyzer) - frequency span 100 kHz */
-#define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT  100e3
+#define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT		 100e3
 
 
 enum C_MODELPATTERN_RUNSTATES_ENUM {
@@ -55,6 +60,7 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 	C_MODELPATTERN_PROCESS_NOOP,
 	C_MODELPATTERN_PROCESS_GOTO_X,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
+	C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG,
 };
 
 
@@ -143,6 +149,7 @@ public:
 	bool		getRxMarkerPeak(double* retX, double* retY);
 
 	/* Tools */
+	int			runningProcessPattern(double degStartPos, double degEndPos, double degResolution);
  static double	calcTicks2Deg(long ticks);
  static long	calcDeg2Ticks(double deg);
  static DWORD	calcDeg2Ms(double deg);

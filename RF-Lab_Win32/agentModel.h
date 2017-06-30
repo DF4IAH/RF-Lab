@@ -30,11 +30,13 @@ typedef enum AGENT_ALL_SIMUMODE {
 typedef struct agentModelReq
 {
 	SHORT								 cmd;
+	ULONG32								 data;
 } agentModelReq_t;
 
 typedef struct agentModelRsp
 {
 	SHORT								 stat;
+	ULONG32								 data;
 } agentModelRsp_t;
 
 

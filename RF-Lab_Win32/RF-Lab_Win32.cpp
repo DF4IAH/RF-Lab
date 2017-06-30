@@ -29,6 +29,8 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+static int			AskRotorPosX(HINSTANCE hInst, HWND hWnd);
+static int			AskTxSettings(HINSTANCE hInst, HWND hWnd); 
 static void			ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT wmId);
 
 

@@ -19,6 +19,7 @@
 
 
 WinSrv* g_instance = nullptr;
+extern HINSTANCE hInst;                                // Aktuelle Instanz
 
 
 template <class T>  void SafeRelease(T **ppT)
@@ -57,10 +58,12 @@ float DPIScale::scaleY = 1.0f;
 
 
 WinSrv::WinSrv() : hWnd(nullptr)
+				 , hwndStatus(nullptr)
 				 , pFactory(nullptr)
 				 , pRenderTarget(nullptr)
 				 , pBrush(nullptr)
 				 , _size(D2D1_SIZE_F())
+				 , _PD({ 0 })
 				 , pAgtModel(nullptr)
 				 , pAgtCom { nullptr, nullptr,nullptr }
 				 , _winExitReceived(FALSE)
@@ -83,6 +86,8 @@ WinSrv::~WinSrv()
 			SafeRelease(&pAgtCom[i]);
 		}
 	}
+
+	//SafeRelease(&hwndStatus);
 
 	SafeRelease(&pBrush);
 	SafeRelease(&pRenderTarget);
@@ -151,8 +156,12 @@ LRESULT WinSrv::setWindow(HWND hWnd)
 		if (SUCCEEDED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
 		{
 			if (SUCCEEDED(createGraphicsResources())) {
-				_ready = TRUE;
-				return 0;
+				/* Create the status bar */
+				this->hwndStatus = DoCreateStatusBar(this->hWnd, 0, hInst, 3);
+				if (this->hwndStatus) {
+					_ready = TRUE;
+					return 0;
+				}
 			}
 
 			// more...   @see  https://msdn.microsoft.com/de-de/library/windows/desktop/dd756692(v=vs.85).aspx
@@ -180,8 +189,8 @@ void WinSrv::paint()
 		// D2Draw-style
 		pRenderTarget->BeginDraw();
 
-		pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::SkyBlue));
-		pRenderTarget->DrawLine(D2D1::Point2F(0, 0), D2D1::Point2F(_size.width, _size.height), pBrush);
+		pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Wheat));
+		//pRenderTarget->DrawLine(D2D1::Point2F(0, 0), D2D1::Point2F(_size.width, _size.height), pBrush);
 		//ClientToScreen(hWnd, &pt);
 
 		//pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
@@ -267,6 +276,71 @@ void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
 	if (pAgtModel) {
 		pAgtModel->wmCmd(wmId, arg);
 	}
+}
+
+
+// Description: 
+//   Creates a status bar and divides it into the specified number of parts.
+// Parameters:
+//   hwndParent - parent window for the status bar.
+//   idStatus - child window identifier of the status bar.
+//   hinst - handle to the application instance.
+//   cParts - number of parts into which to divide the status bar.
+// Returns:
+//   The handle to the status bar.
+//
+HWND WinSrv::DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts)
+{
+	HWND hwndStatus;
+	RECT rcClient;
+	HLOCAL hloc;
+	PINT paParts;
+	int i, nWidth;
+
+	// Ensure that the common control DLL is loaded.
+	//InitCommonControls();
+
+	// Create the status bar.
+	hwndStatus = CreateWindowEx(
+		0,                       // no extended styles
+		STATUSCLASSNAME,         // name of status bar class
+		(PCTSTR)NULL,            // no text when first created
+		SBARS_SIZEGRIP |         // includes a sizing grip
+		WS_CHILD | WS_VISIBLE,   // creates a visible child window
+		0, 0, 0, 0,              // ignores size and position
+		hwndParent,              // handle to parent window
+		(HMENU)idStatus,         // child window identifier
+		hinst,                   // handle to application instance
+		NULL);                   // no window creation data
+
+								 // Get the coordinates of the parent window's client area.
+	GetClientRect(hwndParent, &rcClient);
+
+	// Allocate an array for holding the right edge coordinates.
+	hloc = LocalAlloc(LHND, sizeof(int) * cParts);
+	paParts = (PINT)LocalLock(hloc);
+
+	// Calculate the right edge coordinate for each part, and
+	// copy the coordinates to the array.
+	nWidth = rcClient.right / cParts;
+	int rightEdge = nWidth;
+	for (i = 0; i < cParts; i++) {
+		paParts[i] = rightEdge;
+		rightEdge += nWidth;
+	}
+
+	// Tell the status bar to create the window parts.
+	SendMessage(hwndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
+
+	/* Status line information */
+	SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)L"Status 1");
+	SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)L"Status 2");
+	SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)L"Status 3");
+
+	// Free the array, and return.
+	LocalUnlock(hloc);
+	LocalFree(hloc);
+	return hwndStatus;
 }
 
 

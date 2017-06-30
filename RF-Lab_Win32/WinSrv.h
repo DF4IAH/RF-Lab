@@ -9,13 +9,22 @@
 
 class WinSrv
 {
+public:
+	typedef struct PresentationData_s {
+		char                             statusLine[100];
+	} PresentationData_t;
+
+
 private:
-	HWND					 hWnd;
+	HWND								 hWnd;
+	HWND								 hwndStatus;
 
 	ID2D1Factory						*pFactory;
 	ID2D1HwndRenderTarget				*pRenderTarget;
 	ID2D1SolidColorBrush				*pBrush;
 	D2D1_SIZE_F							 _size;
+
+	PresentationData_t					 _PD;
 
 	unbounded_buffer<agentModelReq>		 _ub_agtModel_req;
 	unbounded_buffer<agentModelRsp>		 _ob_agtModel_rsp;
@@ -44,6 +53,7 @@ private:
 	void threadsStart();
 	void threadsStop();
 	void wmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
+	HWND DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts);
 
 public:
 	static void srvStart();

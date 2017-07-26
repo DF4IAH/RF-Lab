@@ -19,7 +19,7 @@
 
 
 WinSrv* g_instance = nullptr;
-extern HINSTANCE hInst;                                // Aktuelle Instanz
+extern HINSTANCE g_hInst;                                // Aktuelle Instanz
 
 
 template <class T>  void SafeRelease(T **ppT)
@@ -58,7 +58,7 @@ float DPIScale::scaleY = 1.0f;
 
 
 WinSrv::WinSrv() : hWnd(nullptr)
-				 , hwndStatus(nullptr)
+				 , hWndStatus(nullptr)
 				 , pFactory(nullptr)
 				 , pRenderTarget(nullptr)
 				 , pBrush(nullptr)
@@ -101,9 +101,10 @@ void WinSrv::threadsStart()
 {
 	// start the master model with the antenna pattern model variant
 	pAgtModel  = new agentModel(
-		&_ub_agtModel_req, 
-		&_ob_agtModel_rsp, 
-		agentModel::AGENT_MODEL_PATTERN, 
+		&_ub_agtModel_req,
+		&_ob_agtModel_rsp,
+		this,
+		agentModel::AGENT_MODEL_PATTERN,
 		(AGENT_ALL_SIMUMODE_t) (AGENT_ALL_SIMUMODE_NO_RX | AGENT_ALL_SIMUMODE_NO_TX | AGENT_ALL_SIMUMODE_RUN_BARGRAPH)
 	);
 
@@ -165,8 +166,8 @@ LRESULT WinSrv::setWindow(HWND hWnd)
 				ShowWindow(hWnd, SW_MAXIMIZE);
 
 				/* Create the status bar with 3 equal spaced separations */
-				this->hwndStatus = DoCreateStatusBar(this->hWnd, 63, hInst, StatusBarParts);
-				if (this->hwndStatus) {
+				this->hWndStatus = DoCreateStatusBar(this->hWnd, 63, g_hInst, StatusBarParts);
+				if (this->hWndStatus) {
 					/* Resize back to the size before */
 					SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, rc.right, rc.bottom, 0);
 
@@ -228,7 +229,7 @@ void WinSrv::resize()
 		D2D1_SIZE_U size = D2D1::SizeU(rc.right, rc.bottom);
 
 		pRenderTarget->Resize(size);
-		OnStatusbarSize(this->hwndStatus, StatusBarParts, &rc);
+		OnStatusbarSize(this->hWndStatus, StatusBarParts, &rc);
 		calculateLayout();
 		InvalidateRect(hWnd, NULL, FALSE);
 	}
@@ -303,7 +304,7 @@ void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
 //
 HWND WinSrv::DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts)
 {
-	HWND hwndStatus;
+	HWND hWndStatus;
 	RECT rcClient;
 	HLOCAL hloc;
 	PINT paParts;
@@ -313,7 +314,7 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, i
 	//InitCommonControls();
 
 	// Create the status bar.
-	hwndStatus = CreateWindowEx(
+	hWndStatus = CreateWindowEx(
 		0,                       // no extended styles
 		STATUSCLASSNAME,         // name of status bar class
 		(PCTSTR)NULL,            // no text when first created
@@ -342,17 +343,17 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, i
 	}
 
 	// Tell the status bar to create the window parts.
-	SendMessage(hwndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
+	SendMessage(hWndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
 
 	/* Status line information */
-	SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)L"Status 1");
-	SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)L"Status 2");
-	SendMessage(hwndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)L"Status 3");
+	SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)L"Status 1");
+	SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)L"Status 2");
+	SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)L"Status 3");
 
 	// Free the array, and return.
 	LocalUnlock(hloc);
 	LocalFree(hloc);
-	return hwndStatus;
+	return hWndStatus;
 }
 
 void WinSrv::OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size)
@@ -440,4 +441,21 @@ void WinSrv::srvWmCmd(HWND hWnd, int wmId, LPVOID arg)
 	if (g_instance && g_instance->isReady()) {
 		g_instance->wmCmd(hWnd, wmId, arg);
 	}
+}
+
+void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus)
+{
+	if (modelVariant) {
+		SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)modelVariant);
+	}
+
+	if (modelStatus) {
+		SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)modelStatus);
+	}
+
+	//InvalidateRect(hWndStatus, NULL, FALSE);
+	//InvalidateRect(hWnd, NULL, FALSE);
+	//SendMessage(hWndStatus, WM_SIZE, 0, 0);
+	//SendMessage(hWnd, WM_SIZE, 0, 0);
+	//SendMessage(hWndStatus, WM_DISPLAYCHANGE, 0, 0);
 }

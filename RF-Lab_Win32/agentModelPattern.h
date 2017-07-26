@@ -80,6 +80,8 @@ private:
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 	LPVOID								 _arg;
 
+	class agentModel					*pAgtMod;
+
 	HANDLE								 hThreadProcessID;
 	threadDataProcessID_t				 sThreadDataProcessID;
 
@@ -101,7 +103,7 @@ private:
 
 
 public:
-	explicit	agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_ALL_SIMUMODE_t mode);
+	explicit	agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
 	void		run(void);
 
 private:

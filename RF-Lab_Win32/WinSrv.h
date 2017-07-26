@@ -11,7 +11,7 @@ class WinSrv
 {
 public:
 	typedef struct PresentationData_s {
-		char                             statusLine[100];
+		char                            statusLine[100];
 	} PresentationData_t;
 
 	const int							StatusBarParts = 3;
@@ -19,7 +19,7 @@ public:
 
 private:
 	HWND								 hWnd;
-	HWND								 hwndStatus;
+	HWND								 hWndStatus;
 
 	ID2D1Factory						*pFactory;
 	ID2D1HwndRenderTarget				*pRenderTarget;
@@ -66,4 +66,6 @@ public:
 	static void srvPaint();
 	static void srvResize();
 	static void srvWmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
+
+	void reportStatus(LPVOID modelVariant, LPVOID modelStatus);
 };

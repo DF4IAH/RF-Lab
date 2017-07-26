@@ -18,11 +18,13 @@ template <class T>  void SafeRelease(T **ppT)
 }
 
 
-agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_ALL_SIMUMODE_t mode)
+agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class agentModel *am, AGENT_ALL_SIMUMODE_t mode)
 				 : pAgtComReq{ nullptr }
 				 , pAgtComRsp{ nullptr }
 				 , pAgtCom{ nullptr }
 				 , _arg(nullptr)
+
+				 , pAgtMod(am)
 
 				 , hThreadProcessID(nullptr)
 				 , sThreadDataProcessID( { 0 } )
@@ -118,6 +120,7 @@ void agentModelPattern::run(void)
 				agentComReq comReqData;
 				
 				initState = 0x01;
+				 pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs");
 				
 				// Open Rotor
 				if (pAgtCom[C_COMINST_ROT]) {
@@ -126,6 +129,7 @@ void agentModelPattern::run(void)
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 					initState = 0x02;
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor connected");
 				}
 
 				// Open TX

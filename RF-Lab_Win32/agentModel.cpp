@@ -20,9 +20,10 @@ template <class T>  void SafeRelease(T **ppT)
 agentModel *g_am = nullptr;
 
 
-agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode)
+agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode)
 				 : _src(src)
 				 , _tgt(tgt)
+				 , _winSrv(winSrv)
 				 , _am_variant(am_variant)
 				 , _simuMode(mode)
 {
@@ -30,7 +31,7 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 
 	switch (am_variant) {
 	case AGENT_MODEL_PATTERN:
-		_curModel = new agentModelPattern(src, tgt, mode);
+		_curModel = new agentModelPattern(src, tgt, this, mode);
 		break;
 
 	case AGENT_MODEL_NONE:
@@ -90,6 +91,11 @@ void agentModel::wmCmd(int wmId, LPVOID arg)
 	if (g_am && g_am->_curModel) {
 		g_am->_curModel->wmCmd(wmId, arg);
 	}
+}
+
+class WinSrv* agentModel::getWinSrv(void)
+{
+	return _winSrv;
 }
 
 
@@ -176,6 +182,11 @@ int agentModel::getSimuMode(void)
 	else {
 		return 0;
 	}
+}
+
+void agentModel::sendModelStatus(LPVOID status1, LPVOID status2)
+{
+
 }
 
 void agentModel::runProcess(int processID, int arg)

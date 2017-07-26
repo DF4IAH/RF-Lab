@@ -54,11 +54,12 @@ private:
 	ITarget<agentModelRsp_t>			*_tgt;
 	AGENT_MODELS						 _am_variant;
 	AGENT_ALL_SIMUMODE					 _simuMode;
+	class WinSrv						*_winSrv;
 	class agentModelVariant				*_curModel;
 
 
 public:
-	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode);
+	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode);
 	~agentModel(void);
 
 protected:
@@ -71,6 +72,9 @@ public:
 	static bool		shutdown(void);
 	static void		wmCmd(int wmId, LPVOID arg = nullptr);
 
+	class WinSrv*	getWinSrv(void);
+
+
 	/* Tools */
 	static bool		parseStr2Bool(bool* ret, const char* ary, const char* fmt, char delimRight = 0);
 	static bool		parseStr2Long(long* ret, const char* ary, const char* fmt, char delimRight = 0);
@@ -80,6 +84,7 @@ public:
 	/* agentModelPattern - GENERAL */
 	static void		setSimuMode(int simuMode);
 	static int		getSimuMode(void);
+	static void		sendModelStatus(LPVOID status1, LPVOID status2);
 	static void		runProcess(int processID, int arg);
 
 	/* agentModelPattern - Rotor */

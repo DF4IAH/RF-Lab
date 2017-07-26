@@ -19,19 +19,19 @@
 #define MAX_LOADSTRING 100
 
 // Globale Variablen:
-HINSTANCE hInst;                                // Aktuelle Instanz
-WCHAR szTitle[MAX_LOADSTRING];                  // Titelleistentext
-WCHAR szWindowClass[MAX_LOADSTRING];            // Klassenname des Hauptfensters
-int iCbValue;
+HINSTANCE g_hInst;								// Aktuelle Instanz
+WCHAR g_szTitle[MAX_LOADSTRING];				// Titelleistentext
+WCHAR g_szWindowClass[MAX_LOADSTRING];			// Klassenname des Hauptfensters
+int g_iCbValue;
 
 // Vorwärtsdeklarationen der in diesem Codemodul enthaltenen Funktionen:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-static int			AskRotorPosX(HINSTANCE hInst, HWND hWnd);
-static int			AskTxSettings(HINSTANCE hInst, HWND hWnd); 
-static void			ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT wmId);
+static int			AskRotorPosX(HINSTANCE g_hInst, HWND hWnd);
+static int			AskTxSettings(HINSTANCE g_hInst, HWND hWnd); 
+static void			ModelPatternStart(HINSTANCE g_hInst, HWND hWnd, UINT wmId);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -43,17 +43,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
 	// init global values
-	hInst = nullptr;
-	*szTitle = 0;
-	*szWindowClass = 0;
-	iCbValue = 0;
+	g_hInst = nullptr;
+	*g_szTitle = 0;
+	*g_szWindowClass = 0;
+	g_iCbValue = 0;
 
 	// Windows-Kommunikationsserver anstarten
 	WinSrv::srvStart();
 
     // Globale Zeichenfolgen initialisieren
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_RFLAB_WIN32, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDS_APP_TITLE, g_szTitle, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_RFLAB_WIN32, g_szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
     // Anwendungsinitialisierung ausführen:
@@ -100,7 +100,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_RFLAB_WIN32);
-    wcex.lpszClassName  = szWindowClass;
+    wcex.lpszClassName  = g_szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
     return RegisterClassExW(&wcex);
@@ -119,9 +119,9 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // Instanzenhandle in der globalen Variablen speichern
+   g_hInst = hInstance; // Instanzenhandle in der globalen Variablen speichern
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   HWND hWnd = CreateWindowW(g_szWindowClass, g_szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
@@ -129,8 +129,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   // Windows-Kommunikationsserver neues Window-Instanzenhandle mitteilen
-   WinSrv::srvSetWindow(hWnd);
+   WinSrv::srvSetWindow(hWnd); // Windows-Kommunikationsserver neues Window-Instanzenhandle mitteilen
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -163,7 +162,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             switch (wmId)
             {
             case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
             case IDM_EXIT:
 				WinSrv::srvWinExit();
@@ -175,20 +174,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case ID_ROTOR_GOTO_X:
-				argInt = AskRotorPosX(hInst, hWnd);
+				argInt = AskRotorPosX(g_hInst, hWnd);
 				if (argInt != MAXINT16) {  // Position nur verändern, wenn gültiger Wert vorliegt
 					WinSrv::srvWmCmd(hWnd, wmId, &argInt);
 				}
 				break;
 
 			case ID_TX_SETTINGS:
-				AskTxSettings(hInst, hWnd);
+				AskTxSettings(g_hInst, hWnd);
 				break;
 
 			case ID_MODEL_PATTERN_STOP:
 			case ID_MODEL_PATTERN_180_START:
 			case ID_MODEL_PATTERN_360_START:
-				ModelPatternStart(hInst, hWnd, wmId);
+				ModelPatternStart(g_hInst, hWnd, wmId);
 				break;
 
 			default:
@@ -244,18 +243,18 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 // Dialog for Rotor Position to go to
 // returns milli-degrees
-static int AskRotorPosX(HINSTANCE hInst, HWND hWnd)
+static int AskRotorPosX(HINSTANCE g_hInst, HWND hWnd)
 {
 	int lastPos = agentModel::requestPos() / 800;
-	iCbValue = lastPos;
+	g_iCbValue = lastPos;
 
 	// MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);
-	if (IDOK == DialogBox(hInst,
+	if (IDOK == DialogBox(g_hInst,
 							MAKEINTRESOURCE(IDD_ROTOR_POS_X),
 							hWnd,
 							(DLGPROC) RotorPosX_CB)) {
-		if (iCbValue != MAXINT16) {
-			return iCbValue * 1000;
+		if (g_iCbValue != MAXINT16) {
+			return g_iCbValue * 1000;
 		}
 	}
 
@@ -273,14 +272,14 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 
 	switch (message) {
 	case WM_INITDIALOG:
-		if (iCbValue < -180) {
-			iCbValue = -180;
+		if (g_iCbValue < -180) {
+			g_iCbValue = -180;
 		}
-		else if (iCbValue > 180) {
-			iCbValue = 180;
+		else if (g_iCbValue > 180) {
+			g_iCbValue = 180;
 		}
 
-		swprintf_s(szIdcRotorPosXCurrent, L"%d", iCbValue);
+		swprintf_s(szIdcRotorPosXCurrent, L"%d", g_iCbValue);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_CURRENT_EDIT_RO, szIdcRotorPosXCurrent);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
 		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMIN, FALSE,   0);
@@ -288,31 +287,31 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETTICFREQ,     45,   0);
 		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETLINESIZE,     0,   1);
 		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPAGESIZE,     0,  45);
-		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS,       TRUE, 180 + iCbValue);
+		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS,       TRUE, 180 + g_iCbValue);
 		return (INT_PTR)TRUE;
 		break;
 
 	case WM_HSCROLL:
 		switch (LOWORD(wParam)) {
 		case TB_THUMBTRACK:
-			iCbValue = HIWORD(wParam) - 180;
+			g_iCbValue = HIWORD(wParam) - 180;
 			break;
 
 		default:
-			iCbValue = SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0) - 180;
+			g_iCbValue = SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0) - 180;
 		}
 
-		swprintf_s(szIdcRotorPosXCurrent, L"%d", iCbValue);
+		swprintf_s(szIdcRotorPosXCurrent, L"%d", g_iCbValue);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
 		break;
 
 	case WM_KEYDOWN:
 		if (!GetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent, sizeof(szIdcRotorPosXCurrent) - 1)) {
-			iCbValue = MAXINT16;
+			g_iCbValue = MAXINT16;
 		} else {
 			// Process input
-			if (swscanf_s(szIdcRotorPosXNew, L"%d", &iCbValue)) {
-				SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS, TRUE, 180 + iCbValue);
+			if (swscanf_s(szIdcRotorPosXNew, L"%d", &g_iCbValue)) {
+				SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS, TRUE, 180 + g_iCbValue);
 			}
 		}
 		break;
@@ -323,11 +322,11 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			if (!GetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXNew, C_BUFSIZE - 1))
 			{
 				*szIdcRotorPosXNew = 0;
-				iCbValue = MAXINT16;
+				g_iCbValue = MAXINT16;
 			}
 			else {
 				// Process input
-				swscanf_s(szIdcRotorPosXNew, L"%d", &iCbValue);
+				swscanf_s(szIdcRotorPosXNew, L"%d", &g_iCbValue);
 			}
 			// Fall-through.
 		case IDCANCEL:
@@ -343,15 +342,15 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 
 // Dialog für TX Einstellungen
 // am HF Generator
-static int AskTxSettings(HINSTANCE hInst, HWND hWnd)
+static int AskTxSettings(HINSTANCE g_hInst, HWND hWnd)
 {
-	if (IDOK == DialogBox(hInst,
+	if (IDOK == DialogBox(g_hInst,
 		MAKEINTRESOURCE(IDD_TX_SETTINGS),
 		hWnd,
 		(DLGPROC)AskTxSettings_CB)) {
 
 	}
-	return iCbValue;
+	return g_iCbValue;
 }
 
 BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
@@ -408,7 +407,7 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 
 
 // Anstarten der Pattern Mess-Prozedur
-static void ModelPatternStart(HINSTANCE hInst, HWND hWnd, UINT message)
+static void ModelPatternStart(HINSTANCE g_hInst, HWND hWnd, UINT message)
 {
 	switch (message) {
 

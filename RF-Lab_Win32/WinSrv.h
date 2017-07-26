@@ -14,6 +14,8 @@ public:
 		char                             statusLine[100];
 	} PresentationData_t;
 
+	const int							StatusBarParts = 3;
+
 
 private:
 	HWND								 hWnd;
@@ -54,6 +56,7 @@ private:
 	void threadsStop();
 	void wmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
 	HWND DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts);
+	void OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size);
 
 public:
 	static void srvStart();

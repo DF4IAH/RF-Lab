@@ -156,9 +156,20 @@ LRESULT WinSrv::setWindow(HWND hWnd)
 		if (SUCCEEDED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
 		{
 			if (SUCCEEDED(createGraphicsResources())) {
-				/* Create the status bar */
-				this->hwndStatus = DoCreateStatusBar(this->hWnd, 0, hInst, 3);
+				RECT rc;
+
+				/* Get initial window size */
+				GetClientRect(hWnd, &rc);
+
+				/* Expand to max size due to a StatusBar problem */
+				ShowWindow(hWnd, SW_MAXIMIZE);
+
+				/* Create the status bar with 3 equal spaced separations */
+				this->hwndStatus = DoCreateStatusBar(this->hWnd, 63, hInst, StatusBarParts);
 				if (this->hwndStatus) {
+					/* Resize back to the size before */
+					SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, rc.right, rc.bottom, 0);
+
 					_ready = TRUE;
 					return 0;
 				}
@@ -217,6 +228,7 @@ void WinSrv::resize()
 		D2D1_SIZE_U size = D2D1::SizeU(rc.right, rc.bottom);
 
 		pRenderTarget->Resize(size);
+		OnStatusbarSize(this->hwndStatus, StatusBarParts, &rc);
 		calculateLayout();
 		InvalidateRect(hWnd, NULL, FALSE);
 	}
@@ -343,6 +355,33 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, i
 	return hwndStatus;
 }
 
+void WinSrv::OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size)
+{
+	HLOCAL hloc;
+	PINT paParts;
+	int i, nWidth;
+
+	// Allocate an array for holding the right edge coordinates.
+	hloc = LocalAlloc(LHND, sizeof(int) * cParts);
+	paParts = (PINT)LocalLock(hloc);
+
+	// Calculate the right edge coordinate for each part, and
+	// copy the coordinates to the array.
+	nWidth = size->right / cParts;
+	int rightEdge = nWidth;
+	for (i = 0; i < cParts; i++) {
+		paParts[i] = rightEdge;
+		rightEdge += nWidth;
+	}
+
+	// Tell the status bar to create the window parts.
+	SendMessage(hWndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
+	SendMessage(hWndStatus, WM_SIZE, 0, 0);
+
+	// Free the array, and return.
+	LocalUnlock(hloc);
+	LocalFree(hloc);
+}
 
 
 // Statische Methoden folgen

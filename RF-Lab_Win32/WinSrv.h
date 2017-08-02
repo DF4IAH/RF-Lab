@@ -57,12 +57,14 @@ private:
 	void wmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
 	HWND DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts);
 	void OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size);
+	bool ready();
 
 public:
 	static void srvStart();
 	static void srvStop();
 	static void srvWinExit();
 	static LRESULT srvSetWindow(HWND hWnd);
+	static bool srvReady();
 	static void srvPaint();
 	static void srvResize();
 	static void srvWmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);

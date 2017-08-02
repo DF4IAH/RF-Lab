@@ -95,6 +95,11 @@ void agentModelPattern::threadsStop(void)
 
 void agentModelPattern::run(void)
 {
+	/* Delay until window is up and ready */
+	while (!(WinSrv::srvReady())) {
+		Sleep(20);
+	}
+
 	/* Start thread for process IDs to operate */
 	threadsStart();
 

@@ -71,6 +71,7 @@ WinSrv::WinSrv() : hWnd(nullptr)
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr)) {
+		/* Start model */
 		threadsStart();
 	}
 }
@@ -384,6 +385,15 @@ void WinSrv::OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size)
 	LocalFree(hloc);
 }
 
+// Ist wahr sobald WinSrv vollständig betriebsbereit ist
+bool WinSrv::ready()
+{
+	if (hWnd && hWndStatus) {
+		return true;
+	}
+	return false;
+}
+
 
 // Statische Methoden folgen
 
@@ -419,6 +429,16 @@ LRESULT WinSrv::srvSetWindow(HWND hWnd)
 	return -1;  // non-valid invocation
 }
 
+// Ist wahr sobald WinSrv vollständig betriebsbereit ist
+bool WinSrv::srvReady()
+{
+	if (g_instance) {
+		return g_instance->ready();
+	}
+
+	return false;
+}
+
 // Zeichen-Code aufrufen
 void WinSrv::srvPaint()
 {
@@ -445,17 +465,15 @@ void WinSrv::srvWmCmd(HWND hWnd, int wmId, LPVOID arg)
 
 void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus)
 {
+	if (!this->hWndStatus) {
+		return;
+	}
+
 	if (modelVariant) {
-		SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)modelVariant);
+		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)modelVariant);
 	}
 
 	if (modelStatus) {
-		SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)modelStatus);
+		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)modelStatus);
 	}
-
-	//InvalidateRect(hWndStatus, NULL, FALSE);
-	//InvalidateRect(hWnd, NULL, FALSE);
-	//SendMessage(hWndStatus, WM_SIZE, 0, 0);
-	//SendMessage(hWnd, WM_SIZE, 0, 0);
-	//SendMessage(hWndStatus, WM_DISPLAYCHANGE, 0, 0);
 }

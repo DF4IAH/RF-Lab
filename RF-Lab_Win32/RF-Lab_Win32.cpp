@@ -129,8 +129,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   WinSrv::srvSetWindow(hWnd); // Windows-Kommunikationsserver neues Window-Instanzenhandle mitteilen
-
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 

@@ -69,5 +69,5 @@ public:
 	static void srvResize();
 	static void srvWmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
 
-	void reportStatus(LPVOID modelVariant, LPVOID modelStatus);
+	void reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo);
 };

@@ -463,17 +463,17 @@ void WinSrv::srvWmCmd(HWND hWnd, int wmId, LPVOID arg)
 	}
 }
 
-void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus)
+void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo)
 {
-	if (!this->hWndStatus) {
-		return;
-	}
-
 	if (modelVariant) {
 		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)modelVariant);
 	}
 
 	if (modelStatus) {
 		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)modelStatus);
+	}
+
+	if (modelInfo) {
+		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)modelInfo);
 	}
 }

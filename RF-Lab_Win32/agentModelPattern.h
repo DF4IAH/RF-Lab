@@ -123,6 +123,7 @@ public:
 	void		setSimuMode(int simuMode);
 	int			getSimuMode(void);
 	void		runProcess(int processID, int arg);
+	void        setStatusPosition(double pos);
 
 	/* agentModelPattern - Rotor */
 	long		requestPos(void);

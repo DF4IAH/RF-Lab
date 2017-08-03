@@ -151,6 +151,7 @@
     <ClInclude Include="agentModelVariant.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RF-Lab_Win32.h" />
+    <ClInclude Include="USB_TMC.h" />
     <ClInclude Include="WinSrv.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -161,6 +162,7 @@
     <ClCompile Include="agentModelPattern.cpp" />
     <ClCompile Include="agentModelVariant.cpp" />
     <ClCompile Include="RF-Lab_Win32.cpp" />
+    <ClCompile Include="USB_TMC.cpp" />
     <ClCompile Include="WinSrv.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -88,6 +88,7 @@ void agentModelPattern::threadsStop(void)
 {
 	/* End thread */
 	processing_ID = C_MODELPATTERN_PROCESS_END;
+	pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Shutting down ...", L"");
 	WaitForSingleObject(hThreadProcessID, 10000L);			// Wait until the thread has ended (timeout = 10 secs
 	CloseHandle(hThreadProcessID);
 }
@@ -100,8 +101,12 @@ void agentModelPattern::run(void)
 		Sleep(20);
 	}
 
+	pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads ...", L"");
+
 	/* Start thread for process IDs to operate */
 	threadsStart();
+
+	pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM threads created", L"");
 
 	// Start Antenna Rotor
 	if (pAgtCom[C_COMINST_ROT]) {
@@ -125,7 +130,7 @@ void agentModelPattern::run(void)
 				agentComReq comReqData;
 				
 				initState = 0x01;
-				 pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs", L"");
+				 pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs ...", L"");
 				
 				// Open Rotor
 				if (pAgtCom[C_COMINST_ROT]) {
@@ -134,7 +139,7 @@ void agentModelPattern::run(void)
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 					initState = 0x02;
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor port opened", NULL);
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor port opened", L"");
 				}
 
 				// Open TX
@@ -150,7 +155,7 @@ void agentModelPattern::run(void)
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 					initState = 0x03;
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: TX port opened", NULL);
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX port opened", L"");
 				}
 
 				// Open RX
@@ -166,7 +171,7 @@ void agentModelPattern::run(void)
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 					initState = 0x04;
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RX port opened", NULL);
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX port opened", L"");
 				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_OPENCOM_WAIT;
@@ -199,7 +204,7 @@ void agentModelPattern::run(void)
 						comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 						if (comRspData.stat != C_COMRSP_DATA) break;
 						if (_strnicmp(&(comRspData.data[0]), "?X", 2)) break;
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor responds", NULL);
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor responds", L"");
 						initState = 0x14;
 
 						/* receive TX opening response */
@@ -250,7 +255,7 @@ void agentModelPattern::run(void)
 							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							if (comRspData.stat != C_COMRSP_DATA) break;
 							if (_strnicmp(&(comRspData.data[0]), "ROHDE", 5)) break;
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: TX responds", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX responds", L"");
 							initState = 0x2F;
 						}
 
@@ -310,7 +315,7 @@ void agentModelPattern::run(void)
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							if (comRspData.stat != C_COMRSP_DATA) break;
 							if (_strnicmp(&(comRspData.data[0]), "ROHDE", 5)) break;
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RX responds", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX responds", L"");
 							initState = 0x3F;
 						}
 
@@ -354,13 +359,13 @@ void agentModelPattern::run(void)
 							comReqData.parm = string("FX,2500\r");				// Zolix: initial speed 2.500 ticks per sec
 							send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor init done", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor init done", L"");
 							initState = 0x44;
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;
 							initState = 0x45;
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERROR: rotor init exception", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 1 ~ rotor init exception!", L"ERROR!");
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 						}
 					}
@@ -403,13 +408,13 @@ void agentModelPattern::run(void)
 							comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							initState = 0x55;
 							Sleep(2500L);
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: TX init done", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX init done", L"");
 							initState = 0x56;
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;
 							initState = 0x5F;
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERROR: TX init exception", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 2 ~ TX init exception!", L"ERROR!");
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 						}
 					}
@@ -512,7 +517,7 @@ void agentModelPattern::run(void)
 						initState = 0x92;
 						setTxOnState(agentModel::getTxOnDefault());
 						initState = 0x93;
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: TX default parameters are set", NULL);
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX default parameters are set", L"");
 					}
 #endif
 				}
@@ -558,12 +563,12 @@ void agentModelPattern::run(void)
 							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							initState = 0xA7;
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RX init done", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX init done", L"");
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;
 							initState = 0xAF;
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERROR: RX init exception", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 3 ~ RX init exception!", L"WARNING!");
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 						}
 					}
@@ -577,7 +582,7 @@ void agentModelPattern::run(void)
 						initState = 0xB2;
 						setRxLevelMaxValue(agentModel::getTxPwrDefault());
 						initState = 0xB3;
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RX default parameters are set", NULL);
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RX 3 ~ default parameters are set", L"");
 					}
 
 					// Display settings
@@ -599,12 +604,12 @@ void agentModelPattern::run(void)
 							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							initState = 0xC3;
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RX display parameters are set", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX display parameters are set", L"");
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;
 							initState = 0xCF;
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: RX display parameters", NULL);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 3 ~ RX display parameters", L"WARNING!");
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 						}
 					}
@@ -617,16 +622,19 @@ void agentModelPattern::run(void)
 				agentComRsp comRspData;
 
 				initState = 0xD0;
+				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ waiting for response from the rotor", L"");
 				bool state = try_receive(*(pAgtComRsp[C_COMINST_ROT]), comRspData);
 				if (state) {
 					// consume each reported state
 					if (comRspData.stat == C_COMRSP_FAIL) {
 						initState = 0xDF;
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 1 ~ no response from the rotor", L"ERROR!");
 						_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 					}
 				}
 				else {
 					initState = 0xD1;
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
 					_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 				}
 			}
@@ -645,7 +653,7 @@ void agentModelPattern::run(void)
 				comReqData.cmd = C_COMREQ_END;
 				comReqData.parm = string();
 
-				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: shutting down ...", NULL);
+				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: shutting down ...", L"");
 
 				// send shutdown request for each active agent
 				for (int i = 0; i < C_COMINST__COUNT; i++) {
@@ -672,7 +680,7 @@ void agentModelPattern::run(void)
 				}
 				_runState = C_MODELPATTERN_RUNSTATES_NOOP;
 				_running = false;
-				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"");
+				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"CLOSED");
 			}
 			break;
 
@@ -737,6 +745,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 	{
 	case ID_ROTOR_GOTO_0:
 		if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
+			pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor turns to  0°  position", L"RUNNING");
 			runProcess(C_MODELPATTERN_PROCESS_GOTO_X, 0);
 		}
 		break;
@@ -745,6 +754,21 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		if (arg) {
 			if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
 				int* pi = (int*)arg;
+
+				/* Inform about the current state */
+				{
+					const int l_status_size = 256;
+					HLOCAL l_status2_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
+					PWCHAR l_status2 = (PWCHAR)LocalLock(l_status2_alloc);
+
+					swprintf_s(l_status2, l_status_size, L"COM: 1 ~ rotor turns to  %+03d°  position", (*pi) / 1000);
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", l_status2, L"RUNNING");
+
+					LocalUnlock(l_status2_alloc);
+					LocalFree(l_status2_alloc);
+				}
+
+				/* Start rotor */
 				runProcess(C_MODELPATTERN_PROCESS_GOTO_X, *pi);
 			}
 		}
@@ -774,6 +798,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 			m->c->sendPos(posNext);
 			Sleep(calcTicks2Ms(posNext - posNow));
 
+			m->c->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
 			m->c->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 		}
 		break;
@@ -781,6 +806,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG:
 		{  // run a 180° antenna pattern from left = -90° to the right = +90°
 
+			m->c->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 180° pattern", L"goto START position");
 			int ret = m->c->runningProcessPattern(
 				AGENT_PATTERN_180_POS_DEGREE_START,
 				AGENT_PATTERN_180_POS_DEGREE_END,
@@ -795,8 +821,9 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		break;
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG:
-		{  // run a 180° antenna pattern from left = -90° to the right = +90°
+		{  // run a 360° antenna pattern from left = -180° to the right = +180°
 
+			m->c->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 360° pattern", L"goto START position");
 			int ret = m->c->runningProcessPattern(
 				AGENT_PATTERN_360_POS_DEGREE_START,
 				AGENT_PATTERN_360_POS_DEGREE_END,
@@ -812,6 +839,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_STOP:
 		{  // end "STOP at once" signalling
+			m->c->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"stopping current measurement", L"STOPPED");
 			m->c->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 		}
 		break;
@@ -861,6 +889,20 @@ void agentModelPattern::runProcess(int processID, int arg)
 		processing_arg1 = arg;
 		processing_ID = processID;
 	}
+}
+
+void agentModelPattern::setStatusPosition(double pos)
+{
+	/* Inform about the current state */
+	const int l_status_size = 256;
+	HLOCAL l_status3_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
+	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
+
+	swprintf_s(l_status3, l_status_size, L"position: %+03.0lf°", pos);
+	pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
+
+	LocalUnlock(l_status3_alloc);
+	LocalFree(l_status3_alloc);
 }
 
 
@@ -1188,7 +1230,7 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 
 int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPos, double degResolution)
 {  // run a antenna pattern from left = degStartPos to the right = degEndPos
-
+	// TODO: max 3 seconds allowed - use own thread for running process
 	/* Set-up ROTOR */
 	long ticksNow = requestPos();
 	long ticksNext = calcDeg2Ticks(degStartPos);
@@ -1198,6 +1240,9 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 		return -1;
 	}
 
+	/* Inform about the start position */
+	setStatusPosition(degStartPos);
+
 	/* Set-up TX */
 
 	/* Set-up RX */
@@ -1206,7 +1251,7 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 	double degPosIter = degStartPos;
 	while (true) {
 		/* Record data */
-		//measure();
+		//measure();  // TODO
 		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 			return -1;
 		}
@@ -1224,12 +1269,17 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 			return -1;
 		}
+
+		/* Inform about the current step position */
+		setStatusPosition(degPosIter);
 	}
 
 	if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 		return -1;
 	}
+
 	/* Return ROTOR to center position */
+	pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"goto HOME position");
 	requestPos();
 	sendPos(0);
 	Sleep(calcDeg2Ms(degEndPos));

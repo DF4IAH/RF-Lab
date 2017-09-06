@@ -92,6 +92,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>winusb.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -149,9 +150,22 @@
     <ClInclude Include="agentModel.h" />
     <ClInclude Include="agentModelPattern.h" />
     <ClInclude Include="agentModelVariant.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="hotplug.h" />
+    <ClInclude Include="libusb.h" />
+    <ClInclude Include="libusbi.h" />
+    <ClInclude Include="os\poll_windows.h" />
+    <ClInclude Include="os\threads_posix.h" />
+    <ClInclude Include="os\threads_windows.h" />
+    <ClInclude Include="os\windows_common.h" />
+    <ClInclude Include="os\windows_nt_common.h" />
+    <ClInclude Include="os\windows_usbdk.h" />
+    <ClInclude Include="os\windows_winusb.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RF-Lab_Win32.h" />
     <ClInclude Include="USB_TMC.h" />
+    <ClInclude Include="version.h" />
+    <ClInclude Include="version_nano.h" />
     <ClInclude Include="WinSrv.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -180,6 +194,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="libusb\lib\getopt.lib" />
+    <Library Include="libusb\lib\libusb-1.0.lib" />
+    <Library Include="libusb\lib\libusb-usbdk-1.0.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

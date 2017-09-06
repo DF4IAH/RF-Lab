@@ -4,6 +4,7 @@
 #include "agentModelVariant.h"
 
 #include "agentCom.h"
+#include "USB_TMC.h"
 
 using namespace concurrency;
 using namespace std;
@@ -75,6 +76,7 @@ typedef struct threadDataProcessID_s {
 class agentModelPattern : public agentModelVariant
 {
 private:
+	USB_TMC								*usbTmc;
 	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
 	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
 	agentCom							*pAgtCom[C_COMINST__COUNT];
@@ -84,6 +86,8 @@ private:
 
 	HANDLE								 hThreadProcessID;
 	threadDataProcessID_t				 sThreadDataProcessID;
+
+	USB_TMC								*pUsbTmc;
 
 	int									 processing_ID;
 	int									 processing_arg1;

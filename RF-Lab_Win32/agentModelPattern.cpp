@@ -29,6 +29,8 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , hThreadProcessID(nullptr)
 				 , sThreadDataProcessID( { 0 } )
 
+				 , pUsbTmc(nullptr)
+
 				 , processing_ID(0)
 				 , simuMode(mode)
 
@@ -44,8 +46,12 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , rxSpan(0.0)
 				 , rxLevelMax(0.0)
 {
+	/* Init the USB_TMC communication */
+	pUsbTmc = new USB_TMC();
+
 	/* enter first step of FSM */
 	_runState = C_MODELPATTERN_RUNSTATES_OPENCOM;
+
 
 	for (int i = 0; i < C_COMINST__COUNT; ++i) {
 		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
@@ -135,7 +141,7 @@ void agentModelPattern::run(void)
 				// Open Rotor
 				if (pAgtCom[C_COMINST_ROT]) {
 					comReqData.cmd = C_COMREQ_OPEN;
-					snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // Zolix USB port - 19200 baud, 8N1
+					_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // Zolix USB port - 19200 baud, 8N1
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 					initState = 0x02;
@@ -147,10 +153,10 @@ void agentModelPattern::run(void)
 					comReqData.cmd = C_COMREQ_OPEN;
 					if (pAgtCom[C_COMINST_TX]->isIec()) {
 						pAgtCom[C_COMINST_TX]->setIecAddr(28);																// IEC625: R&S SMR40: address == 28
-						snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625: 19200 baud, 8N1
+						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625: 19200 baud, 8N1
 					}
 					else {
-						snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
+						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
 					}
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_TX]), comReqData);
@@ -163,10 +169,10 @@ void agentModelPattern::run(void)
 					comReqData.cmd = C_COMREQ_OPEN;
 					if (pAgtCom[C_COMINST_RX]->isIec()) {
 						pAgtCom[C_COMINST_RX]->setIecAddr(20);																// IEC625: R&S FSEK20: address == 20
-						snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625: 19200 baud, 8N1
+						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625: 19200 baud, 8N1
 					}
 					else {
-						snprintf(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
+						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
 					}
 					comReqData.parm = string(buf);
 					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
@@ -725,6 +731,9 @@ void agentModelPattern::Release(void)
 		SafeRelease(&(pAgtComReq[i]));
 		SafeRelease(&(pAgtComRsp[i]));
 	}
+
+	delete pUsbTmc;
+	SafeRelease(&pUsbTmc);
 }
 
 
@@ -962,7 +971,7 @@ void agentModelPattern::sendPos(long tickPos)
 	char cbuf[C_BUF_SIZE];
 
 	try {
-		snprintf(cbuf, C_BUF_SIZE - 1, "%cX,%ld\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
+		_snprintf_s(cbuf, C_BUF_SIZE - 1, "%cX,%ld\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
 		comReqData.cmd = C_COMREQ_COM_SEND;
 		comReqData.parm = string(cbuf);
 		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);

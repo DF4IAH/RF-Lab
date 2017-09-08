@@ -50,22 +50,27 @@ int USB_TMC::init_libusb(bool show)
 
 void USB_TMC::shutdown_libusb(void)
 {
+	/* Release all USB attached instruments */
+	releaseInstrument_usb_iface(inst_rot, inst_rot_cnt);	inst_rot_cnt = 0;
+	releaseInstrument_usb_iface(inst_tx, inst_tx_cnt);		inst_tx_cnt = 0;
+	releaseInstrument_usb_iface(inst_rx, inst_rx_cnt);		inst_rx_cnt = 0;
+
 	/* Rotors */
 	for (int idx = 0; idx < inst_rot_cnt; idx++)
-		if (inst_rot[idx].devHandle)
-			libusb_close(inst_rot[idx].devHandle);
+		if (inst_rot[idx].dev_handle)
+			libusb_close(inst_rot[idx].dev_handle);
 	inst_rot_cnt = 0;
 
 	/* Transmitters */
 	for (int idx = 0; idx < inst_tx_cnt; idx++)
-		if (inst_tx[idx].devHandle)
-			libusb_close(inst_tx[idx].devHandle);
+		if (inst_tx[idx].dev_handle)
+			libusb_close(inst_tx[idx].dev_handle);
 	inst_tx_cnt = 0;
 
 	/* Receivers */
 	for (int idx = 0; idx < inst_rx_cnt; idx++)
-		if (inst_rx[idx].devHandle)
-			libusb_close(inst_rx[idx].devHandle);
+		if (inst_rx[idx].dev_handle)
+			libusb_close(inst_rx[idx].dev_handle);
 	inst_rx_cnt = 0;
 
 	/* Release the device list */
@@ -87,28 +92,81 @@ void USB_TMC::print_devs_libusb(libusb_device **devs)
 		struct libusb_device_descriptor desc;
 		int r = libusb_get_device_descriptor(dev, &desc);
 		if (r < 0) {
-			wsprintf(strbuf, L"failed to get device descriptor");
-			OutputDebugString(strbuf);
+			wsprintf(strbuf, L"failed to get device descriptor");  OutputDebugString(strbuf);
 			return;
 		}
 
 		wsprintf(strbuf, L"%04x:%04x (bus %d, device %d)",
 			desc.idVendor, desc.idProduct,
-			libusb_get_bus_number(dev), libusb_get_device_address(dev));
-		OutputDebugString(strbuf);
+			libusb_get_bus_number(dev), libusb_get_device_address(dev));  OutputDebugString(strbuf);
 
 		r = libusb_get_port_numbers(dev, path, sizeof(path));
 		if (r > 0) {
-			wsprintf(strbuf, L" path: %d", path[0]);
-			OutputDebugString(strbuf);
+			wsprintf(strbuf, L" path: %d", path[0]);  OutputDebugString(strbuf);
 
 			for (j = 1; j < r; j++) {
-				wsprintf(strbuf, L".%d", path[j]);
-				OutputDebugString(strbuf);
+				wsprintf(strbuf, L".%d", path[j]);  OutputDebugString(strbuf);
 			}
 		}
 		OutputDebugString(L"\n");
 	}
+}
+
+void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descriptor *dev_cap)
+{
+	wchar_t strbuf[256];
+
+	switch (dev_cap->bDevCapabilityType) {
+	case LIBUSB_BT_USB_2_0_EXTENSION: {
+		struct libusb_usb_2_0_extension_descriptor *usb_2_0_ext = NULL;
+		libusb_get_usb_2_0_extension_descriptor(NULL, dev_cap, &usb_2_0_ext);
+		if (usb_2_0_ext) {
+			wsprintf(strbuf, L"    USB 2.0 extension:\n");  OutputDebugString(strbuf);
+			wsprintf(strbuf, L"      attributes             : %02X\n", usb_2_0_ext->bmAttributes);  OutputDebugString(strbuf);
+			libusb_free_usb_2_0_extension_descriptor(usb_2_0_ext);
+		}
+		break;
+	}
+	case LIBUSB_BT_SS_USB_DEVICE_CAPABILITY: {
+		struct libusb_ss_usb_device_capability_descriptor *ss_usb_device_cap = NULL;
+		libusb_get_ss_usb_device_capability_descriptor(NULL, dev_cap, &ss_usb_device_cap);
+		if (ss_usb_device_cap) {
+			wsprintf(strbuf, L"    USB 3.0 capabilities:\n");  OutputDebugString(strbuf);
+			wsprintf(strbuf, L"      attributes             : %02X\n", ss_usb_device_cap->bmAttributes);  OutputDebugString(strbuf);
+			wsprintf(strbuf, L"      supported speeds       : %04X\n", ss_usb_device_cap->wSpeedSupported);  OutputDebugString(strbuf);
+			wsprintf(strbuf, L"      supported functionality: %02X\n", ss_usb_device_cap->bFunctionalitySupport);  OutputDebugString(strbuf);
+			libusb_free_ss_usb_device_capability_descriptor(ss_usb_device_cap);
+		}
+		break;
+	}
+	case LIBUSB_BT_CONTAINER_ID: {
+		struct libusb_container_id_descriptor *container_id = NULL;
+		libusb_get_container_id_descriptor(NULL, dev_cap, &container_id);
+		if (container_id) {
+			wsprintf(strbuf, L"    Container ID:\n      %s\n", uuid_to_string_libusb(container_id->ContainerID));  OutputDebugString(strbuf);
+			libusb_free_container_id_descriptor(container_id);
+		}
+		break;
+	}
+	default:
+		wsprintf(strbuf, L"    Unknown BOS device capability %02x:\n", dev_cap->bDevCapabilityType);  OutputDebugString(strbuf);
+	}
+}
+
+wchar_t* USB_TMC::uuid_to_string_libusb(const uint8_t* uuid)
+{
+	static wchar_t uuid_string[40];
+
+	if (!uuid)
+		return NULL;
+
+	wsprintf(uuid_string, L"{%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
+		uuid[0], uuid[1], uuid[2], uuid[3],
+		uuid[4], uuid[5],
+		uuid[6], uuid[7],
+		uuid[8], uuid[9],
+		uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+	return uuid_string;
 }
 
 int USB_TMC::findInstruments(void)
@@ -170,20 +228,191 @@ instrument_t* USB_TMC::addInstrument(INSTRUMENT_ENUM_t type, int devs_idx)
 	return ret;
 }
 
+void USB_TMC::releaseInstrument_usb_iface(instrument_t *inst, int cnt)
+{
+	if (cnt) {
+		wchar_t strbuf[256];
+
+		for (int idx = 0; idx < cnt; idx++) {
+			/* Releasing the interfaces */
+			wsprintf(strbuf, L"Releasing interface %d...\n", inst[idx].dev_interface);  OutputDebugString(strbuf);
+			libusb_release_interface(inst[idx].dev_handle, inst[idx].dev_interface);
+		}
+	}
+}
+
 void USB_TMC::openTmc(instrument_t *inst)
 {
-	libusb_device			*dev		= devs[inst->devs_idx];
-	libusb_device_handle	*devHandle	= NULL;
-	uint8_t path[8];
+	libusb_device							*dev		= devs[inst->devs_idx];
+	libusb_device_handle					*dev_handle	= NULL;
+	libusb_device_descriptor				 dev_desc;
+	libusb_bos_descriptor					*bos_desc	= NULL;
+	libusb_config_descriptor				*conf_desc	= NULL;
+	uint8_t									 nb_ifaces	= 0;
+	const struct libusb_endpoint_descriptor	*endpoint;
+	uint8_t									 capabilities[24];
+	int										 r;
+	uint8_t									 string_index[3];	// indexes of the string descriptors
+	wchar_t									 strbuf[256];
 
-	int cnt = libusb_get_port_numbers(dev, path, sizeof(path));
-	if (cnt > 0) {
+	//devHandle = libusb_open_device_with_vid_pid(NULL, dev->device_descriptor.idVendor, dev->device_descriptor.idProduct);
+	libusb_open(dev, &dev_handle);
+	if (dev_handle) {
+		inst->dev_handle	= dev_handle;
+		inst->dev			= dev;
 
-	}
+		/* Show the port path */
+		{
+			uint8_t port_path[8];
+			uint8_t bus = libusb_get_bus_number(dev);
+			int cnt = libusb_get_port_numbers(dev, port_path, sizeof(port_path));
+			if (cnt > 0) {
+				OutputDebugString(L"\nDevice properties:\n");
+				wsprintf(strbuf, L"        bus number: %d\n", bus);  OutputDebugString(strbuf);
+				wsprintf(strbuf, L"         port path: %d", port_path[0]);  OutputDebugString(strbuf);
+				for (int i = 1; i < cnt; i++) {
+					wsprintf(strbuf, L"->%d", port_path[i]);  OutputDebugString(strbuf);
+				}
+				OutputDebugString(L" (from root hub)\n");
+			}
+		}
 
-	devHandle = libusb_open_device_with_vid_pid(NULL, dev->device_descriptor.idVendor, dev->device_descriptor.idProduct);
-	if (devHandle) {
-		inst->devHandle = devHandle;
+		/* Read device descriptor */
+		libusb_get_device_descriptor(dev, &dev_desc);
+		// Copy the string descriptors for easier parsing
+		string_index[0] = dev_desc.iManufacturer;
+		string_index[1] = dev_desc.iProduct;
+		string_index[2] = dev_desc.iSerialNumber;
+
+		/* Read BOS descriptor if it exists */
+		r = libusb_get_bos_descriptor(dev_handle, &bos_desc);
+		if (r == LIBUSB_SUCCESS) {
+			wsprintf(strbuf, L"%d caps\n", bos_desc->bNumDeviceCaps);  OutputDebugString(strbuf);
+
+			for (int i = 0; i < bos_desc->bNumDeviceCaps; i++) {
+				print_device_cap_libusb(bos_desc->dev_capability[i]);
+			}
+
+			libusb_free_bos_descriptor(bos_desc);
+		}
+
+		/* Read configuration descriptors */
+		OutputDebugString(L"\nReading first configuration descriptor:\n");
+		r = libusb_get_config_descriptor(dev, 0, &conf_desc);
+		if (r == LIBUSB_SUCCESS) {
+			nb_ifaces = conf_desc->bNumInterfaces;
+			wsprintf(strbuf, L"             nb interfaces: %d\n", nb_ifaces);  OutputDebugString(strbuf);
+
+			for (int idx_iface = 0; idx_iface < nb_ifaces; idx_iface++) {
+				wsprintf(strbuf, L"              interface[%d]: id = %d\n", idx_iface, conf_desc->lu_interface[idx_iface].altsetting[0].bInterfaceNumber);  OutputDebugString(strbuf);
+				for (int idx_alt = 0; idx_alt < conf_desc->lu_interface[idx_iface].num_altsetting; idx_alt++) {
+					wsprintf(strbuf, L"interface[%d].altsetting[%d]: num endpoints = %d\n",	idx_iface, idx_alt, conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bNumEndpoints);  OutputDebugString(strbuf);
+					wsprintf(strbuf, L"   Class.SubClass.Protocol: %02X.%02X.%02X\n",
+						conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceClass,
+						conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceSubClass,
+						conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceProtocol);  OutputDebugString(strbuf);
+
+					/* Skip any not USB_TMC conforming interfaces */
+					if (conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceClass	!= LIBUSB_CLASS_APPLICATION	|| 
+						conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceSubClass	!= SUBCLASS_USBTMC			||
+						conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceProtocol != USBTMC_USB488)
+						continue;
+
+					inst->dev_config	= conf_desc->bConfigurationValue;
+					inst->dev_interface = conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceNumber;
+
+					for (int idx_ep = 0; idx_ep < conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bNumEndpoints; idx_ep++) {
+						struct libusb_ss_endpoint_companion_descriptor *ep_comp = NULL;
+
+						endpoint = &conf_desc->lu_interface[idx_iface].altsetting[idx_alt].endpoint[idx_ep];
+						wsprintf(strbuf, L"       endpoint[%d].address: %02X\n", idx_ep, endpoint->bEndpointAddress);  OutputDebugString(strbuf);
+
+						if (endpoint->bmAttributes == LIBUSB_TRANSFER_TYPE_BULK && !(endpoint->bEndpointAddress & (LIBUSB_ENDPOINT_DIR_MASK))) {
+							inst->dev_bulk_out_ep = endpoint->bEndpointAddress;
+							wsprintf(strbuf, L"Bulk OUT  EP %d", inst->dev_bulk_out_ep);  OutputDebugString(strbuf);
+						}
+						if (endpoint->bmAttributes == LIBUSB_TRANSFER_TYPE_BULK && endpoint->bEndpointAddress & (LIBUSB_ENDPOINT_DIR_MASK)) {
+							inst->dev_bulk_in_ep = endpoint->bEndpointAddress;
+							wsprintf(strbuf, L"Bulk IN   EP %d", inst->dev_bulk_in_ep & 0x7f);  OutputDebugString(strbuf);
+						}
+						if (endpoint->bmAttributes == LIBUSB_TRANSFER_TYPE_INTERRUPT && endpoint->bEndpointAddress & (LIBUSB_ENDPOINT_DIR_MASK)) {
+							inst->dev_interrupt_ep = endpoint->bEndpointAddress;
+							wsprintf(strbuf, L"Interrupt EP %d", inst->dev_interrupt_ep & 0x7f);  OutputDebugString(strbuf);
+						}
+
+						wsprintf(strbuf, L"           max packet size: %04X\n", endpoint->wMaxPacketSize);  OutputDebugString(strbuf);
+						wsprintf(strbuf, L"          polling interval: %02X\n", endpoint->bInterval);  OutputDebugString(strbuf);
+
+						libusb_get_ss_endpoint_companion_descriptor(NULL, endpoint, &ep_comp);
+						if (ep_comp) {
+							wsprintf(strbuf, L"                 max burst: %02X   (USB 3.0)\n", ep_comp->bMaxBurst);  OutputDebugString(strbuf);
+							wsprintf(strbuf, L"        bytes per interval: %04X (USB 3.0)\n", ep_comp->wBytesPerInterval);  OutputDebugString(strbuf);
+							libusb_free_ss_endpoint_companion_descriptor(ep_comp);
+						}
+					}
+				}
+			}
+		}
+		libusb_free_config_descriptor(conf_desc);
+
+		/* Claiming the interfaces and allow kernel to detach when needed */
+		libusb_set_auto_detach_kernel_driver(dev_handle, 1);
+
+		/* Set the right configuration */
+		{
+			int current_config = 0;
+
+			if (libusb_get_configuration(inst->dev_handle, &current_config) == 0 && current_config != inst->dev_config) {
+				if ((r = libusb_set_configuration(inst->dev_handle, inst->dev_config)) < 0) {
+					wsprintf(strbuf, L"Failed to set configuration: %s.", libusb_error_name(r));  OutputDebugString(strbuf);
+					return;
+				}
+			}
+		}
+
+		/* Claiming the interface we need */
+		if ((r = libusb_claim_interface(inst->dev_handle, inst->dev_interface)) < 0) {
+			wsprintf(strbuf, L"Failed to claim interface: %s.", libusb_error_name(r));  OutputDebugString(strbuf);
+			return;
+		}
+
+		#if 0
+		/* Reading the string descriptors */
+		{
+			char string[128];
+
+			OutputDebugString(L"\nReading string descriptors:\n");
+			for (int i = 0; i < sizeof(string_index); i++) {
+				if (string_index[i] == 0) {
+					continue;
+				}
+				if (libusb_get_string_descriptor_ascii(dev_handle, string_index[i], (unsigned char*)string, sizeof(string)) >= 0) {
+					wsprintf(strbuf, L"   String (0x%02X): \"%s\"\n", string_index[i], string);  OutputDebugString(strbuf);
+				}
+			}
+		}
+		#endif
+
+		/* Get capabilities of the USB_TMC interface */
+		r = libusb_control_transfer(inst->dev_handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+				GET_CAPABILITIES, 0, inst->dev_interface,
+				capabilities, sizeof(capabilities), TRANSFER_TIMEOUT);
+		if (r == sizeof(capabilities)) {
+			inst->dev_usbtmc_int_cap = capabilities[4];
+			inst->dev_usbtmc_dev_cap = capabilities[5];
+			inst->dev_usb488_dev_cap = capabilities[15];
+		}
+
+		wsprintf(strbuf, L"Device capabilities: %s%s%s%s%s, %s, %s",
+			inst->dev_usb488_dev_cap & USB488_DEV_CAP_SCPI ?		L"SCPI, "		: L"",
+			inst->dev_usbtmc_dev_cap & USBTMC_DEV_CAP_TERMCHAR ?	L"TermChar, "	: L"",
+			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_LISTEN_ONLY ? L"L3, "			:
+			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_TALK_ONLY ?	L""				: L"L4, ",
+			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_TALK_ONLY ?	L"T5, "			:
+			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_LISTEN_ONLY ? L""				: L"T6, ",
+			inst->dev_usb488_dev_cap & USB488_DEV_CAP_SR1 ?			L"SR1"			: L"SR0",
+			inst->dev_usb488_dev_cap & USB488_DEV_CAP_RL1 ?			L"RL1"			: L"RL0",
+			inst->dev_usb488_dev_cap & USB488_DEV_CAP_DT1 ?			L"DT1"			: L"DT0");  OutputDebugString(strbuf);
 	}
 }
 

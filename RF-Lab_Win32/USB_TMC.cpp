@@ -2,6 +2,15 @@
 #include "USB_TMC.h"
 
 
+#define DEBUG_USB 1
+
+
+inline void* varcpy(void* dest, void* src, size_t size)
+{
+	memcpy(dest, src, size);
+}
+
+
 USB_TMC::USB_TMC() :
 	  devs(NULL)
 	, inst_rot_cnt(0)
@@ -169,6 +178,207 @@ wchar_t* USB_TMC::uuid_to_string_libusb(const uint8_t* uuid)
 	return uuid_string;
 }
 
+void USB_TMC::usbtmc_bulk_out_header_write(	uint8_t header[], uint8_t MsgID,
+													uint8_t bTag,
+													uint32_t TransferSize,
+													uint8_t bmTransferAttributes,
+													char TermChar)
+{
+	uint8_t		bTagN	= ~bTag;
+	uint8_t		u8_0	= 0;
+	uint16_t	u16_0	= 0;
+
+	memcpy(header +  0, &MsgID,					sizeof(MsgID));
+	memcpy(header +  1, &bTag,					sizeof(bTag));
+	memcpy(header +  2, &bTagN,					sizeof(bTagN));
+	memcpy(header +  3, &u8_0,					sizeof(u8_0));
+	memcpy(header +  4, &TransferSize,			sizeof(TransferSize));
+	memcpy(header +  8, &bmTransferAttributes,	sizeof(bmTransferAttributes));
+	memcpy(header +  9, &TermChar,				sizeof(TermChar));
+	memcpy(header + 10, &u16_0,					sizeof(u16_0));
+}
+
+bool USB_TMC::usbtmc_bulk_in_header_read(	uint8_t header[], uint8_t MsgID,
+													uint8_t bTag,
+													uint32_t *TransferSize,
+													uint8_t *bmTransferAttributes)
+{
+	if (header[0]	!= MsgID ||
+		header[1]	!= bTag ||
+		header[2]	!= (unsigned char)~bTag)
+			return false;
+
+	if (TransferSize)
+		*TransferSize =  *((uint32_t*)(header + 4));
+
+	if (bmTransferAttributes)
+		*bmTransferAttributes = header[8];
+
+	return true;
+}
+
+bool USB_TMC::scpi_usbtmc_bulkout(instrument_t *inst, uint8_t msg_id, const void *data, int32_t size, uint8_t transfer_attributes)
+{
+	//struct scpi_usbtmc_libusb *uscpi = inst->uscpi;
+	int		padded_size, r, transferred;
+	wchar_t	strbuf[256];
+
+	if (data && (size + USBTMC_BULK_HEADER_SIZE + 3) > (int)sizeof(inst->buffer)) {
+		OutputDebugString(L"USBTMC bulk out transfer is too big.\n");
+		return false;
+	}
+
+	inst->dev_bTag++;
+	inst->dev_bTag += !inst->dev_bTag;	// bTag == 0 is invalid so avoid it.
+
+	usbtmc_bulk_out_header_write(inst->buffer, msg_id, inst->dev_bTag, size, transfer_attributes, 0);
+	if (data)
+		memcpy(inst->buffer + USBTMC_BULK_HEADER_SIZE, data, size);
+	else
+		size = 0;
+	size += USBTMC_BULK_HEADER_SIZE;
+	padded_size = (size + 3) & ~0x3;
+	memset(inst->buffer + size, 0, padded_size - size);
+
+	r = libusb_bulk_transfer(inst->dev_handle, inst->dev_bulk_out_ep, inst->buffer, padded_size, &transferred, TRANSFER_TIMEOUT);
+	if (r < 0) {
+		wsprintf(strbuf, L"USBTMC bulk out transfer error: %s.\n", libusb_error_name(r));  OutputDebugString(strbuf);
+		return false;
+	}
+
+	if (transferred < padded_size) {
+		wsprintf(strbuf, L"USBTMC bulk out partial transfer (%d/%d bytes).\n", transferred, padded_size);  OutputDebugString(strbuf);
+		return false;
+	}
+
+	return transferred == USBTMC_BULK_HEADER_SIZE;
+}
+
+int USB_TMC::scpi_usbtmc_bulkin_start(instrument_t *inst, uint8_t msg_id, uint8_t *data, int32_t size, uint8_t *transfer_attributes)
+{
+	int r, transferred = 0;
+	uint32_t message_size = 0;
+	wchar_t	strbuf[256];
+
+	r = libusb_bulk_transfer(inst->dev_handle, inst->dev_bulk_in_ep, data, size, &transferred, TRANSFER_TIMEOUT);
+	if (r < 0) {
+		wsprintf(strbuf, L"USBTMC bulk in transfer error: %s.\n", libusb_error_name(r));  OutputDebugString(strbuf);
+		return false;
+	}
+
+	if (!usbtmc_bulk_in_header_read(data, msg_id, inst->dev_bTag, &message_size, transfer_attributes)) {
+		OutputDebugString(L"USBTMC invalid bulk in header.\n");
+		return false;
+	}
+
+	message_size += USBTMC_BULK_HEADER_SIZE;
+	inst->response_length = MIN(transferred, message_size);
+	inst->response_bytes_read = USBTMC_BULK_HEADER_SIZE;
+	inst->remaining_length = message_size - inst->response_length;
+
+	return transferred == USBTMC_BULK_HEADER_SIZE;
+}
+
+int USB_TMC::scpi_usbtmc_bulkin_continue(instrument_t *inst, uint8_t *data, int size)
+{
+	int r, transferred = 0;
+	wchar_t	strbuf[256];
+
+	r = libusb_bulk_transfer(inst->dev_handle, inst->dev_bulk_in_ep, data, size, &transferred, TRANSFER_TIMEOUT);
+	if (r < 0) {
+		wsprintf(strbuf, L"USBTMC bulk in transfer error: %s.\n", libusb_error_name(r));  OutputDebugString(strbuf);
+		return false;
+	}
+
+	inst->response_length = MIN(transferred, inst->remaining_length);
+	inst->response_bytes_read = 0;
+	inst->remaining_length -= inst->response_length;
+
+	return transferred;
+}
+
+#ifdef NEW
+int USB_TMC::scpi_usbtmc_libusb_send(void *priv, const char *command)
+542 {
+	543         struct scpi_usbtmc_libusb *uscpi = priv;
+	544
+		545         if (scpi_usbtmc_bulkout(uscpi, DEV_DEP_MSG_OUT,
+			546                                 command, strlen(command), EOM) <= 0)
+		547                 return SR_ERR;
+	548
+		549         sr_spew("Successfully sent SCPI command: '%s'.", command);
+	550
+		551         return SR_OK;
+	552 }
+
+int USB_TMC::scpi_usbtmc_libusb_read_begin(void *priv)
+555 {
+	556         struct scpi_usbtmc_libusb *uscpi = priv;
+	557
+		558         uscpi->remaining_length = 0;
+	559
+		560         if (scpi_usbtmc_bulkout(uscpi, REQUEST_DEV_DEP_MSG_IN,
+			561             NULL, INT32_MAX, 0) < 0)
+		562                 return SR_ERR;
+	563         if (scpi_usbtmc_bulkin_start(uscpi, DEV_DEP_MSG_IN,
+		564                                      uscpi->buffer, sizeof(uscpi->buffer),
+		565 & uscpi->bulkin_attributes) < 0)
+		566                 return SR_ERR;
+	567
+		568         return SR_OK;
+	569 }
+
+int USB_TMC::scpi_usbtmc_libusb_read_data(void *priv, char *buf, int maxlen)
+572 {
+	573         struct scpi_usbtmc_libusb *uscpi = priv;
+	574         int read_length;
+	575
+		576         if (uscpi->response_bytes_read >= uscpi->response_length) {
+		577                 if (uscpi->remaining_length > 0) {
+			578                         if (scpi_usbtmc_bulkin_continue(uscpi, uscpi->buffer,
+				579                                                         sizeof(uscpi->buffer)) <= 0)
+				580                                 return SR_ERR;
+			581
+		}
+		else {
+			582                         if (uscpi->bulkin_attributes & EOM)
+				583                                 return SR_ERR;
+			584                         if (scpi_usbtmc_libusb_read_begin(uscpi) < 0)
+				585                                 return SR_ERR;
+			586
+		}
+		587
+	}
+	588
+		589         read_length = MIN(uscpi->response_length - uscpi->response_bytes_read, maxlen);
+	590
+		591         memcpy(buf, uscpi->buffer + uscpi->response_bytes_read, read_length);
+	592
+		593         uscpi->response_bytes_read += read_length;
+	594
+		595         return read_length;
+	596 }
+
+static int USB_TMC::scpi_usbtmc_libusb_read_complete(void *priv)
+{
+	600         struct scpi_usbtmc_libusb *uscpi = priv;
+	601         return uscpi->response_bytes_read >= uscpi->response_length &&
+		602                uscpi->remaining_length <= 0 &&
+		603                uscpi->bulkin_attributes & EOM;
+}
+#endif
+
+bool USB_TMC::check_usbtmc_blacklist_libusb(struct usbtmc_blacklist *blacklist, uint16_t vid, uint16_t pid)
+{
+	for (int i = 0; blacklist[i].vid; i++) {
+		if ((blacklist[i].vid == vid && blacklist[i].pid == 0xFFFF) ||
+			(blacklist[i].vid == vid && blacklist[i].pid == pid))
+			return true;
+	}
+	return false;
+}
+
+
 int USB_TMC::findInstruments(void)
 {
 	int cnt = 0;
@@ -184,7 +394,14 @@ int USB_TMC::findInstruments(void)
 			if (type) {
 				instrument_t *inst = addInstrument(type, idx - 1);
 				cnt++;
-				openTmc(inst);
+				bool suc = openUsb(inst);
+				// TODO: inform GUI about the ready device
+#ifndef NORMAL
+				// TODO: take that out
+				if (suc) {
+					suc = openTmc(inst);
+				}
+#endif
 			}
 		}
 	}
@@ -241,7 +458,7 @@ void USB_TMC::releaseInstrument_usb_iface(instrument_t *inst, int cnt)
 	}
 }
 
-void USB_TMC::openTmc(instrument_t *inst)
+bool USB_TMC::openUsb(instrument_t *inst)
 {
 	libusb_device							*dev		= devs[inst->devs_idx];
 	libusb_device_handle					*dev_handle	= NULL;
@@ -255,6 +472,11 @@ void USB_TMC::openTmc(instrument_t *inst)
 	uint8_t									 string_index[3];	// indexes of the string descriptors
 	wchar_t									 strbuf[256];
 
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	//devHandle = libusb_open_device_with_vid_pid(NULL, dev->device_descriptor.idVendor, dev->device_descriptor.idProduct);
 	libusb_open(dev, &dev_handle);
 	if (dev_handle) {
@@ -262,6 +484,7 @@ void USB_TMC::openTmc(instrument_t *inst)
 		inst->dev			= dev;
 
 		/* Show the port path */
+#ifdef DEBUG_USB
 		{
 			uint8_t port_path[8];
 			uint8_t bus = libusb_get_bus_number(dev);
@@ -276,6 +499,7 @@ void USB_TMC::openTmc(instrument_t *inst)
 				OutputDebugString(L" (from root hub)\n");
 			}
 		}
+#endif
 
 		/* Read device descriptor */
 		libusb_get_device_descriptor(dev, &dev_desc);
@@ -284,6 +508,7 @@ void USB_TMC::openTmc(instrument_t *inst)
 		string_index[1] = dev_desc.iProduct;
 		string_index[2] = dev_desc.iSerialNumber;
 
+#ifdef DEBUG_USB
 		/* Read BOS descriptor if it exists */
 		r = libusb_get_bos_descriptor(dev_handle, &bos_desc);
 		if (r == LIBUSB_SUCCESS) {
@@ -295,22 +520,31 @@ void USB_TMC::openTmc(instrument_t *inst)
 
 			libusb_free_bos_descriptor(bos_desc);
 		}
+#endif
 
 		/* Read configuration descriptors */
-		OutputDebugString(L"\nReading first configuration descriptor:\n");
+#ifdef DEBUG_USB
+		OutputDebugString(L"\nReading descriptor of the first configuration:\n");
+#endif
 		r = libusb_get_config_descriptor(dev, 0, &conf_desc);
 		if (r == LIBUSB_SUCCESS) {
 			nb_ifaces = conf_desc->bNumInterfaces;
+#ifdef DEBUG_USB
 			wsprintf(strbuf, L"             nb interfaces: %d\n", nb_ifaces);  OutputDebugString(strbuf);
+#endif
 
 			for (int idx_iface = 0; idx_iface < nb_ifaces; idx_iface++) {
+#ifdef DEBUG_USB
 				wsprintf(strbuf, L"              interface[%d]: id = %d\n", idx_iface, conf_desc->lu_interface[idx_iface].altsetting[0].bInterfaceNumber);  OutputDebugString(strbuf);
+#endif
 				for (int idx_alt = 0; idx_alt < conf_desc->lu_interface[idx_iface].num_altsetting; idx_alt++) {
+#ifdef DEBUG_USB
 					wsprintf(strbuf, L"interface[%d].altsetting[%d]: num endpoints = %d\n",	idx_iface, idx_alt, conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bNumEndpoints);  OutputDebugString(strbuf);
 					wsprintf(strbuf, L"   Class.SubClass.Protocol: %02X.%02X.%02X\n",
 						conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceClass,
 						conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceSubClass,
 						conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceProtocol);  OutputDebugString(strbuf);
+#endif
 
 					/* Skip any not USB_TMC conforming interfaces */
 					if (conf_desc->lu_interface[idx_iface].altsetting[idx_alt].bInterfaceClass	!= LIBUSB_CLASS_APPLICATION	|| 
@@ -325,30 +559,42 @@ void USB_TMC::openTmc(instrument_t *inst)
 						struct libusb_ss_endpoint_companion_descriptor *ep_comp = NULL;
 
 						endpoint = &conf_desc->lu_interface[idx_iface].altsetting[idx_alt].endpoint[idx_ep];
+#ifdef DEBUG_USB
 						wsprintf(strbuf, L"       endpoint[%d].address: %02X\n", idx_ep, endpoint->bEndpointAddress);  OutputDebugString(strbuf);
+#endif
 
 						if (endpoint->bmAttributes == LIBUSB_TRANSFER_TYPE_BULK && !(endpoint->bEndpointAddress & (LIBUSB_ENDPOINT_DIR_MASK))) {
 							inst->dev_bulk_out_ep = endpoint->bEndpointAddress;
+#ifdef DEBUG_USB
 							wsprintf(strbuf, L"Bulk OUT  EP %d", inst->dev_bulk_out_ep);  OutputDebugString(strbuf);
+#endif
 						}
 						if (endpoint->bmAttributes == LIBUSB_TRANSFER_TYPE_BULK && endpoint->bEndpointAddress & (LIBUSB_ENDPOINT_DIR_MASK)) {
 							inst->dev_bulk_in_ep = endpoint->bEndpointAddress;
+#ifdef DEBUG_USB
 							wsprintf(strbuf, L"Bulk IN   EP %d", inst->dev_bulk_in_ep & 0x7f);  OutputDebugString(strbuf);
+#endif
 						}
 						if (endpoint->bmAttributes == LIBUSB_TRANSFER_TYPE_INTERRUPT && endpoint->bEndpointAddress & (LIBUSB_ENDPOINT_DIR_MASK)) {
 							inst->dev_interrupt_ep = endpoint->bEndpointAddress;
+#ifdef DEBUG_USB
 							wsprintf(strbuf, L"Interrupt EP %d", inst->dev_interrupt_ep & 0x7f);  OutputDebugString(strbuf);
+#endif
 						}
 
+#ifdef DEBUG_USB
 						wsprintf(strbuf, L"           max packet size: %04X\n", endpoint->wMaxPacketSize);  OutputDebugString(strbuf);
 						wsprintf(strbuf, L"          polling interval: %02X\n", endpoint->bInterval);  OutputDebugString(strbuf);
+#endif
 
+#ifdef DEBUG_USB
 						libusb_get_ss_endpoint_companion_descriptor(NULL, endpoint, &ep_comp);
 						if (ep_comp) {
 							wsprintf(strbuf, L"                 max burst: %02X   (USB 3.0)\n", ep_comp->bMaxBurst);  OutputDebugString(strbuf);
 							wsprintf(strbuf, L"        bytes per interval: %04X (USB 3.0)\n", ep_comp->wBytesPerInterval);  OutputDebugString(strbuf);
 							libusb_free_ss_endpoint_companion_descriptor(ep_comp);
 						}
+#endif
 					}
 				}
 			}
@@ -364,19 +610,23 @@ void USB_TMC::openTmc(instrument_t *inst)
 
 			if (libusb_get_configuration(inst->dev_handle, &current_config) == 0 && current_config != inst->dev_config) {
 				if ((r = libusb_set_configuration(inst->dev_handle, inst->dev_config)) < 0) {
+#ifdef DEBUG_USB
 					wsprintf(strbuf, L"Failed to set configuration: %s.", libusb_error_name(r));  OutputDebugString(strbuf);
-					return;
+#endif
+					return false;
 				}
 			}
 		}
 
 		/* Claiming the interface we need */
 		if ((r = libusb_claim_interface(inst->dev_handle, inst->dev_interface)) < 0) {
+#ifdef DEBUG_USB
 			wsprintf(strbuf, L"Failed to claim interface: %s.", libusb_error_name(r));  OutputDebugString(strbuf);
-			return;
+#endif
+			return false;
 		}
 
-		#if 0
+#ifdef DEBUG_USB
 		/* Reading the string descriptors */
 		{
 			char string[128];
@@ -390,29 +640,201 @@ void USB_TMC::openTmc(instrument_t *inst)
 					wsprintf(strbuf, L"   String (0x%02X): \"%s\"\n", string_index[i], string);  OutputDebugString(strbuf);
 				}
 			}
+			OutputDebugString(L"\n");
 		}
-		#endif
+#endif
 
-		/* Get capabilities of the USB_TMC interface */
+#ifdef DEBUG_USB
+		/* Get capabilities of the USB_TMC interface - @see https://en.wikipedia.org/wiki/IEEE-488#Capabilities */
 		r = libusb_control_transfer(inst->dev_handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
 				GET_CAPABILITIES, 0, inst->dev_interface,
 				capabilities, sizeof(capabilities), TRANSFER_TIMEOUT);
 		if (r == sizeof(capabilities)) {
 			inst->dev_usbtmc_int_cap = capabilities[4];
 			inst->dev_usbtmc_dev_cap = capabilities[5];
-			inst->dev_usb488_dev_cap = capabilities[15];
+			inst->dev_usb488_dev_cap1 = capabilities[14];
+			inst->dev_usb488_dev_cap2 = capabilities[15];
 		}
 
-		wsprintf(strbuf, L"Device capabilities: %s%s%s%s%s, %s, %s",
-			inst->dev_usb488_dev_cap & USB488_DEV_CAP_SCPI ?		L"SCPI, "		: L"",
-			inst->dev_usbtmc_dev_cap & USBTMC_DEV_CAP_TERMCHAR ?	L"TermChar, "	: L"",
-			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_LISTEN_ONLY ? L"L3, "			:
-			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_TALK_ONLY ?	L""				: L"L4, ",
-			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_TALK_ONLY ?	L"T5, "			:
-			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_LISTEN_ONLY ? L""				: L"T6, ",
-			inst->dev_usb488_dev_cap & USB488_DEV_CAP_SR1 ?			L"SR1"			: L"SR0",
-			inst->dev_usb488_dev_cap & USB488_DEV_CAP_RL1 ?			L"RL1"			: L"RL0",
-			inst->dev_usb488_dev_cap & USB488_DEV_CAP_DT1 ?			L"DT1"			: L"DT0");  OutputDebugString(strbuf);
+		wsprintf(strbuf, L"USBTMC device capabilities: TermChar %s, L%s, T%s\n",
+			inst->dev_usbtmc_dev_cap & USBTMC_DEV_CAP_TERMCHAR		? L"YES"	: L"NO",
+			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_LISTEN_ONLY	? L"3"		:
+			 inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_TALK_ONLY	? L"-"		: L"4",
+			inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_TALK_ONLY		? L"5"		:
+			 inst->dev_usbtmc_int_cap & USBTMC_INT_CAP_LISTEN_ONLY	? L"-"		: L"6");  OutputDebugString(strbuf);
+
+		wsprintf(strbuf, L"Device capabilities1: TRIGGER %s, REN_CON %s, USB488.2 %s\n",
+			inst->dev_usb488_dev_cap1 & USB488_DEV_CAP1_TRIG		?  L"YES"	: L"NO",
+			inst->dev_usb488_dev_cap1 & USB488_DEV_CAP1_RENCON		?  L"YES"	: L"NO",
+			inst->dev_usb488_dev_cap1 & USB488_DEV_CAP1_IS_488_2	?  L"YES"	: L"NO");  OutputDebugString(strbuf);
+
+		wsprintf(strbuf, L"Device capabilities2: SCPI %s, SR%s, RL%s, DT%s\n\n",
+			inst->dev_usb488_dev_cap2 & USB488_DEV_CAP2_SCPI		?  L"YES"	: L"NO",
+			inst->dev_usb488_dev_cap2 & USB488_DEV_CAP2_SR1			?  L"1"		: L"0",
+			inst->dev_usb488_dev_cap2 & USB488_DEV_CAP2_RL1			?  L"1"		: L"0",
+			inst->dev_usb488_dev_cap2 & USB488_DEV_CAP2_DT1			?  L"1"		: L"0");  OutputDebugString(strbuf);
+#endif
+
+		/* Instrument USB port is up and running */
+		inst->dev_usb_up = true;
+		return inst->dev_usb_up;
+	}
+
+	/* Got no device handle */
+	return false;
+}
+
+bool USB_TMC::openTmc(instrument_t *inst)
+{
+	/* Initiate instrument */
+	bool r = tmcInitiate(inst);
+
+	/* Switch instrument from local to remote */
+	r = tmcGoRemote(inst);
+
+	
+
+	/* Instrument TMC connection is up and running */
+	inst->dev_tmc_up = true;
+	return inst->dev_tmc_up;
+}
+
+bool USB_TMC::tmcInitiate(instrument_t *inst)
+{
+	int									 r;
+	uint8_t								 status;
+	wchar_t								 strbuf[256];
+	bool								 ret = true;
+
+	r = libusb_control_transfer(inst->dev_handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+		INITIATE_CLEAR, 0, inst->dev_interface,
+		&status, 1, TRANSFER_TIMEOUT);
+	if (r < 0 || status != USBTMC_STATUS_SUCCESS) {
+#ifdef DEBUG_USB
+		if (r < 0) {
+			wsprintf(strbuf, L"Failed to INITIATE_CLEAR: %s.\n", libusb_error_name(r));  OutputDebugString(strbuf);
+		}
+		else {
+			wsprintf(strbuf, L"Failed to INITIATE_CLEAR: USBTMC status %d.\n", status);  OutputDebugString(strbuf);
+		}
+#endif
+		ret = false;
+	}
+
+	return ret;
+}
+
+bool USB_TMC::tmcGoRemote(instrument_t *inst)
+{
+	struct libusb_device_descriptor		 des;
+	uint8_t								 status;
+	int									 r;
+	wchar_t								 strbuf[256];
+	bool								 ret = true;
+
+	/* Sanity check */
+	if (!inst)
+		return false;
+
+	/* No cap. to toggle between local and remote - accepting already */
+	if (!(inst->dev_usb488_dev_cap2 & USB488_DEV_CAP2_RL1))
+		return true;
+
+	do {
+		//dev = libusb_get_device(inst->dev_handle);
+		libusb_get_device_descriptor(inst->dev, &des);
+
+		/* Check if REN_REMOTE and friends are supported */
+		if (!(inst->dev_usb488_dev_cap1 & USB488_DEV_CAP1_RENCON)) {
+			ret = true;
+			break;
+		}
+
+		/* Blacklisted devices are not able to handle the go remote request */
+		if (check_usbtmc_blacklist_libusb(blacklist_remote, des.idVendor, des.idProduct)) {
+			ret = true;
+			break;
+		}
+
+#ifdef DEBUG_USB
+		OutputDebugString(L"Locking out local control.\n");
+#endif
+
+		/* The device allows REN_CONTROL commands */
+		r = libusb_control_transfer(inst->dev_handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+			REN_CONTROL, 1, inst->dev_interface,
+			&status, 1, TRANSFER_TIMEOUT);
+		if (r < 0 || status != USBTMC_STATUS_SUCCESS) {
+#ifdef DEBUG_USB
+			if (r < 0) {
+				wsprintf(strbuf, L"Failed to enter REN state: %s.\n", libusb_error_name(r));  OutputDebugString(strbuf);
+			}
+			else {
+				wsprintf(strbuf, L"Failed to enter REN state: USBTMC status %d.\n", status);  OutputDebugString(strbuf);
+			}
+#endif
+			ret = false;
+			break;
+		}
+
+		/* The device allows REN_CONTROL commands */
+		r = libusb_control_transfer(inst->dev_handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+			LOCAL_LOCKOUT, 0, inst->dev_interface,
+			&status, 1, TRANSFER_TIMEOUT);
+		if (r < 0 || status != USBTMC_STATUS_SUCCESS) {
+#ifdef DEBUG_USB
+			if (r < 0) {
+				wsprintf(strbuf, L"Failed to enter local lockout state: %s.\n", libusb_error_name(r));  OutputDebugString(strbuf);
+			}
+			else {
+				wsprintf(strbuf, L"Failed to enter local lockout state: USBTMC status %d.\n", status);  OutputDebugString(strbuf);
+			}
+#endif
+			ret = false;
+			break;
+		}
+	} while (false);
+
+	return ret;
+}
+
+void USB_TMC::tmcGoLocal(instrument_t *inst)
+{
+	/* Sanity check */
+	if (!inst)
+		return;
+
+	{
+		struct libusb_device_descriptor	des;
+		int								r;
+		uint8_t							status;
+		wchar_t							strbuf[256];
+
+		if (!(inst->dev_usb488_dev_cap2 & USB488_DEV_CAP2_RL1))
+			return;
+
+		libusb_get_device_descriptor(inst->dev, &des);
+
+		/* Blacklisted devices are not able to handle the go local request */
+		if (check_usbtmc_blacklist_libusb(blacklist_remote, des.idVendor, des.idProduct))
+			return;
+
+#ifdef DEBUG_USB
+		OutputDebugString(L"Returning local control.\n");
+#endif
+
+		r = libusb_control_transfer(inst->dev_handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+									GO_TO_LOCAL, 0, inst->dev_interface,
+									&status, 1, TRANSFER_TIMEOUT);
+#ifdef DEBUG_USB
+		if (r < 0 || status != USBTMC_STATUS_SUCCESS) {
+			if (r < 0) {
+				wsprintf(strbuf, L"Failed to clear local lockout state: %s.\n", libusb_error_name(r));  OutputDebugString(strbuf);
+			} else {
+				wsprintf(strbuf, L"Failed to clear local lockout state: USBTMC status %d.\n", status);  OutputDebugString(strbuf);
+			}
+		}
+#endif
 	}
 }
 

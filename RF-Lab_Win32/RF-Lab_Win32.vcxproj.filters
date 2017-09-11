@@ -129,6 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
+    <None Include="Docs\usbtmc_usb488_subclass_1_00.pdf" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libusb\lib\getopt.lib" />

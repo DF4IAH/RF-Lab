@@ -4,6 +4,10 @@
 /* @see https://github.com/python-ivi/python-usbtmc/blob/master/usbtmc/usbtmc.py */
 
 
+/* Agents Library */
+#include <agents.h>
+#include "agentCom.h"
+
 #include "libusb.h"
 #include "libusbi.h"
 
@@ -13,6 +17,7 @@
 #endif
 
 #define MAX_TRANSFER_LENGTH				2048
+#define AGENT_PATTERN_USBTMC_TIMEOUT	 500
 #define TRANSFER_TIMEOUT				1000
 
 /* Some USBTMC-specific enums, as defined in the USBTMC standard. */
@@ -175,9 +180,6 @@ typedef enum INSTRUMENT_ENUM {
 	INSTRUMENT_RECEIVER_SA_RIGOL_DSA875,
 } INSTRUMENT_ENUM_t;
 
-typedef struct scpi_usbtmc_libusb {  // TODO: to be removed later
-} scpi_usbtmc_libusb_t;
-
 typedef struct instrument {
 	INSTRUMENT_ENUM_t		 type;
 	int						 devs_idx;
@@ -209,11 +211,26 @@ typedef struct instrument {
 } instrument_t;
 
 
+typedef struct UsbTmc_Instruments {
+	int					inst_rot_cnt;
+	instrument_t		inst_rot[8];
+
+	int					inst_tx_cnt;
+	instrument_t		inst_tx[8];
+
+	int					inst_rx_cnt;
+	instrument_t		inst_rx[8];
+} UsbTmc_Instruments_t;
+
+
 class USB_TMC
 {
 public:
-	USB_TMC();
+	USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbReq, unbounded_buffer<agentUsbRsp>* pAgtUsbRsp);
 	virtual ~USB_TMC();
+
+	void start(void);
+
 
 private:
 
@@ -251,15 +268,14 @@ private:
 	const struct libusb_version		   *version;
 	libusb_device					  **devs;
 
-	/* ... Instruments */
-	int					inst_rot_cnt;
-	instrument_t		inst_rot[8];
+	/* Server connection */
+	unbounded_buffer<agentUsbReq>	   *pAgtUsbReq;
+	unbounded_buffer<agentUsbRsp>	   *pAgtUsbRsp;
 
-	int					inst_tx_cnt;
-	instrument_t		inst_tx[8];
+	/* All Instruments detected */
+	UsbTmc_Instruments_t				ai;
 
-	int					inst_rx_cnt;
-	instrument_t		inst_rx[8];
+	bool								isStarted;
 };
 
 

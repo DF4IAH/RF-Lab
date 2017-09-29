@@ -36,7 +36,7 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 
 	case AGENT_MODEL_NONE:
 	default:
-		_curModel = nullptr;
+		delete _curModel; _curModel = nullptr;
 	}
 }
 

@@ -198,7 +198,7 @@ void USB_TMC::usbtmc_bulk_out_header_write(	uint8_t header[], uint8_t MsgID,
 	memcpy(header + 10, &u16_0,					sizeof(u16_0));
 }
 
-bool USB_TMC::usbtmc_bulk_in_header_read(	uint8_t header[], uint8_t MsgID,
+int USB_TMC::usbtmc_bulk_in_header_read(	uint8_t header[], uint8_t MsgID,
 													uint8_t bTag,
 													uint32_t *TransferSize,
 													uint8_t *bmTransferAttributes)
@@ -217,7 +217,7 @@ bool USB_TMC::usbtmc_bulk_in_header_read(	uint8_t header[], uint8_t MsgID,
 	return true;
 }
 
-bool USB_TMC::scpi_usbtmc_bulkout(instrument_t *inst, uint8_t msg_id, const void *data, int32_t size, uint8_t transfer_attributes)
+int USB_TMC::scpi_usbtmc_bulkout(instrument_t *inst, uint8_t msg_id, const void *data, int32_t size, uint8_t transfer_attributes)
 {
 	//struct scpi_usbtmc_libusb *uscpi = inst->uscpi;
 	int		padded_size, r, transferred;
@@ -272,7 +272,7 @@ int USB_TMC::scpi_usbtmc_bulkin_start(instrument_t *inst, uint8_t msg_id, uint8_
 	}
 
 	message_size += USBTMC_BULK_HEADER_SIZE;
-	inst->response_length = MIN(transferred, message_size);
+	inst->response_length = MIN((long)transferred, (long)message_size);
 	inst->response_bytes_read = USBTMC_BULK_HEADER_SIZE;
 	inst->remaining_length = message_size - inst->response_length;
 
@@ -297,76 +297,70 @@ int USB_TMC::scpi_usbtmc_bulkin_continue(instrument_t *inst, uint8_t *data, int 
 	return transferred;
 }
 
-#ifdef NEW
 int USB_TMC::scpi_usbtmc_libusb_send(void *priv, const char *command)
-542 {
-	543         struct scpi_usbtmc_libusb *uscpi = priv;
-	544
-		545         if (scpi_usbtmc_bulkout(uscpi, DEV_DEP_MSG_OUT,
-			546                                 command, strlen(command), EOM) <= 0)
-		547                 return SR_ERR;
-	548
-		549         sr_spew("Successfully sent SCPI command: '%s'.", command);
-	550
-		551         return SR_OK;
-	552 }
+{
+	instrument_t *uscpi = (instrument_t*)priv;
+	wchar_t	strbuf[256];
+
+	if (scpi_usbtmc_bulkout(uscpi, DEV_DEP_MSG_OUT, command, strlen(command), EOM) <= 0)
+		return false;
+
+	wsprintf(strbuf, L"Successfully sent SCPI command: '%s'.", command);  OutputDebugString(strbuf);
+
+	return true;
+}
 
 int USB_TMC::scpi_usbtmc_libusb_read_begin(void *priv)
-555 {
-	556         struct scpi_usbtmc_libusb *uscpi = priv;
-	557
-		558         uscpi->remaining_length = 0;
-	559
-		560         if (scpi_usbtmc_bulkout(uscpi, REQUEST_DEV_DEP_MSG_IN,
-			561             NULL, INT32_MAX, 0) < 0)
-		562                 return SR_ERR;
-	563         if (scpi_usbtmc_bulkin_start(uscpi, DEV_DEP_MSG_IN,
-		564                                      uscpi->buffer, sizeof(uscpi->buffer),
-		565 & uscpi->bulkin_attributes) < 0)
-		566                 return SR_ERR;
-	567
-		568         return SR_OK;
-	569 }
+{
+	instrument_t *uscpi = (instrument_t*)priv;
+
+	uscpi->remaining_length = 0;
+
+	if (scpi_usbtmc_bulkout(uscpi, REQUEST_DEV_DEP_MSG_IN, NULL, INT32_MAX, 0) < 0)
+		return false;
+
+	if (scpi_usbtmc_bulkin_start(uscpi, DEV_DEP_MSG_IN, uscpi->buffer, sizeof(uscpi->buffer), &uscpi->dev_bulkin_attributes) < 0)
+		return false;
+
+	return true;
+}
 
 int USB_TMC::scpi_usbtmc_libusb_read_data(void *priv, char *buf, int maxlen)
-572 {
-	573         struct scpi_usbtmc_libusb *uscpi = priv;
-	574         int read_length;
-	575
-		576         if (uscpi->response_bytes_read >= uscpi->response_length) {
-		577                 if (uscpi->remaining_length > 0) {
-			578                         if (scpi_usbtmc_bulkin_continue(uscpi, uscpi->buffer,
-				579                                                         sizeof(uscpi->buffer)) <= 0)
-				580                                 return SR_ERR;
-			581
-		}
-		else {
-			582                         if (uscpi->bulkin_attributes & EOM)
-				583                                 return SR_ERR;
-			584                         if (scpi_usbtmc_libusb_read_begin(uscpi) < 0)
-				585                                 return SR_ERR;
-			586
-		}
-		587
-	}
-	588
-		589         read_length = MIN(uscpi->response_length - uscpi->response_bytes_read, maxlen);
-	590
-		591         memcpy(buf, uscpi->buffer + uscpi->response_bytes_read, read_length);
-	592
-		593         uscpi->response_bytes_read += read_length;
-	594
-		595         return read_length;
-	596 }
-
-static int USB_TMC::scpi_usbtmc_libusb_read_complete(void *priv)
 {
-	600         struct scpi_usbtmc_libusb *uscpi = priv;
-	601         return uscpi->response_bytes_read >= uscpi->response_length &&
-		602                uscpi->remaining_length <= 0 &&
-		603                uscpi->bulkin_attributes & EOM;
+	instrument_t *uscpi = (instrument_t*)priv;
+	int read_length;
+
+	if (uscpi->response_bytes_read >= uscpi->response_length) {
+		if (uscpi->remaining_length > 0) {
+			if (scpi_usbtmc_bulkin_continue(uscpi, uscpi->buffer, sizeof(uscpi->buffer)) <= 0)
+				return false;
+
+		} else {
+			if (uscpi->dev_bulkin_attributes & EOM)
+				return false;
+
+			if (scpi_usbtmc_libusb_read_begin(uscpi) < 0)
+				return false;
+		}
+	}
+
+	read_length = MIN(uscpi->response_length - uscpi->response_bytes_read, maxlen);
+
+	memcpy(buf, uscpi->buffer + uscpi->response_bytes_read, read_length);
+
+	uscpi->response_bytes_read += read_length;
+
+	return read_length;
 }
-#endif
+
+int USB_TMC::scpi_usbtmc_libusb_read_complete(void *priv)
+{
+	instrument_t *uscpi = (instrument_t*)priv;
+
+	return	(uscpi->response_bytes_read >= uscpi->response_length) && 
+			(uscpi->remaining_length	<= 0) &&
+			(uscpi->dev_bulkin_attributes & EOM);
+}
 
 bool USB_TMC::check_usbtmc_blacklist_libusb(struct usbtmc_blacklist *blacklist, uint16_t vid, uint16_t pid)
 {

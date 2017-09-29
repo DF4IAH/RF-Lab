@@ -176,9 +176,6 @@ typedef enum INSTRUMENT_ENUM {
 } INSTRUMENT_ENUM_t;
 
 typedef struct scpi_usbtmc_libusb {  // TODO: to be removed later
-	struct sr_context		*ctx;
-	struct sr_usb_dev_inst	*usb;
-	int						 detached_kernel_driver;
 } scpi_usbtmc_libusb_t;
 
 typedef struct instrument {
@@ -201,11 +198,14 @@ typedef struct instrument {
 	bool					 dev_usb_up;
 	bool					 dev_tmc_up;
 
-	scpi_usbtmc_libusb_t	 uscpi;		// TODO: move that content into 'instrument'
 	int						 response_length;
 	int						 response_bytes_read;
 	int						 remaining_length;
 	uint8_t					 buffer[MAX_TRANSFER_LENGTH];
+
+	struct sr_context		*ctx;						// SCPI USB-TMC code
+	struct sr_usb_dev_inst	*usb;						// SCPI USB-TMC code
+	int						 detached_kernel_driver;	// SCPI USB-TMC code
 } instrument_t;
 
 
@@ -236,10 +236,14 @@ private:
 	void tmcGoLocal(instrument_t *inst);
 	INSTRUMENT_ENUM_t checkIDTable(uint16_t idVendor, uint16_t idProduct);
 	void usbtmc_bulk_out_header_write(uint8_t header[], uint8_t MsgID, uint8_t bTag, uint32_t TransferSize, uint8_t bmTransferAttributes, char TermChar);
-	bool usbtmc_bulk_in_header_read(uint8_t header[], uint8_t MsgID, uint8_t bTag, uint32_t *TransferSize, uint8_t *bmTransferAttributes);
-	bool scpi_usbtmc_bulkout(instrument_t *inst, uint8_t msg_id, const void *data, int32_t size, uint8_t transfer_attributes);
+	int usbtmc_bulk_in_header_read(uint8_t header[], uint8_t MsgID, uint8_t bTag, uint32_t *TransferSize, uint8_t *bmTransferAttributes);
+	int scpi_usbtmc_bulkout(instrument_t *inst, uint8_t msg_id, const void *data, int32_t size, uint8_t transfer_attributes);
 	int scpi_usbtmc_bulkin_start(instrument_t *inst, uint8_t msg_id, uint8_t *data, int32_t size, uint8_t *transfer_attributes);
 	int scpi_usbtmc_bulkin_continue(instrument_t *inst, uint8_t *data, int size);
+	int scpi_usbtmc_libusb_send(void *priv, const char *command);
+	int scpi_usbtmc_libusb_read_begin(void *priv);
+	int scpi_usbtmc_libusb_read_data(void *priv, char *buf, int maxlen);
+	int scpi_usbtmc_libusb_read_complete(void *priv);
 
 
 	/* Attributes */

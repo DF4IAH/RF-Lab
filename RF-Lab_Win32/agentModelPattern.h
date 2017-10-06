@@ -69,7 +69,7 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 class agentModelPattern;
 typedef struct threadDataProcessID_s {
 	int									threadNo;
-	agentModelPattern*					c;
+	agentModelPattern*					o;
 } threadDataProcessID_t;
 
 
@@ -89,7 +89,7 @@ private:
 
 	class agentModel					*pAgtMod;
 
-	HANDLE								 hThreadProcessID;
+	HANDLE								 hThreadUsbTmc;
 	threadDataProcessID_t				 sThreadDataProcessID;
 
 	USB_TMC								*pUsbTmc;

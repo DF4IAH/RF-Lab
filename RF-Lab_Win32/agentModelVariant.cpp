@@ -5,7 +5,7 @@
 
 agentModelVariant::agentModelVariant(void)
 				 : _running(FALSE)
-				 ,_runState(C_MODEL_RUNSTATES_NOOP)
+				 , _runState(C_MODEL_RUNSTATES_NOOP)
 				 , _done(FALSE)
 {
 }

@@ -223,18 +223,35 @@ typedef struct UsbTmc_Instruments {
 } UsbTmc_Instruments_t;
 
 
-class USB_TMC
+class USB_TMC;
+typedef struct threadDataUsbTmc_s {
+	int									threadNo;
+	USB_TMC*							o;
+} threadDataUsbTmc_t;
+
+
+class USB_TMC : public agent
 {
 public:
 	USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbReq, unbounded_buffer<agentUsbRsp>* pAgtUsbRsp);
 	virtual ~USB_TMC();
 
-	void start(void);
+#if 0
+	static void procThreadUsbTmc(void* pContext);
+#endif
+
+	void run(void);				// The agent's own run() thread
+	void allowStart(void);		// Release the brakes in run()
 
 
 private:
 
 	/* Methods */
+
+#if 0
+	void threadsStart(void);
+	void threadsStop(void);
+#endif
 
 	int init_libusb(bool show);
 	void print_devs_libusb(libusb_device **devs);
@@ -265,17 +282,20 @@ private:
 
 	/* Attributes */
 
-	const struct libusb_version		   *version;
-	libusb_device					  **devs;
+	HANDLE								 hThreadUsbTmc;
+	threadDataUsbTmc_t					 sThreadDataUsbTmc;
+
+	const struct libusb_version			*version;
+	libusb_device					   **devs;
 
 	/* Server connection */
-	unbounded_buffer<agentUsbReq>	   *pAgtUsbReq;
-	unbounded_buffer<agentUsbRsp>	   *pAgtUsbRsp;
+	unbounded_buffer<agentUsbReq>		*pAgtUsbReq;
+	unbounded_buffer<agentUsbRsp>		*pAgtUsbRsp;
 
 	/* All Instruments detected */
-	UsbTmc_Instruments_t				ai;
+	UsbTmc_Instruments_t				 ai;
 
-	bool								isStarted;
+	bool								 isStarted;
 };
 
 

@@ -5,6 +5,8 @@
 #include <agents.h>
 #include "agentCom.h"
 
+#include <process.h>
+
 
 #define DEBUG_USB 1
 
@@ -14,16 +16,36 @@ inline void* varcpy(void* dest, void* src, size_t size)
 	memcpy(dest, src, size);
 }
 
-// TODO: create own thread for this class
+
+USB_TMC *g_usb_tmc = nullptr;
+
 USB_TMC::USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbReq, unbounded_buffer<agentUsbRsp>* pAgtUsbRsp) :
 	devs(NULL)
 	, pAgtUsbReq(pAgtUsbReq)
 	, pAgtUsbRsp(pAgtUsbRsp)
 	, isStarted(false)
 {
+	g_usb_tmc = this;
+	
 	/* Clear instrument structure */
 	memset(&ai, 0, sizeof(UsbTmc_Instruments_t));
 
+	/* Start the agent that will call the run() method */
+	start();
+
+	/* The libusb connection is done in its own thread */
+	//threadsStart();
+}
+
+USB_TMC::~USB_TMC()
+{
+	//threadsStop();
+	shutdown_libusb();
+}
+
+
+void USB_TMC::run(void)
+{
 	/* Search for any USB_TMC devices */
 	int cnt = init_libusb(true);
 
@@ -32,46 +54,39 @@ USB_TMC::USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbReq, unbounded_buffer<age
 		cnt = findInstruments();
 	}
 
-	/* Inform about the instruments */
-	{
+	/* Wait for the request of the agentModelPattern */
+	do {
+		/* Inform about the instruments */
 		agentUsbReq usbReqData;
 
-		/* Wait for the request of the agentModelPattern */
-		do {
-			if (!isStarted) {
-				Sleep(10);
-				continue;
-			}
+		if (!isStarted) {
+			Sleep(10);
+			continue;
+		}
 
-			try {
-				usbReqData = receive(*pAgtUsbReq, AGENT_PATTERN_USBTMC_TIMEOUT);
-				if (usbReqData.cmd == C_USBREQ_DO_REGISTRATION) {
-					agentUsbRsp usbRspData;
+		try {
+			usbReqData = receive(*pAgtUsbReq, AGENT_PATTERN_USBTMC_TIMEOUT);
+			if (usbReqData.cmd == C_USBREQ_DO_REGISTRATION) {
+				agentUsbRsp usbRspData;
 
-					usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
-					usbRspData.data = &ai;
-					send(pAgtUsbRsp, usbRspData);
+				usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
+				usbRspData.data = &ai;
+				send(pAgtUsbRsp, usbRspData);
 
-					break;
-				}
+				break;
 			}
-			catch (Concurrency::operation_timed_out e) {
-				//e.what();
-			}
-		} while (true);  // Try as long as known request comes
-	}
+		}
+		catch (Concurrency::operation_timed_out e) {
+			//e.what();
+		}
+	} while (true);  // Try as long as known request comes
 }
 
-USB_TMC::~USB_TMC()
-{
-	shutdown_libusb();
-}
-
-
-void USB_TMC::start(void)
+void USB_TMC::allowStart(void)
 {
 	isStarted = true;
 }
+
 
 int USB_TMC::init_libusb(bool show)
 {

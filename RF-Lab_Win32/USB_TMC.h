@@ -174,10 +174,12 @@ typedef enum INSTRUMENT_ENUM {
 	/* Transmitters */
 	INSTRUMENT_TRANSMITTERS__ALL		= 0x20,
 	INSTRUMENT_TRANSMITTER_FG_XXX,
+	INSTRUMENT_TRANSMITTERS_GENERIC_TX	= 0x29,
 
 	/* Receivers */
 	INSTRUMENT_RECEIVERS__ALL			= 0x30,
 	INSTRUMENT_RECEIVER_SA_RIGOL_DSA875,
+	INSTRUMENT_TRANSMITTERS_GENERIC_RX	= 0x39,
 } INSTRUMENT_ENUM_t;
 
 typedef struct instrument {
@@ -188,6 +190,8 @@ typedef struct instrument {
 	libusb_device_handle	*dev_handle;
 	uint8_t					 dev_config;
 	uint8_t					 dev_interface;
+	uint16_t				 dev_usb_idVendor;
+	uint16_t				 dev_usb_idProduct;
 	uint8_t					 dev_bulk_out_ep;
 	uint8_t					 dev_bulk_in_ep;
 	uint8_t					 dev_interrupt_ep;
@@ -199,6 +203,7 @@ typedef struct instrument {
 	uint8_t					 dev_bulkin_attributes;
 	bool					 dev_usb_up;
 	bool					 dev_tmc_up;
+	char					 dev_tmc_idn[256];
 
 	int						 response_length;
 	int						 response_bytes_read;
@@ -261,14 +266,22 @@ private:
 	bool check_usbtmc_blacklist_libusb(struct usbtmc_blacklist *blacklist, uint16_t vid, uint16_t pid);
 
 	int findInstruments(void);
-	instrument_t* addInstrument(INSTRUMENT_ENUM_t type, int devs_idx);
+	instrument_t* addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instrument_t *optionalInst);
 	void releaseInstrument_usb_iface(instrument_t *inst, int cnt);
 	bool openUsb(instrument_t *inst);
+	bool closeUsb(instrument_t *inst);
 	bool openTmc(instrument_t *inst);
 	bool tmcInitiate(instrument_t *inst);
 	bool tmcGoRemote(instrument_t *inst);
 	void tmcGoLocal(instrument_t *inst);
 	INSTRUMENT_ENUM_t checkIDTable(uint16_t idVendor, uint16_t idProduct);
+	INSTRUMENT_ENUM_t usbTmcCheck(int devs_idx, struct libusb_device_descriptor *desc, instrument_t *outInst);
+	bool usbTmcIsTx(int devs_idx, instrument_t *outInst);
+	bool usbTmcReadLine(instrument_t *inst, char* outLine, int len);
+	void usbTmcReadFlush(instrument_t *inst);
+	bool usbTmcCmdRST(instrument_t *inst);
+	bool usbTmcGetIDN(instrument_t *inst);
+
 	void usbtmc_bulk_out_header_write(uint8_t header[], uint8_t MsgID, uint8_t bTag, uint32_t TransferSize, uint8_t bmTransferAttributes, char TermChar);
 	int usbtmc_bulk_in_header_read(uint8_t header[], uint8_t MsgID, uint8_t bTag, uint32_t *TransferSize, uint8_t *bmTransferAttributes);
 	int scpi_usbtmc_bulkout(instrument_t *inst, uint8_t msg_id, const void *data, int32_t size, uint8_t transfer_attributes);

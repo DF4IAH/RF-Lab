@@ -246,7 +246,7 @@ public:
 #endif
 
 	void run(void);				// The agent's own run() thread
-	void allowStart(void);		// Release the brakes in run()
+	void start(void);			// Start agent and release the brake in run()
 
 
 private:
@@ -280,6 +280,10 @@ private:
 	bool usbTmcReadLine(instrument_t *inst, char* outLine, int len);
 	void usbTmcReadFlush(instrument_t *inst);
 	bool usbTmcCmdRST(instrument_t *inst);
+	bool usbTmcCmdCLS(instrument_t *inst);
+	bool usbTmcCmdSRE(instrument_t *inst, uint16_t bitmask);
+	bool usbTmcCmdESE(instrument_t *inst, uint16_t bitmask);
+	int  usbTmcGetSTB(instrument_t *inst);
 	bool usbTmcGetIDN(instrument_t *inst);
 
 	void usbtmc_bulk_out_header_write(uint8_t header[], uint8_t MsgID, uint8_t bTag, uint32_t TransferSize, uint8_t bmTransferAttributes, char TermChar);

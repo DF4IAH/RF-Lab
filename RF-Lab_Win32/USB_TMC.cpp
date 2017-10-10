@@ -29,12 +29,6 @@ USB_TMC::USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbReq, unbounded_buffer<age
 	
 	/* Clear instrument structure */
 	memset(&ai, 0, sizeof(UsbTmc_Instruments_t));
-
-	/* Start the agent that will call the run() method */
-	start();
-
-	/* The libusb connection is done in its own thread */
-	//threadsStart();
 }
 
 USB_TMC::~USB_TMC()
@@ -47,10 +41,9 @@ USB_TMC::~USB_TMC()
 void USB_TMC::run(void)
 {
 	/* Search for any USB devices */
-	int cnt = init_libusb(true);
-
-	/* Find known USB_TMC instruments attached to the USB bus */
+	int cnt = init_libusb(false);
 	if (cnt > 0) {
+		/* Find known or generic USB_TMC instruments attached to the USB bus */
 		cnt = findInstruments();
 	}
 
@@ -82,8 +75,9 @@ void USB_TMC::run(void)
 	} while (true);  // Try as long as known request comes
 }
 
-void USB_TMC::allowStart(void)
+void USB_TMC::start(void)
 {
+	agent::start();
 	isStarted = true;
 }
 
@@ -433,7 +427,7 @@ int USB_TMC::findInstruments(void)
 			bool doCopyInst = false;
 
 			/* Look-up table for well-known instruments */
-			INSTRUMENT_ENUM_t type = INSTRUMENT_NONE;  // TODO: checkIDTable(desc.idVendor, desc.idProduct);
+			INSTRUMENT_ENUM_t type = checkIDTable(desc.idVendor, desc.idProduct);
 
 			/* Second chance by a generic USB_TMC check */
 			if (type == INSTRUMENT_NONE) {
@@ -444,14 +438,6 @@ int USB_TMC::findInstruments(void)
 			if (type != INSTRUMENT_NONE) {
 				instrument_t *inst = addInstrument(idx - 1, type, doCopyInst ?  &outInst : nullptr);
 				cnt++;
-				bool suc = openUsb(inst);
-				// TODO: inform GUI about the ready device
-#ifndef NORMAL
-				// TODO: take that out
-				if (suc) {
-					suc = openTmc(inst);
-				}
-#endif
 			}
 		}
 	}
@@ -469,10 +455,8 @@ instrument_t* USB_TMC::addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instr
 				ret = &(ai.inst_rot[ai.inst_rot_cnt]);
 				if (optionalInst)
 					memcpy(ret, optionalInst, sizeof(instrument_t));
-				else {
-					ai.inst_rot[ai.inst_rot_cnt].type = type;
-					ai.inst_rot[ai.inst_rot_cnt].devs_idx = devs_idx;
-				}
+				ai.inst_rot[ai.inst_rot_cnt].type		= type;
+				ai.inst_rot[ai.inst_rot_cnt].devs_idx	= devs_idx;
 				ai.inst_rot_cnt++;
 			}
 		}
@@ -483,10 +467,8 @@ instrument_t* USB_TMC::addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instr
 				ret = &(ai.inst_tx[ai.inst_tx_cnt]);
 				if (optionalInst)
 					memcpy(ret, optionalInst, sizeof(instrument_t));
-				else {
-					ai.inst_tx[ai.inst_tx_cnt].type = type;
-					ai.inst_tx[ai.inst_tx_cnt].devs_idx = devs_idx;
-				}
+				ai.inst_tx[ai.inst_tx_cnt].type			= type;
+				ai.inst_tx[ai.inst_tx_cnt].devs_idx		= devs_idx;
 				ai.inst_tx_cnt++;
 			}
 
@@ -496,10 +478,8 @@ instrument_t* USB_TMC::addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instr
 				ret = &(ai.inst_rx[ai.inst_rx_cnt]);
 				if (optionalInst)
 					memcpy(ret, optionalInst, sizeof(instrument_t));
-				else {
-					ai.inst_rx[ai.inst_rx_cnt].type = type;
-					ai.inst_rx[ai.inst_rx_cnt].devs_idx = devs_idx;
-				}
+				ai.inst_rx[ai.inst_rx_cnt].type			= type;
+				ai.inst_rx[ai.inst_rx_cnt].devs_idx		= devs_idx;
 				ai.inst_rx_cnt++;
 			}
 		}
@@ -781,13 +761,11 @@ bool USB_TMC::closeUsb(instrument_t *inst)
 
 bool USB_TMC::openTmc(instrument_t *inst)
 {
-	/* Initiate instrument */
-	bool r = tmcInitiate(inst);
+	/* Initiate communication */
+	//bool r1 = tmcInitiate(inst);
 
 	/* Switch instrument from local to remote */
-	r = tmcGoRemote(inst);
-
-	
+	bool r2 = tmcGoRemote(inst);
 
 	/* Instrument TMC connection is up and running */
 	inst->dev_tmc_up = true;
@@ -826,10 +804,6 @@ bool USB_TMC::tmcGoRemote(instrument_t *inst)
 	wchar_t								 strbuf[256];
 	bool								 ret = true;
 
-	/* Sanity check */
-	if (!inst)
-		return false;
-
 	/* No cap. to toggle between local and remote - accepting already */
 	if (!(inst->dev_usb488_dev_cap2 & USB488_DEV_CAP2_RL1))
 		return true;
@@ -843,6 +817,8 @@ bool USB_TMC::tmcGoRemote(instrument_t *inst)
 
 		/* Blacklisted devices are not able to handle the go remote request */
 		if (check_usbtmc_blacklist_libusb(blacklist_remote, inst->dev_usb_idVendor, inst->dev_usb_idProduct)) {
+			/* Send a *RST message to get the same result */
+			usbTmcCmdRST(inst);
 			ret = true;
 			break;
 		}
@@ -972,9 +948,9 @@ INSTRUMENT_ENUM_t USB_TMC::usbTmcCheck(int devs_idx, struct libusb_device_descri
 				continue;
 
 			isUsbTmc = true;
-#ifdef DEBUG_USB
+//#ifdef DEBUG_USB
 			wsprintf(strbuf, L"Found USBTMC device (VID:PID = %04x:%04x).\n", desc->idVendor, desc->idProduct);  OutputDebugString(strbuf);
-#endif
+//#endif
 			isTx = usbTmcIsTx(devs_idx, outInst);
 		}
 		libusb_free_config_descriptor(confDes);
@@ -999,30 +975,51 @@ bool USB_TMC::usbTmcIsTx(int devs_idx, instrument_t *outInst)
 
 	inst->devs_idx = devs_idx;
 	if (openUsb(inst)) {
-		if (!usbTmcCmdRST(inst)) {
-			stat |= 0x01;
-			wsprintf(strbuf, L"Can not reset the instrument (VID:PID = %04x:%04x).\n", inst->dev_usb_idVendor, inst->dev_usb_idProduct);  OutputDebugString(strbuf);
-		}
-
-		if (!stat) {
-			if (!usbTmcGetIDN(inst))
-				stat |= 0x02;
-		}
-
-		if (!stat) {
-			r = scpi_usbtmc_libusb_send(inst, ":OUTP:STAT OFF");
-			if (r < 0) {
-				stat |= 0x04;
+		if (openTmc(inst)) {
+			if (!usbTmcCmdRST(inst)) {
+				stat |= 0x01;
+				wsprintf(strbuf, L"Can not reset the instrument (VID:PID = %04x:%04x).\n", inst->dev_usb_idVendor, inst->dev_usb_idProduct);  OutputDebugString(strbuf);
 			}
-			else {
-				char scpi_buf[256];
-				r = usbTmcReadLine(inst, scpi_buf, sizeof(scpi_buf));
-				OutputDebugStringA(scpi_buf);
-				Sleep(1000);
+
+			if (!stat) {
+				if (!usbTmcGetIDN(inst))
+					stat |= 0x02;
+			}
+
+#if 0
+			if (!stat) {
+				if (!usbTmcCmdCLS(inst))
+					stat |= 0x04;
+			}
+
+			if (!stat) {
+				if (!usbTmcCmdSRE(inst, 0))
+					stat |= 0x08;
+			}
+
+			if (!stat) {
+				if (!usbTmcCmdESE(inst, 0))
+					stat |= 0x10;
+			}
+#endif
+
+			if (!stat) {
+				r = scpi_usbtmc_libusb_send(inst, ":FREQ:SPAN:FULL");		// RX: Spectrum analysator knows about a full scan
+	//			r = scpi_usbtmc_libusb_send(inst, ":FREQ:CENT 1.0E+06");	// RX: Spectrum analysator knows about a center frequency
+	//			r = scpi_usbtmc_libusb_send(inst, ":OUTP:STAT OFF");		// TX: Generator knows about ...
+				if (r < 0) {
+					stat |= 0x20;
+				}
+				else {
+					/* Generator fails (TX) / Spectrum analysator passes (RX) */
+					int val = usbTmcGetSTB(inst);
+					if (val) {
+						isTx = true;
+					}
+				}
 			}
 		}
-
-		closeUsb(inst);
+		closeUsb(inst);  // includes closeTmc()
 	}
 
 	return isTx;
@@ -1060,6 +1057,41 @@ void USB_TMC::usbTmcReadFlush(instrument_t *inst)
 bool USB_TMC::usbTmcCmdRST(instrument_t *inst)
 {
 	return 0 == scpi_usbtmc_libusb_send(inst, "*RST");
+}
+
+bool USB_TMC::usbTmcCmdCLS(instrument_t *inst)
+{
+	return 0 == scpi_usbtmc_libusb_send(inst, "*CLS;*WAI");
+}
+
+bool USB_TMC::usbTmcCmdSRE(instrument_t *inst, uint16_t bitmask)
+{
+	char scpi_buf[256];
+
+	sprintf_s(scpi_buf, sizeof(scpi_buf), "*SRE %d", bitmask);
+	return 0 == scpi_usbtmc_libusb_send(inst, scpi_buf);
+}
+
+bool USB_TMC::usbTmcCmdESE(instrument_t *inst, uint16_t bitmask)
+{
+	char scpi_buf[256];
+
+	sprintf_s(scpi_buf, sizeof(scpi_buf), "*ESE %d", bitmask);
+	return 0 == scpi_usbtmc_libusb_send(inst, scpi_buf);
+}
+
+int USB_TMC::usbTmcGetSTB(instrument_t *inst)
+{
+	char scpi_buf[256];
+	int  ival = 0;
+
+	int r = scpi_usbtmc_libusb_send(inst, "*STB?");
+	if (!r) {
+		usbTmcReadLine(inst, scpi_buf, sizeof(scpi_buf));
+	}
+
+	int len = sscanf_s(scpi_buf, "%d", &ival);
+	return len ? ival : 0;
 }
 
 bool USB_TMC::usbTmcGetIDN(instrument_t *inst)

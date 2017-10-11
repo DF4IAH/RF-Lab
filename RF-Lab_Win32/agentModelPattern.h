@@ -67,32 +67,29 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 
 
 class agentModelPattern;
-typedef struct threadDataProcessID_s {
+typedef struct threadDataAgentModelPattern_s {
 	int									threadNo;
 	agentModelPattern*					o;
-} threadDataProcessID_t;
+} threadDataAgentModelPattern_t;
 
 
 
-class agentModelPattern : public agentModelVariant
+class agentModelPattern : public agentModelVariant, public agent
 {
 private:
-	USB_TMC								*usbTmc;
-	unbounded_buffer<agentUsbReq_t>		*pAgtUsbReq;
-	unbounded_buffer<agentUsbRsp_t>		*pAgtUsbRsp;
-	agentUsb							*pAgtUsb;
-
-	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
-	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
-	agentCom							*pAgtCom[C_COMINST__COUNT];
 	LPVOID								 _arg;
 
 	class agentModel					*pAgtMod;
+	threadDataAgentModelPattern_t		 sThreadDataAgentModelPattern;
 
-	HANDLE								 hThreadUsbTmc;
-	threadDataProcessID_t				 sThreadDataProcessID;
+	agentCom							*pAgtCom[C_COMINST__COUNT];
+	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
+	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
 
-	USB_TMC								*pUsbTmc;
+	USB_TMC								*pAgtUsbTmc;
+	unbounded_buffer<agentUsbReq_t>		*pAgtUsbTmcReq;
+	unbounded_buffer<agentUsbRsp_t>		*pAgtUsbTmcRsp;
+	HANDLE								 hThreadAgtUsbTmc;
 
 	int									 processing_ID;
 	int									 processing_arg1;
@@ -123,8 +120,8 @@ private:
 public:
 	/* overwriting agentModel member functions() */
 	bool		isRunning(void);
-	void		Release(void);
 	bool		shutdown(void);
+	void		Release(void);
 	void		wmCmd(int wmId, LPVOID arg = nullptr);
 	static void	procThreadProcessID(void* pContext);
 

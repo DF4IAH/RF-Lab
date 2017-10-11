@@ -22,7 +22,7 @@ WinSrv* g_instance = nullptr;
 extern HINSTANCE g_hInst;                                // Aktuelle Instanz
 
 
-template <class T>  void SafeRelease(T **ppT)
+template <class T>  void SafeReleaseDelete(T **ppT)
 {
 	if (*ppT)
 	{
@@ -65,7 +65,6 @@ WinSrv::WinSrv() : hWnd(nullptr)
 				 , _size(D2D1_SIZE_F())
 				 , _PD({ 0 })
 				 , pAgtModel(nullptr)
-				 , pAgtCom { nullptr, nullptr,nullptr }
 				 , _winExitReceived(FALSE)
 				 , _ready(FALSE)
 {
@@ -79,20 +78,11 @@ WinSrv::WinSrv() : hWnd(nullptr)
 
 WinSrv::~WinSrv()
 {
-	threadsStop();
-
-	SafeRelease(&pAgtModel);
-	for (int i = 0; i < C_COMINST__COUNT; ++i) {
-		if (pAgtCom[i]) {
-			SafeRelease(&pAgtCom[i]);
-		}
-	}
-
 	//SafeRelease(&hwndStatus);
 
-	SafeRelease(&pBrush);
-	SafeRelease(&pRenderTarget);
-	SafeRelease(&pFactory);
+	SafeReleaseDelete(&pBrush);
+	SafeReleaseDelete(&pRenderTarget);
+	SafeReleaseDelete(&pFactory);
 
 	CoUninitialize();
 }
@@ -115,19 +105,8 @@ void WinSrv::threadsStart()
 
 void WinSrv::threadsStop()
 {
-	// shutdown the antenna measure model
-	if (pAgtModel) {
-		//_ub_agtModel_req.send();
-		//pAgtModel->shutdown();
-		agent::wait(pAgtModel);
-	}
-
-	// shutdown each communication interface
-	for (int i = 0; i < C_COMINST__COUNT; ++i) {
-		if (pAgtCom[i]) {
-			agent::wait(pAgtCom[i]);
-		}
-	}
+	/* Shutdown the model */
+	SafeReleaseDelete(&pAgtModel);
 }
 
 
@@ -135,10 +114,7 @@ void WinSrv::srvWinExit()
 {
 	if (g_instance) {
 		g_instance->_winExitReceived = TRUE;
-
-		if (g_instance->pAgtModel) {
-			g_instance->pAgtModel->shutdown();
-		}
+		g_instance->threadsStop();
 	}
 }
 
@@ -281,8 +257,8 @@ HRESULT WinSrv::createGraphicsResources()
 
 void WinSrv::discardGraphicsResources()
 {
-	SafeRelease(&pBrush);
-	SafeRelease(&pRenderTarget);
+	SafeReleaseDelete(&pBrush);
+	SafeReleaseDelete(&pRenderTarget);
 }
 
 void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
@@ -409,10 +385,7 @@ void WinSrv::srvStart()
 void WinSrv::srvStop()
 {
 	if (g_instance) {
-		srvWinExit();
-		while (agentModel::isRunning()) {
-			Sleep(10);
-		}
+		//srvWinExit();
 
 		delete g_instance;
 		g_instance = nullptr;

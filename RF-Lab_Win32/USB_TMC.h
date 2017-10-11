@@ -20,6 +20,15 @@
 #define AGENT_PATTERN_USBTMC_TIMEOUT	 500
 #define TRANSFER_TIMEOUT				1000
 
+
+enum C_USB_TMC_RUNSTATES_ENUM {
+	C_USB_TMC_RUNSTATES_NOOP = 0,
+	C_USB_TMC_RUNSTATES_INIT,
+	C_USB_TMC_RUNSTATES_RUN,
+	C_USB_TMC_RUNSTATES_STOP,
+};
+
+
 /* Some USBTMC-specific enums, as defined in the USBTMC standard. */
 //#define LIBUSB_CLASS_APPLICATION		0xFE  --> @see: libusb.h  enum libusb_class_code { ... };
 #define SUBCLASS_USBTMC					0x03
@@ -238,25 +247,26 @@ typedef struct threadDataUsbTmc_s {
 class USB_TMC : public agent
 {
 public:
-	USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbReq, unbounded_buffer<agentUsbRsp>* pAgtUsbRsp);
+	USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbTmcReq, unbounded_buffer<agentUsbRsp>* pAgtUsbTmcRsp);
 	virtual ~USB_TMC();
 
 #if 0
 	static void procThreadUsbTmc(void* pContext);
 #endif
 
-	void run(void);				// The agent's own run() thread
 	void start(void);			// Start agent and release the brake in run()
+	bool shutdown(void);		// Signal to shutdown the run() thread
+	void Release(void);			// Stop agent and shutdown
+	void run(void);				// The agent's own run() thread
+	bool isDone(void);
 
 
 private:
 
 	/* Methods */
 
-#if 0
-	void threadsStart(void);
-	void threadsStop(void);
-#endif
+//	void threadsStart(void);
+//	void threadsStop(void);
 
 	int init_libusb(bool show);
 	void print_devs_libusb(libusb_device **devs);
@@ -299,20 +309,23 @@ private:
 
 	/* Attributes */
 
-	HANDLE								 hThreadUsbTmc;
+	HANDLE								 hThreadAgtUsbTmc;
 	threadDataUsbTmc_t					 sThreadDataUsbTmc;
 
 	const struct libusb_version			*version;
 	libusb_device					   **devs;
 
 	/* Server connection */
-	unbounded_buffer<agentUsbReq>		*pAgtUsbReq;
-	unbounded_buffer<agentUsbRsp>		*pAgtUsbRsp;
+	unbounded_buffer<agentUsbReq>		*pAgtUsbTmcReq;
+	unbounded_buffer<agentUsbRsp>		*pAgtUsbTmcRsp;
 
 	/* All Instruments detected */
 	UsbTmc_Instruments_t				 ai;
 
 	bool								 isStarted;
+	bool								 _running;
+	short								 _runState;
+	bool								 _done;
 };
 
 

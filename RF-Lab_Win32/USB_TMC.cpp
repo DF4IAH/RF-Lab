@@ -19,11 +19,13 @@ inline void* varcpy(void* dest, void* src, size_t size)
 
 USB_TMC *g_usb_tmc = nullptr;
 
-USB_TMC::USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbReq, unbounded_buffer<agentUsbRsp>* pAgtUsbRsp) :
+USB_TMC::USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbTmcReq, unbounded_buffer<agentUsbRsp>* pAgtUsbTmcRsp) :
 	devs(NULL)
-	, pAgtUsbReq(pAgtUsbReq)
-	, pAgtUsbRsp(pAgtUsbRsp)
+	, pAgtUsbTmcReq(pAgtUsbTmcReq)
+	, pAgtUsbTmcRsp(pAgtUsbTmcRsp)
 	, isStarted(false)
+	, _running(false)
+	, _runState(C_USB_TMC_RUNSTATES_NOOP)
 {
 	g_usb_tmc = this;
 	
@@ -38,6 +40,30 @@ USB_TMC::~USB_TMC()
 }
 
 
+void USB_TMC::start(void)
+{
+	agent::start();
+	isStarted = true;
+}
+
+bool USB_TMC::shutdown(void)
+{
+	bool old_running = _running;
+
+	// signal to shutdown
+	_running = false;
+	_runState = C_USB_TMC_RUNSTATES_NOOP;
+
+	return old_running;
+}
+
+void USB_TMC::Release(void)
+{
+	_runState	= C_USB_TMC_RUNSTATES_NOOP;
+	_running	= false;
+}
+
+
 void USB_TMC::run(void)
 {
 	/* Search for any USB devices */
@@ -47,38 +73,54 @@ void USB_TMC::run(void)
 		cnt = findInstruments();
 	}
 
+	while (!isStarted) {
+		Sleep(10);
+	}
+
 	/* Wait for the request of the agentModelPattern */
-	do {
+	_runState = C_USB_TMC_RUNSTATES_INIT;
+	_running = TRUE;
+	while (_running) {
 		/* Inform about the instruments */
 		agentUsbReq usbReqData;
 
-		if (!isStarted) {
-			Sleep(10);
-			continue;
-		}
-
 		try {
-			usbReqData = receive(*pAgtUsbReq, AGENT_PATTERN_USBTMC_TIMEOUT);
+			usbReqData = receive(*pAgtUsbTmcReq, AGENT_PATTERN_USBTMC_TIMEOUT);
 			if (usbReqData.cmd == C_USBREQ_DO_REGISTRATION) {
 				agentUsbRsp usbRspData;
 
 				usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
 				usbRspData.data = &ai;
-				send(pAgtUsbRsp, usbRspData);
+				send(pAgtUsbTmcRsp, usbRspData);
 
-				break;
+				_runState = C_USB_TMC_RUNSTATES_RUN;
+			}
+
+			else if (usbReqData.cmd == C_USBREQ_END) {
+				agentUsbRsp usbRspData;
+
+				usbRspData.stat = C_USBRSP_END;
+				usbRspData.data = nullptr;
+				send(pAgtUsbTmcRsp, usbRspData);
+
+				_running = false;
+				_runState = C_USB_TMC_RUNSTATES_NOOP;
 			}
 		}
-		catch (Concurrency::operation_timed_out e) {
-			//e.what();
+		catch (const Concurrency::operation_timed_out& e) {
+			(void)e;
 		}
-	} while (true);  // Try as long as known request comes
+	}
+
+	_runState = C_USB_TMC_RUNSTATES_NOOP;
+	_done = true;
+
+	agent::done();
 }
 
-void USB_TMC::start(void)
+bool USB_TMC::isDone(void)
 {
-	agent::start();
-	isStarted = true;
+	return _done;
 }
 
 

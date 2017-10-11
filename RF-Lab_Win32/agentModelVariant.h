@@ -18,6 +18,7 @@ class agentModelVariant
 protected:
 	bool								 _running;
 	short								 _runState;
+	bool								 _noWinMsg;
 	bool								 _done;
 
 	ISource<agentModelReq_t>			*_src;

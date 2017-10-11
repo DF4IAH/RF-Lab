@@ -2,7 +2,7 @@
 #include "agentCom.h"
 
 
-template <class T>  void SafeRelease(T **ppT)
+template <class T>  void SafeReleaseDelete(T **ppT)
 {
 	if (*ppT)
 	{
@@ -61,7 +61,7 @@ void agentCom::Release(void)
 
 	// wait until all threads are done
 	while (!_done) {
-		Sleep(1);
+		Sleep(10);
 	}
 
 	// release objects
@@ -74,7 +74,7 @@ bool agentCom::shutdown(void)
 	bool old_running = _running;
 
 	// signal to shutdown
-	_running = FALSE;
+	_running = false;
 
 	return old_running;
 }
@@ -92,7 +92,7 @@ void agentCom::run(void)
 		comRsp.data = string();
 
 		// receive the request
-		agentComReq comReq = receive(_src);
+		agentComReq comReq = Concurrency::receive(_src);
 
 		// command decoder
 		switch (comReq.cmd) {
@@ -225,12 +225,12 @@ void agentCom::run(void)
 		}
 
 		// send the response
-		send(_tgt, comRsp);
+		Concurrency::send(_tgt, comRsp);
 	}
 
 	// Move the agent to the finished state.
-	_done = TRUE;
-	done();
+	_done = true;
+	agent::done();
 }
 
 

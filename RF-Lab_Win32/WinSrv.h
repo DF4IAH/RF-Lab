@@ -33,8 +33,6 @@ private:
 	//overwrite_buffer<agentModelRsp>	 _ob_agtModel_rsp;
 	agentModel							*pAgtModel;
 
-	agentCom							*pAgtCom[3];
-
 	bool								 _winExitReceived;
 	bool								 _ready;
 

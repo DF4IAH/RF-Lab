@@ -10,6 +10,9 @@ using namespace concurrency;
 using namespace std;
 
 
+#define AGENT_COM_RECEIVE_TIMEOUT				   500
+
+
 enum C_COMINST_ENUM {
 	C_COMINST_ROT = 0,
 	C_COMINST_TX,
@@ -69,34 +72,6 @@ typedef struct agentComRsp
 	SHORT								 stat;
 	string								 data;
 } agentComRsp_t;
-
-
-
-class agentUsb : public agent
-{
-private:
-	bool								 _running;
-	bool								 _done;
-	ISource<agentComReq>&				 _src;
-	ITarget<agentComRsp>&				 _tgt;
-
-	HANDLE								 _hCom;
-
-
-public:
-	explicit agentUsb(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
-	bool isRunning(void);
-	void Release(void);
-	bool shutdown(void);
-
-
-protected:
-	void run(void);
-
-
-public:
-
-};
 
 
 class agentCom : public agent

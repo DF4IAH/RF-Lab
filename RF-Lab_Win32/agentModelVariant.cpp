@@ -4,9 +4,10 @@
 
 
 agentModelVariant::agentModelVariant(void)
-				 : _running(FALSE)
+				 : _running(false)
 				 , _runState(C_MODEL_RUNSTATES_NOOP)
-				 , _done(FALSE)
+				 , _noWinMsg(false)
+				 , _done(false)
 {
 }
 

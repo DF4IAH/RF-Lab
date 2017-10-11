@@ -6,7 +6,7 @@
 #include "WinSrv.h"
 
 
-template <class T>  void SafeRelease(T **ppT)
+template <class T>  void SafeReleaseDelete(T **ppT)
 {
 	if (*ppT)
 	{
@@ -43,7 +43,6 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 agentModel::~agentModel(void)
 {
 	if (g_am && g_am->_curModel) {
-		g_am->_curModel->Release();
 		delete _curModel;
 	}
 	g_am = nullptr;

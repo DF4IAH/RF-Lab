@@ -30,7 +30,8 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 static int			AskRotorPosX(HINSTANCE g_hInst, HWND hWnd);
-static int			AskTxSettings(HINSTANCE g_hInst, HWND hWnd); 
+static int			AskTxSettings(HINSTANCE g_hInst, HWND hWnd);
+static void			ModelInit(HINSTANCE g_hInst, HWND hWnd);
 static void			ModelPatternStart(HINSTANCE g_hInst, HWND hWnd, UINT wmId);
 
 
@@ -180,6 +181,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			case ID_TX_SETTINGS:
 				AskTxSettings(g_hInst, hWnd);
+				break;
+
+			case ID_CTRL_ALL_RESET:
+				ModelInit(g_hInst, hWnd);
 				break;
 
 			case ID_MODEL_PATTERN_STOP:
@@ -403,6 +408,11 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 	return FALSE;
 }
 
+// Reinitialisierung der aktivierten Modell-Geräte
+static void ModelInit(HINSTANCE g_hInst, HWND hWnd)
+{
+	agentModel::initDevices();
+}
 
 // Anstarten der Pattern Mess-Prozedur
 static void ModelPatternStart(HINSTANCE g_hInst, HWND hWnd, UINT message)

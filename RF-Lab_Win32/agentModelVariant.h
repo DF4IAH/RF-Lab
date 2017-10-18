@@ -17,6 +17,7 @@ class agentModelVariant
 {
 protected:
 	bool								 _running;
+	bool								 _runReinit;
 	short								 _runState;
 	bool								 _noWinMsg;
 	bool								 _done;
@@ -43,6 +44,7 @@ public:
 	virtual void	setSimuMode(int simuMode);
 	virtual int		getSimuMode(void);
 	virtual void	runProcess(int processID, int arg);
+	virtual void	initDevices(void);
 
 	/* agentModelPattern - Rotor */
 	virtual long	requestPos(void);

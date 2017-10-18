@@ -188,6 +188,13 @@ void agentModel::sendModelStatus(LPVOID status1, LPVOID status2)
 
 }
 
+void agentModel::initDevices(void)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->initDevices();
+	}
+}
+
 void agentModel::runProcess(int processID, int arg)
 {
 	if (g_am && g_am->_curModel) {

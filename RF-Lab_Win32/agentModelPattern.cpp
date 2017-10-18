@@ -59,7 +59,6 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 	/* Init the USB_TMC communication */
 	pAgtUsbTmcReq	= new unbounded_buffer<agentUsbReq>;
 	pAgtUsbTmcRsp	= new unbounded_buffer<agentUsbRsp>;
-	pAgtUsbTmc		= new USB_TMC(pAgtUsbTmcReq, pAgtUsbTmcRsp);
 
 	for (int i = 0; i < C_COMINST__COUNT; ++i) {
 		pAgtComReq[i]	= new unbounded_buffer<agentComReq>;
@@ -91,15 +90,25 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 
 void agentModelPattern::threadsStart(void)
 {
-	hThreadAgtUsbTmc = CreateMutex(NULL, FALSE, NULL);		// Mutex is still free
 	sThreadDataAgentModelPattern.threadNo = 1;
 	sThreadDataAgentModelPattern.o = this;
 	processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 	_beginthread(&procThreadProcessID, 0, &sThreadDataAgentModelPattern);
+
+	hThreadAgtUsbTmc = CreateMutex(NULL, FALSE, NULL);		// Mutex is still free
+	pAgtUsbTmc = new USB_TMC(pAgtUsbTmcReq, pAgtUsbTmcRsp);
 }
 
 void agentModelPattern::threadsStop(void)
 {
+	/* Signal the USB_TMC object to shutdown */
+	pAgtUsbTmc->shutdown();
+
+	/* Delay loop as long it needs to stop this run() method */
+	while (!pAgtUsbTmc->isDone()) {
+		Sleep(25);
+	}
+
 	/* End thread */
 	processing_ID = C_MODELPATTERN_PROCESS_END;
 	//pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Shutting down ...", L"");
@@ -115,46 +124,26 @@ void agentModelPattern::run(void)
 		Sleep(25);
 	}
 
-	if (!_noWinMsg)
-		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads ...", L"");
-
-	/* Start thread for process IDs to operate */
-	threadsStart();
-
-	if (!_noWinMsg)
-		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM threads created", L"");
-
 	/* model's working loop */
-	_runState = C_MODELPATTERN_RUNSTATES_REGISTRATION;
-	_running = TRUE;
+	_running	= true;
+	_runReinit	= false;
+	_runState	= C_MODELPATTERN_RUNSTATES_BEGIN;
 	while (_running) {
 		try {
 			switch (_runState) {
-			case C_MODELPATTERN_RUNSTATES_REGISTRATION:
+			case C_MODELPATTERN_RUNSTATES_BEGIN:
 			{
-				agentUsbReq usbReqData;
+				/* In case of a REINIT, clear this flag */
+				_runReinit = false;
 
-				/* Allow USB_TMC to access communication agent */
-				pAgtUsbTmc->start();
+				if (!_noWinMsg)
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads ...", L"");
 
-				usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
-				send(*pAgtUsbTmcReq, usbReqData);
+				/* Start thread for process IDs to operate */
+				threadsStart();
 
-				agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, COOPERATIVE_TIMEOUT_INFINITE /*AGENT_PATTERN_USBTMC_TIMEOUT*/);
-				if (usbRspData.stat == C_USBRSP_REGISTRATION_LIST) {
-					/* Fill in registration list */
-					UsbTmc_Instruments_t* usbInsts = (UsbTmc_Instruments_t*)usbRspData.data;
-
-					// TODO: implementation here
-					for (int idx = 0; idx < usbInsts->inst_rot_cnt; ++idx) {
-					}
-
-					for (int idx = 0; idx < usbInsts->inst_rx_cnt; ++idx) {
-					}
-
-					for (int idx = 0; idx < usbInsts->inst_tx_cnt; ++idx) {
-					}
-				}
+				if (!_noWinMsg)
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM threads created", L"");
 
 				_runState = C_MODELPATTERN_RUNSTATES_OPENCOM;
 			}
@@ -165,24 +154,26 @@ void agentModelPattern::run(void)
 				char buf[C_BUF_SIZE];
 				agentComReq comReqData;
 
-				// Start Antenna Rotor
-				if (pAgtCom[C_COMINST_ROT]) {
-					pAgtCom[C_COMINST_ROT]->start();
-				}
+				/* Start serial communication servers */
+				{
+					if (pAgtCom[C_COMINST_ROT]) {
+						pAgtCom[C_COMINST_ROT]->start();
+					}
 
-				if (pAgtCom[C_COMINST_TX]) {
-					pAgtCom[C_COMINST_TX]->start();
-				}
+					if (pAgtCom[C_COMINST_TX]) {
+						pAgtCom[C_COMINST_TX]->start();
+					}
 
-				if (pAgtCom[C_COMINST_RX]) {
-					pAgtCom[C_COMINST_RX]->start();
+					if (pAgtCom[C_COMINST_RX]) {
+						pAgtCom[C_COMINST_RX]->start();
+					}
 				}
 
 				initState = 0x01;
 				if (!_noWinMsg)
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs ...", L"");
 
-				// Open Rotor
+				/* Open Rotor */
 				if (pAgtCom[C_COMINST_ROT]) {
 					comReqData.cmd = C_COMREQ_OPEN;
 					_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);		// Zolix USB port - 19200 baud, 8N1
@@ -193,7 +184,7 @@ void agentModelPattern::run(void)
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor port opened", L"");
 				}
 
-				// Open TX
+				/* Open TX */
 				if (pAgtCom[C_COMINST_TX]) {
 					comReqData.cmd = C_COMREQ_OPEN;
 					if (pAgtCom[C_COMINST_TX]->isIec()) {
@@ -210,7 +201,7 @@ void agentModelPattern::run(void)
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX port opened", L"");
 				}
 
-				// Open RX
+				/* Open RX */
 				if (pAgtCom[C_COMINST_RX]) {
 					comReqData.cmd = C_COMREQ_OPEN;
 					if (pAgtCom[C_COMINST_RX]->isIec()) {
@@ -376,7 +367,7 @@ void agentModelPattern::run(void)
 						}
 
 						/* success, all devices are ready */
-						_runState = C_MODELPATTERN_RUNSTATES_INIT;
+						_runState = C_MODELPATTERN_RUNSTATES_USB_REGISTRATION;
 						initState = 0xFF;
 					} while (FALSE);
 				}
@@ -384,6 +375,50 @@ void agentModelPattern::run(void)
 					(void)e;
 					_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 				}
+			}
+			break;
+
+			case C_MODELPATTERN_RUNSTATES_USB_REGISTRATION:
+			{
+				agentUsbReq usbReqData;
+
+				/* Allow USB_TMC to access communication agent */
+				pAgtUsbTmc->start();
+
+				usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
+				send(*pAgtUsbTmcReq, usbReqData);
+
+				agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, COOPERATIVE_TIMEOUT_INFINITE /*AGENT_PATTERN_USBTMC_TIMEOUT*/);
+				if (usbRspData.stat == C_USBRSP_REGISTRATION_LIST) {
+					/* Fill in registration list */
+					UsbTmc_Instruments_t* usbInsts = (UsbTmc_Instruments_t*)usbRspData.data;
+
+					// TODO: implementation here
+					for (int idx = 0; idx < usbInsts->inst_rot_cnt; ++idx) {
+						// TODO: code
+					}
+
+					for (int idx = 0; idx < usbInsts->inst_rx_cnt; ++idx) {
+						// TODO: code
+					}
+
+					for (int idx = 0; idx < usbInsts->inst_tx_cnt; ++idx) {
+						// TODO: code
+					}
+				}
+
+				_runState = C_MODELPATTERN_PROCESSES_SELECTION_WAIT;
+			}
+			break;
+
+			case C_MODELPATTERN_PROCESSES_SELECTION_WAIT:
+			{
+				/* Wait until the instruments are selected */
+				{
+					// TODO: code
+				}
+
+				_runState = C_MODELPATTERN_RUNSTATES_INIT;
 			}
 			break;
 
@@ -713,8 +748,21 @@ void agentModelPattern::run(void)
 			{
 				/* Init Error occured, show requester */
 				int lastGood = initState;
-				_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
+
+				if (!_noWinMsg)
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"INIT ERROR: please connect missing device(s)", L"STANDBY");
+
+				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 			}
+			break;
+
+			case C_MODELPATTERN_RUNSTATES_REINIT:
+			{
+				/* Close any devices and restart init process */
+				_runReinit	= true;
+				_runState	= C_MODELPATTERN_RUNSTATES_CLOSE_COM;
+			}
+			break;
 
 			case C_MODELPATTERN_RUNSTATES_CLOSE_COM:
 			{
@@ -769,10 +817,21 @@ void agentModelPattern::run(void)
 						}
 					}
 				}
-				_runState	= C_MODELPATTERN_RUNSTATES_NOOP;
-				_running	= false;
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"CLOSED");
+
+				/* Stop the ProcessID thread */
+				threadsStop();
+
+				if (_runReinit) {
+					_runState = C_MODELPATTERN_RUNSTATES_BEGIN;
+					if (!_noWinMsg)
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"REINIT");
+
+				} else {
+					_runState = C_MODELPATTERN_RUNSTATES_NOOP;
+					_running = false;
+					if (!_noWinMsg)
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"CLOSED");
+				}
 			}
 			break;
 
@@ -792,25 +851,21 @@ void agentModelPattern::run(void)
 
 			if (_runState < C_MODELPATTERN_RUNSTATES_CLOSE_COM) {
 				_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
-			}
-			else if (_runState <= C_MODELPATTERN_RUNSTATES_CLOSE_COM_WAIT) {
-				_runState	= C_MODELPATTERN_RUNSTATES_NOOP;
-				_running	= false;
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: broken", L"CLOSED");
+
+			} else if (_runState <= C_MODELPATTERN_RUNSTATES_CLOSE_COM_WAIT) {
+				if (_runReinit) {
+					_runState = C_MODELPATTERN_RUNSTATES_BEGIN;
+					if (!_noWinMsg)
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: broken", L"REINIT");
+
+				} else {
+					_runState = C_MODELPATTERN_RUNSTATES_NOOP;
+					_running = false;
+					if (!_noWinMsg)
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: broken", L"CLOSED");
+				}
 			}
 		}
-	}
-
-	/* Stop the ProcessID thread */
-	threadsStop();
-
-	/* Signal the USB_TMC object to shutdown */
-	pAgtUsbTmc->shutdown();
-
-	/* Delay loop as long it needs to stop this run() method */
-	while (!pAgtUsbTmc->isDone()) {
-		Sleep(25);
 	}
 
 	_done = true;
@@ -995,6 +1050,13 @@ void agentModelPattern::setSimuMode(int mode)
 int agentModelPattern::getSimuMode(void)
 {
 	return simuMode;
+}
+
+void agentModelPattern::initDevices(void)
+{
+	if (_running && (_runState == C_MODELPATTERN_RUNSTATES_RUNNING)) {
+		_runState = C_MODELPATTERN_RUNSTATES_REINIT;
+	}
 }
 
 void agentModelPattern::runProcess(int processID, int arg)

@@ -23,9 +23,10 @@ USB_TMC::USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbTmcReq, unbounded_buffer<
 	devs(NULL)
 	, pAgtUsbTmcReq(pAgtUsbTmcReq)
 	, pAgtUsbTmcRsp(pAgtUsbTmcRsp)
-	, isStarted(false)
+	, _isStarted(false)
 	, _running(false)
 	, _runState(C_USB_TMC_RUNSTATES_NOOP)
+	, _isOpen(false)
 {
 	g_usb_tmc = this;
 	
@@ -43,7 +44,7 @@ USB_TMC::~USB_TMC()
 void USB_TMC::start(void)
 {
 	agent::start();
-	isStarted = true;
+	_isStarted = true;
 }
 
 bool USB_TMC::shutdown(void)
@@ -66,28 +67,37 @@ void USB_TMC::Release(void)
 
 void USB_TMC::run(void)
 {
-	/* Search for any USB devices */
-	int cnt = init_libusb(false);
-	if (cnt > 0) {
-		/* Find known or generic USB_TMC instruments attached to the USB bus */
-		cnt = findInstruments();
-	}
-
-	while (!isStarted) {
+	while (!_isStarted) {
 		Sleep(10);
 	}
 
 	/* Wait for the request of the agentModelPattern */
-	_runState = C_USB_TMC_RUNSTATES_INIT;
-	_running = TRUE;
+	_runState	= C_USB_TMC_RUNSTATES_INIT;
+	_running	= true;
 	while (_running) {
 		/* Inform about the instruments */
 		agentUsbReq usbReqData;
 
 		try {
 			usbReqData = receive(*pAgtUsbTmcReq, AGENT_PATTERN_USBTMC_TIMEOUT);
+
 			if (usbReqData.cmd == C_USBREQ_DO_REGISTRATION) {
 				agentUsbRsp usbRspData;
+
+				/* Shutdown first */
+				if (_isOpen) {
+					shutdown_libusb();
+					_isOpen = false;
+					Sleep(100);
+				}
+
+				/* Search for any USB devices */
+				int cnt = init_libusb(false);
+				_isOpen = true;
+				if (cnt > 0) {
+					/* Find known or generic USB_TMC instruments attached to the USB bus */
+					cnt = findInstruments();
+				}
 
 				usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
 				usbRspData.data = &ai;
@@ -98,6 +108,10 @@ void USB_TMC::run(void)
 
 			else if (usbReqData.cmd == C_USBREQ_END) {
 				agentUsbRsp usbRspData;
+
+				/* Close the libusb connections */
+				shutdown_libusb();
+				_isOpen = false;
 
 				usbRspData.stat = C_USBRSP_END;
 				usbRspData.data = nullptr;
@@ -112,7 +126,7 @@ void USB_TMC::run(void)
 		}
 	}
 
-	_runState = C_USB_TMC_RUNSTATES_NOOP;
+	_runState = C_USB_TMC_RUNSTATES_STOP;
 	_done = true;
 
 	agent::done();
@@ -529,7 +543,7 @@ instrument_t* USB_TMC::addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instr
 	return ret;
 }
 
-void USB_TMC::releaseInstrument_usb_iface(instrument_t *inst, int cnt)
+void USB_TMC::releaseInstrument_usb_iface(instrument_t inst[], int cnt)
 {
 	if (cnt) {
 		wchar_t strbuf[256];
@@ -537,7 +551,11 @@ void USB_TMC::releaseInstrument_usb_iface(instrument_t *inst, int cnt)
 		for (int idx = 0; idx < cnt; idx++) {
 			/* Releasing the interfaces */
 			wsprintf(strbuf, L"Releasing interface %d...\n", inst[idx].dev_interface);  OutputDebugString(strbuf);
-			libusb_release_interface(inst[idx].dev_handle, inst[idx].dev_interface);
+			if (&(inst[idx])) {
+				if (inst[idx].dev_handle && inst[idx].dev_interface) {
+					libusb_release_interface(inst[idx].dev_handle, inst[idx].dev_interface);
+				}
+			}
 		}
 	}
 }

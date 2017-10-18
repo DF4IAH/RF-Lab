@@ -85,6 +85,7 @@ public:
 	static void		setSimuMode(int simuMode);
 	static int		getSimuMode(void);
 	static void		sendModelStatus(LPVOID status1, LPVOID status2);
+	static void     initDevices(void);
 	static void		runProcess(int processID, int arg);
 
 	/* agentModelPattern - Rotor */

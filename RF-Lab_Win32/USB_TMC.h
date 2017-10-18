@@ -277,7 +277,7 @@ private:
 
 	int findInstruments(void);
 	instrument_t* addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instrument_t *optionalInst);
-	void releaseInstrument_usb_iface(instrument_t *inst, int cnt);
+	void releaseInstrument_usb_iface(instrument_t inst[], int cnt);
 	bool openUsb(instrument_t *inst);
 	bool closeUsb(instrument_t *inst);
 	bool openTmc(instrument_t *inst);
@@ -322,9 +322,10 @@ private:
 	/* All Instruments detected */
 	UsbTmc_Instruments_t				 ai;
 
-	bool								 isStarted;
+	bool								 _isStarted;
 	bool								 _running;
 	short								 _runState;
+	bool								 _isOpen;
 	bool								 _done;
 };
 

@@ -5,6 +5,7 @@
 
 agentModelVariant::agentModelVariant(void)
 				 : _running(false)
+				 , _runReinit(false)
 				 , _runState(C_MODEL_RUNSTATES_NOOP)
 				 , _noWinMsg(false)
 				 , _done(false)
@@ -51,6 +52,10 @@ int agentModelVariant::getSimuMode(void)
 }
 
 void agentModelVariant::runProcess(int processID, int arg)
+{
+}
+
+void agentModelVariant::initDevices(void)
 {
 }
 

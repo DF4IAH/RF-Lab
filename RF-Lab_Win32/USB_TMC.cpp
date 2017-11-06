@@ -38,13 +38,16 @@ USB_TMC::~USB_TMC()
 {
 	//threadsStop();
 	shutdown_libusb();
+	g_usb_tmc = nullptr;
 }
 
 
 void USB_TMC::start(void)
 {
-	agent::start();
-	_isStarted = true;
+	if (!_isStarted) {
+		agent::start();
+		_isStarted = true;
+	}
 }
 
 bool USB_TMC::shutdown(void)
@@ -52,16 +55,17 @@ bool USB_TMC::shutdown(void)
 	bool old_running = _running;
 
 	// signal to shutdown
-	_running = false;
-	_runState = C_USB_TMC_RUNSTATES_NOOP;
+	Release();
 
 	return old_running;
 }
 
 void USB_TMC::Release(void)
 {
-	_runState	= C_USB_TMC_RUNSTATES_NOOP;
+	// signal to shutdown
 	_running	= false;
+	_runState	= C_USB_TMC_RUNSTATES_NOOP;
+	_isStarted	= false;
 }
 
 
@@ -134,7 +138,7 @@ void USB_TMC::run(void)
 
 bool USB_TMC::isDone(void)
 {
-	return _done;
+	return _done || !_isStarted;
 }
 
 

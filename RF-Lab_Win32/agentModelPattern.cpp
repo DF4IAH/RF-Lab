@@ -56,14 +56,44 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , rxSpan(0.0)
 				 , rxLevelMax(0.0)
 {
+}
+
+inline bool agentModelPattern::isRunning(void)
+{
+	return _running;
+}
+
+bool agentModelPattern::shutdown(void)
+{
+	if (_running) {
+		_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
+		_noWinMsg = true;
+	}
+	return _running;
+}
+
+void agentModelPattern::Release(void)
+{
+	/* signaling and wait until all threads are done */
+	if (_running) {
+		(void)shutdown();
+	}
+
+	/* Wait until run() thread terminates */
+	agent::wait(this);
+}
+
+
+void agentModelPattern::agentsInit(void)
+{
 	/* Init the USB_TMC communication */
-	pAgtUsbTmcReq	= new unbounded_buffer<agentUsbReq>;
-	pAgtUsbTmcRsp	= new unbounded_buffer<agentUsbRsp>;
+	pAgtUsbTmcReq = new unbounded_buffer<agentUsbReq>;
+	pAgtUsbTmcRsp = new unbounded_buffer<agentUsbRsp>;
 
 	for (int i = 0; i < C_COMINST__COUNT; ++i) {
-		pAgtComReq[i]	= new unbounded_buffer<agentComReq>;
-		pAgtComRsp[i]	= new unbounded_buffer<agentComRsp>;
-		pAgtCom[i]		= nullptr;
+		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
+		pAgtComRsp[i] = new unbounded_buffer<agentComRsp>;
+		pAgtCom[i] = nullptr;
 
 		if (pAgtComReq[i] && pAgtComRsp[i]) {
 			switch (i) {
@@ -87,6 +117,33 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 	}
 }
 
+void agentModelPattern::agentsShutdown(void)
+{
+	/* Signal the USB_TMC object to shutdown */
+	pAgtUsbTmc->shutdown();
+
+	/* Delay loop as long it needs to stop this run() method */
+	while (!pAgtUsbTmc->isDone()) {
+		Sleep(25);
+	}
+
+	/* Release USB-TMC connection */
+	agent::wait(pAgtUsbTmc, AGENT_PATTERN_RECEIVE_TIMEOUT);
+	SafeReleaseDelete(&pAgtUsbTmc);
+	SafeDelete(&pAgtUsbTmcReq);
+	SafeDelete(&pAgtUsbTmcRsp);
+
+	/* Release serial connection objects */
+	for (int i = 0; i < C_COMINST__COUNT; i++) {
+		if (pAgtCom[i]) {
+			agent::wait(pAgtCom[i], AGENT_PATTERN_RECEIVE_TIMEOUT);
+		}
+		SafeReleaseDelete(&(pAgtCom[i]));
+		SafeDelete(&(pAgtComReq[i]));
+		SafeDelete(&(pAgtComRsp[i]));
+	}
+}
+
 
 void agentModelPattern::threadsStart(void)
 {
@@ -101,14 +158,6 @@ void agentModelPattern::threadsStart(void)
 
 void agentModelPattern::threadsStop(void)
 {
-	/* Signal the USB_TMC object to shutdown */
-	pAgtUsbTmc->shutdown();
-
-	/* Delay loop as long it needs to stop this run() method */
-	while (!pAgtUsbTmc->isDone()) {
-		Sleep(25);
-	}
-
 	/* End thread */
 	processing_ID = C_MODELPATTERN_PROCESS_END;
 	//pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Shutting down ...", L"");
@@ -138,6 +187,9 @@ void agentModelPattern::run(void)
 
 				if (!_noWinMsg)
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads ...", L"");
+
+				/* Start the communication agents */
+				agentsInit();
 
 				/* Start thread for process IDs to operate */
 				threadsStart();
@@ -227,7 +279,7 @@ void agentModelPattern::run(void)
 				try {
 					agentComReq comReqData;
 
-					_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;		// default value
+					_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;		// Default value
 
 					do {
 						/* receive rotor opening response */
@@ -235,7 +287,7 @@ void agentModelPattern::run(void)
 						if (!pAgtCom[C_COMINST_ROT]) break;
 						initState = 0x12;
 						agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-						if (comRspData.stat != C_COMRSP_OK)	break;
+						if (comRspData.stat != C_COMRSP_OK)	break;			// No rotor --> INIT_ERROR
 						initState = 0x13;
 						Sleep(10);
 
@@ -251,7 +303,7 @@ void agentModelPattern::run(void)
 						if (!_noWinMsg)
 							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor responds", L"");
 						initState = 0x14;
-
+						
 						/* receive TX opening response */
 						if (pAgtCom[C_COMINST_TX]) {
 							initState = 0x21;
@@ -821,6 +873,9 @@ void agentModelPattern::run(void)
 				/* Stop the ProcessID thread */
 				threadsStop();
 
+				/* Shutdown the agents */
+				agentsShutdown();
+
 				if (_runReinit) {
 					_runState = C_MODELPATTERN_RUNSTATES_BEGIN;
 					if (!_noWinMsg)
@@ -870,49 +925,6 @@ void agentModelPattern::run(void)
 
 	_done = true;
 	agent::done();
-}
-
-
-inline bool agentModelPattern::isRunning(void)
-{
-	return _running;
-}
-
-bool agentModelPattern::shutdown(void)
-{
-	if (_running) {
-		_runState = C_MODELPATTERN_RUNSTATES_CLOSE_COM;
-		_noWinMsg = true;
-	}
-	return _running;
-}
-
-
-void agentModelPattern::Release(void)
-{
-	/* signaling and wait until all threads are done */
-	if (_running) {
-		(void)shutdown();
-	}
-
-	/* Wait until run() thread terminates */
-	agent::wait(this);
-
-	/* Delete USB-TMC connection */
-	agent::wait(pAgtUsbTmc, COOPERATIVE_TIMEOUT_INFINITE);
-	SafeReleaseDelete(&pAgtUsbTmc);
-	SafeDelete(&pAgtUsbTmcReq);
-	SafeDelete(&pAgtUsbTmcRsp);
-
-	/* Release objects */
-	for (int i = 0; i < C_COMINST__COUNT; i++) {
-		if (pAgtCom[i]) {
-			agent::wait(pAgtCom[i], COOPERATIVE_TIMEOUT_INFINITE);
-		}
-		SafeReleaseDelete(&(pAgtCom[i]));
-		SafeDelete(&(pAgtComReq[i]));
-		SafeDelete(&(pAgtComRsp[i]));
-	}
 }
 
 

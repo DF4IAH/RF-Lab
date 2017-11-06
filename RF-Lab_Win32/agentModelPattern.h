@@ -116,6 +116,8 @@ public:
 	void		run(void);
 
 private:
+	void		agentsInit(void);
+	void		agentsShutdown(void);
 	void		threadsStart(void);
 	void		threadsStop(void);
 	void		sendPos(long tickPos);

@@ -77,6 +77,7 @@ typedef struct agentComRsp
 class agentCom : public agent
 {
 private:
+	bool								 _isStarted;
 	bool								 _running;
 	bool								 _done;
 	ISource<agentComReq>&				 _src;
@@ -90,6 +91,7 @@ private:
 
 public:
 	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
+	void start(void);
 	bool isRunning(void);
 	bool isIec(void);
 	void setIecAddr(int iecAddr);

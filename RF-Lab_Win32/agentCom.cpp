@@ -14,7 +14,8 @@ template <class T>  void SafeReleaseDelete(T **ppT)
 
 
 agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
-				 : _running(FALSE)
+				 : _isStarted(FALSE)
+				 , _running(FALSE)
 				 , _done(FALSE)
 				 , _src(src)
 				 , _tgt(tgt)
@@ -23,6 +24,14 @@ agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
 {
 }
 
+
+void agentCom::start(void)
+{
+	if (!_isStarted) {
+		agent::start();
+		_isStarted = true;
+	}
+}
 
 bool agentCom::isRunning(void)
 {
@@ -64,6 +73,8 @@ void agentCom::Release(void)
 		Sleep(10);
 	}
 
+	_isStarted = false;
+
 	// release objects
 	// ... none
 }
@@ -74,7 +85,7 @@ bool agentCom::shutdown(void)
 	bool old_running = _running;
 
 	// signal to shutdown
-	_running = false;
+	_running = FALSE;
 
 	return old_running;
 }

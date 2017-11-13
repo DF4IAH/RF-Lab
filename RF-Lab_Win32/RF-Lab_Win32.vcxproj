@@ -152,6 +152,7 @@
     <ClInclude Include="agentModelVariant.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="hotplug.h" />
+    <ClInclude Include="instruments.h" />
     <ClInclude Include="libusb.h" />
     <ClInclude Include="libusbi.h" />
     <ClInclude Include="os\poll_windows.h" />

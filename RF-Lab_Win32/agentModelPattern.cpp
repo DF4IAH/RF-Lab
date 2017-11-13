@@ -39,6 +39,8 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , hThreadAgtUsbTmc(nullptr)
 				 , sThreadDataAgentModelPattern( { 0 } )
 
+				 , ai( { 0 } )
+
 				 , pAgtUsbTmc(nullptr)
 
 				 , processing_ID(0)
@@ -56,6 +58,13 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , rxSpan(0.0)
 				 , rxLevelMax(0.0)
 {
+	/* Clear instrument structure */
+	memset(&ai, 0, sizeof(ArrayOfInstruments_t));
+}
+
+ArrayOfInstruments_t* agentModelPattern::getAIPtr(void)
+{
+	return &ai;
 }
 
 inline bool agentModelPattern::isRunning(void)
@@ -227,47 +236,112 @@ void agentModelPattern::run(void)
 
 				/* Open Rotor */
 				if (pAgtCom[C_COMINST_ROT]) {
-					comReqData.cmd = C_COMREQ_OPEN;
-					_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 3, CBR_19200, 8, NOPARITY, ONESTOPBIT);		// Zolix USB port - 19200 baud, 8N1
-					comReqData.parm = string(buf);
-					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-					initState = 0x02;
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor port opened", L"");
+					try {
+						comReqData.cmd = C_COMREQ_OPEN;
+						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d",
+							C_ROT_COM_PORT, C_ROT_COM_BAUD, C_ROT_COM_BITS, C_ROT_COM_PARITY, C_ROT_COM_STOPBITS);								// Zolix USB port - 19200 baud, 8N1
+						comReqData.parm = string(buf);
+						send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+						agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+						if (comRspData.stat == C_COMRSP_OK) {
+							initState = 0x02;
+							addSerInstrument(pAgtCom[C_COMINST_ROT],
+								C_ROT_COM_PORT, C_ROT_COM_BAUD, C_ROT_COM_BITS, C_ROT_COM_PARITY, C_ROT_COM_STOPBITS,
+								false/* IEC*/, 0/* IEC addr */);
+
+							if (!_noWinMsg)
+								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor port opened", L"");
+						}
+					}
+					catch (const Concurrency::operation_timed_out& e) {
+						(void)e;
+					}
 				}
 
 				/* Open TX */
 				if (pAgtCom[C_COMINST_TX]) {
-					comReqData.cmd = C_COMREQ_OPEN;
-					if (pAgtCom[C_COMINST_TX]->isIec()) {
-						pAgtCom[C_COMINST_TX]->setIecAddr(28);																	// IEC625: R&S SMR40: address == 28
-						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);	// IEC625: 19200 baud, 8N1
+					try {
+						comReqData.cmd = C_COMREQ_OPEN;
+						if (pAgtCom[C_COMINST_TX]->isIec()) {
+							pAgtCom[C_COMINST_TX]->setIecAddr(C_TX_COM_IEC_ADDR);																// IEC625: R&S SMR40: address == 28
+							_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d",
+								C_TX_COM_IEC_PORT, C_TX_COM_IEC_BAUD, C_TX_COM_IEC_BITS, C_TX_COM_IEC_PARITY, C_TX_COM_IEC_STOPBITS);			// IEC625: 19200 baud, 8N1
+							comReqData.parm = string(buf);
+							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+							if (comRspData.stat == C_COMRSP_OK) {
+								initState = 0x03;
+								addSerInstrument(pAgtCom[C_COMINST_TX],
+									C_TX_COM_IEC_PORT, C_TX_COM_IEC_BAUD, C_TX_COM_IEC_BITS, C_TX_COM_IEC_PARITY, C_TX_COM_IEC_STOPBITS,
+									true /* is IEC */, C_TX_COM_IEC_ADDR);
+
+								if (!_noWinMsg)
+									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX IEC port opened", L"");
+							}
+						}
+						else {
+							_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d",
+								C_TX_COM_PORT, C_TX_COM_BAUD, C_TX_COM_BITS, C_TX_COM_PARITY, C_TX_COM_STOPBITS);								// serial port - 9600 baud, 8N1
+							comReqData.parm = string(buf);
+							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+							if (comRspData.stat == C_COMRSP_OK) {
+								initState = 0x03;
+								addSerInstrument(pAgtCom[C_COMINST_TX],
+									C_TX_COM_PORT, C_TX_COM_BAUD, C_TX_COM_BITS, C_TX_COM_PARITY, C_TX_COM_STOPBITS,
+									false /* is IEC */, 0);
+
+								if (!_noWinMsg)
+									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX port opened", L"");
+							}
+						}
 					}
-					else {
-						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
+					catch (const Concurrency::operation_timed_out& e) {
+						(void)e;
 					}
-					comReqData.parm = string(buf);
-					send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-					initState = 0x03;
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX port opened", L"");
 				}
 
 				/* Open RX */
 				if (pAgtCom[C_COMINST_RX]) {
-					comReqData.cmd = C_COMREQ_OPEN;
-					if (pAgtCom[C_COMINST_RX]->isIec()) {
-						pAgtCom[C_COMINST_RX]->setIecAddr(20);																// IEC625: R&S FSEK20: address == 20
-						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 4, CBR_19200, 8, NOPARITY, ONESTOPBIT);  // IEC625: 19200 baud, 8N1
+					try {
+						comReqData.cmd = C_COMREQ_OPEN;
+						if (pAgtCom[C_COMINST_RX]->isIec()) {
+							pAgtCom[C_COMINST_RX]->setIecAddr(C_RX_COM_IEC_ADDR);																// IEC625: R&S FSEK20: address == 20
+							_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d",
+								C_RX_COM_IEC_PORT, C_RX_COM_IEC_BAUD, C_RX_COM_IEC_BITS, C_RX_COM_IEC_PARITY, C_RX_COM_IEC_STOPBITS);			// IEC625: 19200 baud, 8N1
+							comReqData.parm = string(buf);
+							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+							if (comRspData.stat == C_COMRSP_OK) {
+								initState = 0x04;
+								addSerInstrument(pAgtCom[C_COMINST_TX],
+									C_RX_COM_IEC_PORT, C_RX_COM_IEC_BAUD, C_RX_COM_IEC_BITS, C_RX_COM_IEC_PARITY, C_RX_COM_IEC_STOPBITS,
+									true /* is IEC */, C_RX_COM_IEC_ADDR);
+
+								if (!_noWinMsg)
+									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX IEC port opened", L"");
+							}
+						}
+						else {
+							_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d",
+								C_RX_COM_PORT, C_RX_COM_BAUD, C_RX_COM_BITS, C_RX_COM_PARITY, C_RX_COM_STOPBITS);								// serial port - 9600 baud, 8N1
+							comReqData.parm = string(buf);
+							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+							if (comRspData.stat == C_COMRSP_OK) {
+								initState = 0x04;
+								addSerInstrument(pAgtCom[C_COMINST_TX],
+									C_RX_COM_PORT, C_RX_COM_BAUD, C_RX_COM_BITS, C_RX_COM_PARITY, C_RX_COM_STOPBITS,
+									false /* is IEC */, 0);
+
+								if (!_noWinMsg)
+									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX port opened", L"");
+							}
+						}
 					}
-					else {
-						_snprintf_s(buf, C_BUF_SIZE, ":P=%d :B=%d :I=%d :A=%d :S=%d", 1, CBR_9600, 8, NOPARITY, ONESTOPBIT);	// serial port - 9600 baud, 8N1
+					catch (const Concurrency::operation_timed_out& e) {
+						(void)e;
 					}
-					comReqData.parm = string(buf);
-					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-					initState = 0x04;
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX port opened", L"");
 				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_OPENCOM_WAIT;
@@ -303,6 +377,7 @@ void agentModelPattern::run(void)
 						if (!_noWinMsg)
 							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor responds", L"");
 						initState = 0x14;
+						// doRegister();
 						
 						/* receive TX opening response */
 						if (pAgtCom[C_COMINST_TX]) {
@@ -443,7 +518,7 @@ void agentModelPattern::run(void)
 				agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, COOPERATIVE_TIMEOUT_INFINITE /*AGENT_PATTERN_USBTMC_TIMEOUT*/);
 				if (usbRspData.stat == C_USBRSP_REGISTRATION_LIST) {
 					/* Fill in registration list */
-					UsbTmc_Instruments_t* usbInsts = (UsbTmc_Instruments_t*)usbRspData.data;
+					ArrayOfInstruments_t* usbInsts = (ArrayOfInstruments_t*)usbRspData.data;
 
 					// TODO: implementation here
 					for (int idx = 0; idx < usbInsts->inst_rot_cnt; ++idx) {

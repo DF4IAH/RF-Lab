@@ -42,6 +42,42 @@ using namespace std;
 /* RX: Rohde & Schwarz FSEK20 (spectrum analyzer) - frequency span 100 kHz */
 #define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT		 100e3
 
+#define C_ROT_COM_PORT								 3
+#define C_ROT_COM_BAUD								 CBR_19200
+#define C_ROT_COM_BITS								 8
+#define C_ROT_COM_PARITY							 NOPARITY
+#define C_ROT_COM_STOPBITS							 ONESTOPBIT
+
+#define C_TX_COM_PORT								 1
+#define C_TX_COM_BAUD								 CBR_9600
+#define C_TX_COM_BITS								 8
+#define C_TX_COM_PARITY								 NOPARITY
+#define C_TX_COM_STOPBITS							 ONESTOPBIT
+
+#define C_TX_COM_IEC_ADDR							 28
+#define C_TX_COM_IEC_PORT							 4
+#define C_TX_COM_IEC_BAUD							 CBR_19200
+#define C_TX_COM_IEC_BITS							 8
+#define C_TX_COM_IEC_PARITY							 NOPARITY
+#define C_TX_COM_IEC_STOPBITS						 ONESTOPBIT
+
+#define C_RX_COM_PORT								 1
+#define C_RX_COM_BAUD								 CBR_9600
+#define C_RX_COM_BITS								 8
+#define C_RX_COM_PARITY								 NOPARITY
+#define C_RX_COM_STOPBITS							 ONESTOPBIT
+
+#define C_RX_COM_IEC_ADDR							 20
+#define C_RX_COM_IEC_PORT							 4
+#define C_RX_COM_IEC_BAUD							 CBR_19200
+#define C_RX_COM_IEC_BITS							 8
+#define C_RX_COM_IEC_PARITY							 NOPARITY
+#define C_RX_COM_IEC_STOPBITS						 ONESTOPBIT
+
+
+/* Instruments */
+#include "instruments.h"
+
 
 enum C_MODELPATTERN_RUNSTATES_ENUM {
 	C_MODELPATTERN_RUNSTATES_NOOP = 0,
@@ -85,6 +121,9 @@ private:
 	class agentModel					*pAgtMod;
 	threadDataAgentModelPattern_t		 sThreadDataAgentModelPattern;
 
+	/* All Instruments detected */
+	ArrayOfInstruments_t				 ai;
+
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
 	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
@@ -113,6 +152,7 @@ private:
 
 public:
 	explicit	agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
+	ArrayOfInstruments_t* getAIPtr(void);
 	void		run(void);
 
 private:

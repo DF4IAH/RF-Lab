@@ -4,11 +4,17 @@
 /* Agents Library */
 #include <agents.h>
 #include "agentCom.h"
+#include "agentModel.h"
+#include "agentModelPattern.h"
 
 #include <process.h>
 
 
 #define DEBUG_USB 1
+
+
+extern agentModel *g_am;
+
 
 
 inline void* varcpy(void* dest, void* src, size_t size)
@@ -29,9 +35,10 @@ USB_TMC::USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbTmcReq, unbounded_buffer<
 	, _isOpen(false)
 {
 	g_usb_tmc = this;
-	
-	/* Clear instrument structure */
-	memset(&ai, 0, sizeof(UsbTmc_Instruments_t));
+
+	if (g_am) {
+		pAI = ((agentModelPattern*)(g_am->getCurModCtx()))->getAIPtr();
+	}
 }
 
 USB_TMC::~USB_TMC()
@@ -104,7 +111,7 @@ void USB_TMC::run(void)
 				}
 
 				usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
-				usbRspData.data = &ai;
+				usbRspData.data = ((agentModelPattern*) (g_am->getCurModCtx()))->getAIPtr();
 				send(pAgtUsbTmcRsp, usbRspData);
 
 				_runState = C_USB_TMC_RUNSTATES_RUN;
@@ -166,27 +173,27 @@ int USB_TMC::init_libusb(bool show)
 void USB_TMC::shutdown_libusb(void)
 {
 	/* Release all USB attached instruments */
-	releaseInstrument_usb_iface(ai.inst_rot,	ai.inst_rot_cnt);	ai.inst_rot_cnt = 0;
-	releaseInstrument_usb_iface(ai.inst_tx,		ai.inst_tx_cnt);	ai.inst_tx_cnt	= 0;
-	releaseInstrument_usb_iface(ai.inst_rx,		ai.inst_rx_cnt);	ai.inst_rx_cnt	= 0;
+	releaseInstrument_usb_iface(pAI->inst_rot,	pAI->inst_rot_cnt);		pAI->inst_rot_cnt	= 0;
+	releaseInstrument_usb_iface(pAI->inst_tx,	pAI->inst_tx_cnt);		pAI->inst_tx_cnt	= 0;
+	releaseInstrument_usb_iface(pAI->inst_rx,	pAI->inst_rx_cnt);		pAI->inst_rx_cnt	= 0;
 
 	/* Rotors */
-	for (int idx = 0; idx < ai.inst_rot_cnt; idx++)
-		if (ai.inst_rot[idx].dev_handle)
-			libusb_close(ai.inst_rot[idx].dev_handle);
-	ai.inst_rot_cnt = 0;
+	for (int idx = 0; idx < pAI->inst_rot_cnt; idx++)
+		if (pAI->inst_rot[idx].dev_handle)
+			libusb_close(pAI->inst_rot[idx].dev_handle);
+	pAI->inst_rot_cnt = 0;
 
 	/* Transmitters */
-	for (int idx = 0; idx < ai.inst_tx_cnt; idx++)
-		if (ai.inst_tx[idx].dev_handle)
-			libusb_close(ai.inst_tx[idx].dev_handle);
-	ai.inst_tx_cnt = 0;
+	for (int idx = 0; idx < pAI->inst_tx_cnt; idx++)
+		if (pAI->inst_tx[idx].dev_handle)
+			libusb_close(pAI->inst_tx[idx].dev_handle);
+	pAI->inst_tx_cnt = 0;
 
 	/* Receivers */
-	for (int idx = 0; idx < ai.inst_rx_cnt; idx++)
-		if (ai.inst_rx[idx].dev_handle)
-			libusb_close(ai.inst_rx[idx].dev_handle);
-	ai.inst_rx_cnt = 0;
+	for (int idx = 0; idx < pAI->inst_rx_cnt; idx++)
+		if (pAI->inst_rx[idx].dev_handle)
+			libusb_close(pAI->inst_rx[idx].dev_handle);
+	pAI->inst_rx_cnt = 0;
 
 	/* Release the device list */
 	if (devs) {
@@ -495,6 +502,7 @@ int USB_TMC::findInstruments(void)
 				doCopyInst = true;
 			}
 
+			/* Add instrument to the Array of Instruments */
 			if (type != INSTRUMENT_NONE) {
 				instrument_t *inst = addInstrument(idx - 1, type, doCopyInst ?  &outInst : nullptr);
 				cnt++;
@@ -508,42 +516,52 @@ instrument_t* USB_TMC::addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instr
 {
 	instrument_t *ret = NULL;
 
-	if (type > INSTRUMENT_ROTORS__ALL) {
-		if (type < INSTRUMENT_TRANSMITTERS__ALL) {
-			/* Rotors */
-			if (ai.inst_rot_cnt < (sizeof(ai.inst_rot) / sizeof(instrument_t))) {
-				ret = &(ai.inst_rot[ai.inst_rot_cnt]);
-				if (optionalInst)
-					memcpy(ret, optionalInst, sizeof(instrument_t));
-				ai.inst_rot[ai.inst_rot_cnt].type		= type;
-				ai.inst_rot[ai.inst_rot_cnt].devs_idx	= devs_idx;
-				ai.inst_rot_cnt++;
-			}
-		}
+	switch (type & INSTRUMENT_VARIANT_MASK) {
 
-		else if (type < INSTRUMENT_RECEIVERS__ALL) {
-			/* Transmitters */
-			if (ai.inst_tx_cnt < (sizeof(ai.inst_tx) / sizeof(instrument_t))) {
-				ret = &(ai.inst_tx[ai.inst_tx_cnt]);
-				if (optionalInst)
-					memcpy(ret, optionalInst, sizeof(instrument_t));
-				ai.inst_tx[ai.inst_tx_cnt].type			= type;
-				ai.inst_tx[ai.inst_tx_cnt].devs_idx		= devs_idx;
-				ai.inst_tx_cnt++;
-			}
-
-		} else {
-			/* Receivers */
-			if (ai.inst_rx_cnt < (sizeof(ai.inst_rx) / sizeof(instrument_t))) {
-				ret = &(ai.inst_rx[ai.inst_rx_cnt]);
-				if (optionalInst)
-					memcpy(ret, optionalInst, sizeof(instrument_t));
-				ai.inst_rx[ai.inst_rx_cnt].type			= type;
-				ai.inst_rx[ai.inst_rx_cnt].devs_idx		= devs_idx;
-				ai.inst_rx_cnt++;
-			}
+	case INSTRUMENT_ROTORS__ALL:
+	{
+		/* Rotors */
+		if (pAI->inst_rot_cnt < (sizeof(pAI->inst_rot) / sizeof(instrument_t))) {
+			ret = &(pAI->inst_rot[pAI->inst_rot_cnt]);
+			if (optionalInst)
+				memcpy(ret, optionalInst, sizeof(instrument_t));
+			pAI->inst_rot[pAI->inst_rot_cnt].type = type;
+			pAI->inst_rot[pAI->inst_rot_cnt].devs_idx = devs_idx;	// USB special
+			pAI->inst_rot_cnt++;
 		}
 	}
+	break;
+
+	case INSTRUMENT_TRANSMITTERS__ALL:
+	{
+		/* Transmitters */
+		if (pAI->inst_tx_cnt < (sizeof(pAI->inst_tx) / sizeof(instrument_t))) {
+			ret = &(pAI->inst_tx[pAI->inst_tx_cnt]);
+			if (optionalInst)
+				memcpy(ret, optionalInst, sizeof(instrument_t));
+			pAI->inst_tx[pAI->inst_tx_cnt].type = type;
+			pAI->inst_tx[pAI->inst_tx_cnt].devs_idx = devs_idx;	// USB special
+			pAI->inst_tx_cnt++;
+		}
+	}
+	break;
+
+	case INSTRUMENT_RECEIVERS__ALL:
+	{
+		/* Receivers */
+		if (pAI->inst_rx_cnt < (sizeof(pAI->inst_rx) / sizeof(instrument_t))) {
+			ret = &(pAI->inst_rx[pAI->inst_rx_cnt]);
+			if (optionalInst)
+				memcpy(ret, optionalInst, sizeof(instrument_t));
+			pAI->inst_rx[pAI->inst_rx_cnt].type = type;
+			pAI->inst_rx[pAI->inst_rx_cnt].devs_idx = devs_idx;	// USB special
+			pAI->inst_rx_cnt++;
+		}
+	}
+	break;
+
+	}  // switch();
+
 	return ret;
 }
 
@@ -972,7 +990,7 @@ INSTRUMENT_ENUM_t USB_TMC::checkIDTable(uint16_t idVendor, uint16_t idProduct)
 	case 0x1ab1:
 		switch (idProduct) {
 		case 0x0960:
-			return INSTRUMENT_RECEIVER_SA_RIGOL_DSA875;
+			return INSTRUMENT_RECEIVERS_USB__RIGOL_DSA875;
 			break;
 		}
 		break;
@@ -984,8 +1002,8 @@ INSTRUMENT_ENUM_t USB_TMC::checkIDTable(uint16_t idVendor, uint16_t idProduct)
 
 INSTRUMENT_ENUM_t USB_TMC::usbTmcCheck(int devs_idx, struct libusb_device_descriptor *desc, instrument_t *outInst)
 {
-	static int									nextFreeTxId = INSTRUMENT_TRANSMITTERS_GENERIC_TX;
-	static int									nextFreeRxId = INSTRUMENT_TRANSMITTERS_GENERIC_RX;
+	static int									nextFreeTxId = INSTRUMENT_TRANSMITTERS_USB__GENERIC;
+	static int									nextFreeRxId = INSTRUMENT_RECEIVERS_USB__GENERIC;
 	struct libusb_config_descriptor			   *confDes;
 	const struct libusb_interface_descriptor   *intfDes;
 	libusb_device							   *dev = devs[devs_idx];
@@ -993,8 +1011,6 @@ INSTRUMENT_ENUM_t USB_TMC::usbTmcCheck(int devs_idx, struct libusb_device_descri
 	bool										isUsbTmc = false;
 	bool										isTx = false;
 	wchar_t										strbuf[256];
-
-
 
 	for (int confidx = 0; confidx < desc->bNumConfigurations; confidx++) {
 		if ((r = libusb_get_config_descriptor(dev, confidx, &confDes)) < 0) {

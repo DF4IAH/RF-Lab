@@ -72,6 +72,7 @@ public:
 	static bool		shutdown(void);
 	static void		wmCmd(int wmId, LPVOID arg = nullptr);
 
+	class agentModelVariant* getCurModCtx(void);
 	class WinSrv*	getWinSrv(void);
 
 

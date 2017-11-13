@@ -8,6 +8,7 @@
 #include <agents.h>
 #include "agentCom.h"
 
+/* LibUSB */
 #include "libusb.h"
 #include "libusbi.h"
 
@@ -173,68 +174,8 @@ static struct usbtmc_blacklist blacklist_remote[] = {
 };
 
 
-typedef enum INSTRUMENT_ENUM {
-	INSTRUMENT_NONE						= 0,
-
-	/* Rotors */
-	INSTRUMENT_ROTORS__ALL				= 0x10,
-	INSTRUMENT_ROTORS_XXX,
-
-	/* Transmitters */
-	INSTRUMENT_TRANSMITTERS__ALL		= 0x20,
-	INSTRUMENT_TRANSMITTER_FG_XXX,
-	INSTRUMENT_TRANSMITTERS_GENERIC_TX	= 0x29,
-
-	/* Receivers */
-	INSTRUMENT_RECEIVERS__ALL			= 0x30,
-	INSTRUMENT_RECEIVER_SA_RIGOL_DSA875,
-	INSTRUMENT_TRANSMITTERS_GENERIC_RX	= 0x39,
-} INSTRUMENT_ENUM_t;
-
-typedef struct instrument {
-	INSTRUMENT_ENUM_t		 type;
-	int						 devs_idx;
-
-	libusb_device			*dev;
-	libusb_device_handle	*dev_handle;
-	uint8_t					 dev_config;
-	uint8_t					 dev_interface;
-	uint16_t				 dev_usb_idVendor;
-	uint16_t				 dev_usb_idProduct;
-	uint8_t					 dev_bulk_out_ep;
-	uint8_t					 dev_bulk_in_ep;
-	uint8_t					 dev_interrupt_ep;
-	uint8_t					 dev_usbtmc_int_cap;
-	uint8_t					 dev_usbtmc_dev_cap;
-	uint8_t					 dev_usb488_dev_cap1;
-	uint8_t					 dev_usb488_dev_cap2;
-	uint8_t					 dev_bTag;
-	uint8_t					 dev_bulkin_attributes;
-	bool					 dev_usb_up;
-	bool					 dev_tmc_up;
-	char					 dev_tmc_idn[256];
-
-	int						 response_length;
-	int						 response_bytes_read;
-	int						 remaining_length;
-	uint8_t					 buffer[MAX_TRANSFER_LENGTH];
-
-	struct sr_context		*ctx;						// SCPI USB-TMC code
-	struct sr_usb_dev_inst	*usb;						// SCPI USB-TMC code
-	int						 detached_kernel_driver;	// SCPI USB-TMC code
-} instrument_t;
-
-
-typedef struct UsbTmc_Instruments {
-	int					inst_rot_cnt;
-	instrument_t		inst_rot[8];
-
-	int					inst_tx_cnt;
-	instrument_t		inst_tx[8];
-
-	int					inst_rx_cnt;
-	instrument_t		inst_rx[8];
-} UsbTmc_Instruments_t;
+/* Application */
+#include "instruments.h"
 
 
 class USB_TMC;
@@ -319,8 +260,7 @@ private:
 	unbounded_buffer<agentUsbReq>		*pAgtUsbTmcReq;
 	unbounded_buffer<agentUsbRsp>		*pAgtUsbTmcRsp;
 
-	/* All Instruments detected */
-	UsbTmc_Instruments_t				 ai;
+	ArrayOfInstruments_t*				 pAI;
 
 	bool								 _isStarted;
 	bool								 _running;

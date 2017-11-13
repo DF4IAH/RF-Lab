@@ -49,6 +49,14 @@ agentModel::~agentModel(void)
 }
 
 
+class agentModelVariant* agentModel::getCurModCtx(void)
+{
+	if (g_am && g_am->_curModel) {
+		return _curModel;
+	}
+	return nullptr;
+}
+
 void agentModel::run(void)
 {
 	if (g_am && g_am->_curModel) {

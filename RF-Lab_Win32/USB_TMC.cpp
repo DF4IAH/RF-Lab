@@ -504,7 +504,7 @@ int USB_TMC::findInstruments(void)
 
 			/* Add instrument to the Array of Instruments */
 			if (type != INSTRUMENT_NONE) {
-				instrument_t *inst = addInstrument(idx - 1, type, doCopyInst ?  &outInst : nullptr);
+				instrument_t *inst = addInstrument(type, idx - 1, doCopyInst ?  &outInst : nullptr);
 				cnt++;
 			}
 		}
@@ -512,7 +512,7 @@ int USB_TMC::findInstruments(void)
 	return cnt;
 }
 
-instrument_t* USB_TMC::addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instrument_t *optionalInst)
+instrument_t* USB_TMC::addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instrument_t *optionalInst)
 {
 	instrument_t *ret = NULL;
 

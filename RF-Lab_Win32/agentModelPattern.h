@@ -42,12 +42,15 @@ using namespace std;
 /* RX: Rohde & Schwarz FSEK20 (spectrum analyzer) - frequency span 100 kHz */
 #define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT		 100e3
 
+/* Serial communication parameters, as long as they are not stored non-volatile */
+#define C_ROT_COM_IS_IEC							 false
 #define C_ROT_COM_PORT								 3
 #define C_ROT_COM_BAUD								 CBR_19200
 #define C_ROT_COM_BITS								 8
 #define C_ROT_COM_PARITY							 NOPARITY
 #define C_ROT_COM_STOPBITS							 ONESTOPBIT
 
+#define C_TX_COM_IS_IEC								 true
 #define C_TX_COM_PORT								 1
 #define C_TX_COM_BAUD								 CBR_9600
 #define C_TX_COM_BITS								 8
@@ -61,6 +64,7 @@ using namespace std;
 #define C_TX_COM_IEC_PARITY							 NOPARITY
 #define C_TX_COM_IEC_STOPBITS						 ONESTOPBIT
 
+#define C_RX_COM_IS_IEC								 true
 #define C_RX_COM_PORT								 1
 #define C_RX_COM_BAUD								 CBR_9600
 #define C_RX_COM_BITS								 8
@@ -160,6 +164,9 @@ private:
 	void		agentsShutdown(void);
 	void		threadsStart(void);
 	void		threadsStop(void);
+	instrument_t*	addSerInstrument(	INSTRUMENT_ENUM_t type, 
+										agentCom* pAgtCom, uint8_t comPort, uint32_t comBaud, uint8_t comBits, uint8_t comParity, uint8_t comStopbits, 
+										bool isIec, uint8_t iecAddr);
 	void		sendPos(long tickPos);
 
 public:
@@ -209,4 +216,6 @@ public:
  static long	calcDeg2Ticks(double deg);
  static DWORD	calcDeg2Ms(double deg);
  static DWORD	calcTicks2Ms(long ticks);
+ static INSTRUMENT_ENUM_t findInstrumentByIdn(const string rspIdnStr, INSTRUMENT_ENUM_t instVariant);
+
 };

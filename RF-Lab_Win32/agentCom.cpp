@@ -38,29 +38,6 @@ bool agentCom::isRunning(void)
 	return _running;
 }
 
-bool agentCom::isIec(void)
-{
-	return _isIec;
-}
-
-void agentCom::setIecAddr(int iecAddr)
-{
-	if (iecAddr >= 0 && iecAddr <= 255) {
-		_iecAddr = iecAddr;
-		_isIec   = TRUE;
-	}
-	else {
-		_iecAddr = 0;
-		_isIec	 = FALSE;
-	}
-}
-
-int agentCom::getIecAddr(void)
-{
-	return _iecAddr;
-}
-
-
 void agentCom::Release(void)
 {
 	// signaling
@@ -79,7 +56,6 @@ void agentCom::Release(void)
 	// ... none
 }
 
-
 bool agentCom::shutdown(void)
 {
 	bool old_running = _running;
@@ -88,6 +64,119 @@ bool agentCom::shutdown(void)
 	_running = FALSE;
 
 	return old_running;
+}
+
+
+bool agentCom::isIec(void)
+{
+	return _isIec;
+}
+
+void agentCom::setIecAddr(int iecAddr)
+{
+	if (iecAddr >= 0 && iecAddr <= 255) {
+		_iecAddr = iecAddr;
+		_isIec = TRUE;
+	}
+	else {
+		_iecAddr = 0;
+		_isIec = FALSE;
+	}
+}
+
+int agentCom::getIecAddr(void)
+{
+	return _iecAddr;
+}
+
+/* Ser-Com blocking message transfer */
+string agentCom::doComRequestResponse(const string in)
+{
+	if (in.length() && (_hCom != INVALID_HANDLE_VALUE)) {
+		char lpBuffer[C_BUF_SIZE];
+		DWORD dNoOFBytestoWrite;         // No of bytes to write into the port
+		DWORD dNoOfBytesWritten = 0;     // No of bytes written to the port
+
+		dNoOFBytestoWrite = snprintf(lpBuffer, C_BUF_SIZE, "%s", in.c_str());
+
+		int status = WriteFile(_hCom,	// Handle to the Serial port
+			lpBuffer,					// Data to be written to the port
+			dNoOFBytestoWrite,			// Number of bytes to write
+			&dNoOfBytesWritten,			// Bytes written
+			NULL);
+
+		if (status) {
+			const DWORD dNoOFBytestoRead = C_BUF_SIZE;
+			DWORD dNoOfBytesRead = 0;
+
+			status = FlushFileBuffers(_hCom);
+			Sleep(25);
+			status = ReadFile(_hCom,	// Handle to the Serial port
+				lpBuffer,				// Buffer where data from the port is to be written to
+				dNoOFBytestoRead,		// Number of bytes to be read
+				&dNoOfBytesRead,		// Bytes read
+				NULL);
+
+			if (status) {
+				return string(lpBuffer, dNoOfBytesRead);
+			}
+		}
+	}
+
+	/* Fail case */
+	return string();
+}
+
+/* Check if device reacts like a Zolix-SC300 turntable */
+bool agentCom::isZolix(void)
+{
+	const char C_zolix_version_str[] = C_ZOLIX_VERSION_VAL_STR;
+	const string strRequest = string(C_ZOLIX_VERSION_REQ_STR);
+
+	string resp = doComRequestResponse(strRequest);
+	size_t pos = resp.find(C_zolix_version_str, 0);
+	return (pos != string::npos);
+}
+
+/* Prepare the IEC serial connection */
+void agentCom::iecPrepare(int iecAddr)
+{
+	const char C_iec_rsp_ok[] = "++";
+
+	if (iecAddr != C_SET_IEC_ADDR_INVALID) {  // TODO: test new code
+		xxx();
+		/* check if USB<-->IEC adapter is responding */
+		const string iecSyncingStr = string("++addr\r\n");
+
+		(void)        doComRequestResponse(iecSyncingStr);		// first request for sync purposes
+		string resp = doComRequestResponse(iecSyncingStr);
+		size_t pos = resp.find(C_iec_rsp_ok, 0);
+		if (pos == string::npos) {
+			return;
+		}
+
+		/* IEC adapter target address */
+		string strRequest = string("++addr ");
+		strRequest.append(agentCom::int2String(iecAddr));
+		strRequest.append("\r\n");
+		resp = doComRequestResponse(strRequest);
+		pos = resp.find(C_iec_rsp_ok, 0);
+		if (pos == string::npos) {
+			return;
+		}
+
+		/* IEC adapter enable automatic target response handling */
+		string("++auto 1\r\n");
+		resp = doComRequestResponse("++auto 1\r\n");
+
+		while (false) { ; }
+	}
+}
+
+/* Do an *IDN? request and return the response */
+string agentCom::getIdnResponse(void)
+{
+	return doComRequestResponse((const string) string(C_IDN_REQ_STR));
 }
 
 
@@ -107,21 +196,23 @@ void agentCom::run(void)
 
 		// command decoder
 		switch (comReq.cmd) {
-		case C_COMREQ_OPEN: 
+		case C_COMREQ_OPEN_ZOLIX: 
+		case C_COMREQ_OPEN_IDN:
 		{
-			int data_port = 0;
-			int data_baud = 0;
-			int data_size = 0;
-			int data_stopbits = 0;
-			int data_parity = 0;
+			int data_port		= 0;
+			int data_baud		= 0;
+			int data_size		= 0;
+			int data_stopbits	= 0;
+			int data_parity		= 0;
+			int data_iec_addr	= C_SET_IEC_ADDR_INVALID;
 
-			sscanf_s(comReq.parm.c_str(), ":P=%d :B=%d :I=%d :A=%d :S=%d",
+			sscanf_s(comReq.parm.c_str(), C_OPENPARAMS_STR,
 				&data_port, 
 				&data_baud,
 				&data_size,
 				&data_parity,
-				&data_stopbits
-				// , (unsigned) comReq.parm.length()
+				&data_stopbits,
+				&data_iec_addr
 				);  // COM PORT
 
 			wchar_t cbuf[C_BUF_SIZE];
@@ -166,59 +257,37 @@ void agentCom::run(void)
 					timeouts.WriteTotalTimeoutMultiplier	= 0;	// in milliseconds
 					timeouts.WriteTotalTimeoutConstant		= 0;	// in milliseconds
 					status = SetCommTimeouts(_hCom, &timeouts);
-					comRsp.stat = status ? C_COMRSP_OK : C_COMRSP_FAIL;
+					if (status) {
+						/* Set IEC serial adapter to the defined IEC target address */
+						if (data_iec_addr != C_SET_IEC_ADDR_INVALID) {
+							iecPrepare(data_iec_addr);
+						}
+
+						switch (comReq.cmd) {
+						case C_COMREQ_OPEN_ZOLIX:
+							comRsp.stat = isZolix() ?  C_COMRSP_OK : C_COMRSP_FAIL;
+							break;
+
+						case C_COMREQ_OPEN_IDN:
+							comRsp.data = string(getIdnResponse());
+							comRsp.stat = C_COMRSP_DATA;
+							break;
+						}
+					}
 				}
-				else {
-					comRsp.stat = C_COMRSP_FAIL;
-				}
-			}
-			else {
-				comRsp.stat = C_COMRSP_FAIL;
 			}
 		} 
 		break;
 
 		case C_COMREQ_COM_SEND:
 		{
-			// send parm string via serial port and wait for result
-			char lpBuffer[C_BUF_SIZE];
-			DWORD dNoOFBytestoWrite;         // No of bytes to write into the port
-			DWORD dNoOfBytesWritten = 0;     // No of bytes written to the port
+			/* Send and receive message */
+			string response = doComRequestResponse(comReq.parm);
 
-			dNoOFBytestoWrite = snprintf(lpBuffer, C_BUF_SIZE, "%s", comReq.parm.c_str());
-
-			int status = WriteFile(_hCom,	// Handle to the Serial port
-				lpBuffer,					// Data to be written to the port
-				dNoOFBytestoWrite,			// Number of bytes to write
-				&dNoOfBytesWritten,			// Bytes written
-				NULL);
-
-			if (status) {
-				const DWORD dNoOFBytestoRead = C_BUF_SIZE;
-				DWORD dNoOfBytesRead = 0;
-				char lpBuffer[C_BUF_SIZE] = { 0 };
-
-				status = FlushFileBuffers(_hCom);
-				Sleep(10);
-				status = ReadFile(_hCom,	// Handle to the Serial port
-					lpBuffer,				// Buffer where data from the port is to be written to
-					dNoOFBytestoRead,		// Number of bytes to be read
-					&dNoOfBytesRead,		// Bytes read
-					NULL);
-
-				if (status) {
-					comRsp.data = string(lpBuffer, dNoOfBytesRead);
-					comRsp.stat = C_COMRSP_DATA;
-				}
-				else {
-					comRsp.stat = C_COMRSP_FAIL;
-				}
+			if (response.length()) {
+				comRsp.data = response;
+				comRsp.stat = C_COMRSP_DATA;
 			}
-			else {
-				comRsp.stat = C_COMRSP_FAIL;
-			}
-			
-
 		}
 		break;
 

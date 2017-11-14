@@ -10,7 +10,15 @@ using namespace concurrency;
 using namespace std;
 
 
-#define AGENT_COM_RECEIVE_TIMEOUT				   500
+#define AGENT_COM_RECEIVE_TIMEOUT					500
+
+#define C_OPENPARAMS_STR							":P=%d :B=%d :I=%d :A=%d :S=%d :E=%d"
+
+#define C_ZOLIX_VERSION_REQ_STR						"\rVE\r"
+#define C_ZOLIX_VERSION_VAL_STR						"SC300"
+#define C_IDN_REQ_STR								"*IDN?\r\n"
+
+#define C_SET_IEC_ADDR_INVALID						-1
 
 
 enum C_COMINST_ENUM {
@@ -33,7 +41,8 @@ enum C_USBRSP_ENUM {
 
 enum C_COMREQ_ENUM {
 	C_COMREQ_END = 0,
-	C_COMREQ_OPEN,
+	C_COMREQ_OPEN_ZOLIX,
+	C_COMREQ_OPEN_IDN,
 	C_COMREQ_COM_SEND,
 	C_COMREQ_CLOSE,
 };
@@ -93,11 +102,16 @@ public:
 	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
 	void start(void);
 	bool isRunning(void);
+	void Release(void);
+	bool shutdown(void);
+
 	bool isIec(void);
 	void setIecAddr(int iecAddr);
 	int  getIecAddr(void);
-	void Release(void);
-	bool shutdown(void);
+	string doComRequestResponse(const string in);
+	bool isZolix(void);
+	void iecPrepare(int iecAddr);
+	string getIdnResponse(void);
 
 
 protected:

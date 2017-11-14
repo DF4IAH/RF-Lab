@@ -217,7 +217,7 @@ private:
 	bool check_usbtmc_blacklist_libusb(struct usbtmc_blacklist *blacklist, uint16_t vid, uint16_t pid);
 
 	int findInstruments(void);
-	instrument_t* addInstrument(int devs_idx, INSTRUMENT_ENUM_t type, instrument_t *optionalInst);
+	instrument_t* addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instrument_t *optionalInst);
 	void releaseInstrument_usb_iface(instrument_t inst[], int cnt);
 	bool openUsb(instrument_t *inst);
 	bool closeUsb(instrument_t *inst);

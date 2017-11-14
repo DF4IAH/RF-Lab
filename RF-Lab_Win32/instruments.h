@@ -6,7 +6,7 @@
 /* Instruments */
 
 typedef enum INSTRUMENT_ENUM {
-	INSTRUMENT_NONE = 0x0000,
+	INSTRUMENT_NONE								= 0x0000,
 
 	/* Rotors */
 	INSTRUMENT_ROTORS__ALL						= 0x1000,
@@ -45,8 +45,14 @@ typedef struct instrument {
 	int						 devs_idx;
 
 	/* Serial entries */
+	agentCom				*pAgtCom;
+	uint8_t					 comPort;
+	uint32_t				 comBaud;
+	uint8_t					 comBits;
+	uint8_t					 comParity;
+	uint8_t					 comStopbits;
 	bool					 isIec;
-
+	uint8_t					 iecAddr;
 
 	/* USB entries */
 	libusb_device			*dev;
@@ -77,9 +83,7 @@ typedef struct instrument {
 	struct sr_usb_dev_inst	*usb;						// SCPI USB-TMC code
 	int						 detached_kernel_driver;	// SCPI USB-TMC code
 
-
-														/* Ethernet entries */
-
+	/* Ethernet entries */
 
 } instrument_t;
 

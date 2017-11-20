@@ -43,6 +43,7 @@ using namespace std;
 #define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT		 100e3
 
 /* Serial communication parameters, as long as they are not stored non-volatile */
+/* Zolix: USB-->COM port 3: 19200 baud, 8N1 */
 #define C_ROT_COM_IS_IEC							 false
 #define C_ROT_COM_PORT								 3
 #define C_ROT_COM_BAUD								 CBR_19200
@@ -57,12 +58,25 @@ using namespace std;
 #define C_TX_COM_PARITY								 NOPARITY
 #define C_TX_COM_STOPBITS							 ONESTOPBIT
 
-#define C_TX_COM_IEC_ADDR							 28
+#if 1
+/* R&S SMR40: USB-->COM-->IEC625: address == 28, COM port 4: 19200 baud, 8N1 */
+#define C_TX_COM_IEC_ADDR							 28			
 #define C_TX_COM_IEC_PORT							 4
 #define C_TX_COM_IEC_BAUD							 CBR_19200
 #define C_TX_COM_IEC_BITS							 8
 #define C_TX_COM_IEC_PARITY							 NOPARITY
 #define C_TX_COM_IEC_STOPBITS						 ONESTOPBIT
+
+#else
+/* Agilent EXG N5173B: USB-->COM-->IEC625: address == 19, COM port 4: 19200 baud, 8N1 */
+#define C_TX_COM_IEC_ADDR							 19			
+#define C_TX_COM_IEC_PORT							 4
+#define C_TX_COM_IEC_BAUD							 CBR_19200
+#define C_TX_COM_IEC_BITS							 8
+#define C_TX_COM_IEC_PARITY							 NOPARITY
+#define C_TX_COM_IEC_STOPBITS						 ONESTOPBIT
+#endif
+
 
 #define C_RX_COM_IS_IEC								 true
 #define C_RX_COM_PORT								 1
@@ -71,13 +85,13 @@ using namespace std;
 #define C_RX_COM_PARITY								 NOPARITY
 #define C_RX_COM_STOPBITS							 ONESTOPBIT
 
+/* R&S FSEK20: USB-->COM-->IEC625 - address == 20, COM port 4: 19200 baud, 8N1 */
 #define C_RX_COM_IEC_ADDR							 20
 #define C_RX_COM_IEC_PORT							 4
 #define C_RX_COM_IEC_BAUD							 CBR_19200
 #define C_RX_COM_IEC_BITS							 8
 #define C_RX_COM_IEC_PARITY							 NOPARITY
 #define C_RX_COM_IEC_STOPBITS						 ONESTOPBIT
-
 
 /* Instruments */
 #include "instruments.h"
@@ -86,17 +100,18 @@ using namespace std;
 enum C_MODELPATTERN_RUNSTATES_ENUM {
 	C_MODELPATTERN_RUNSTATES_NOOP = 0,
 	C_MODELPATTERN_RUNSTATES_BEGIN,
+	C_MODELPATTERN_RUNSTATES_FETCH_SETTINGS,
+	C_MODELPATTERN_RUNSTATES_COM_REGISTRATION,
 	C_MODELPATTERN_RUNSTATES_USB_REGISTRATION,
-	C_MODELPATTERN_RUNSTATES_OPENCOM,
-	C_MODELPATTERN_RUNSTATES_OPENCOM_WAIT,
-	C_MODELPATTERN_PROCESSES_SELECTION_WAIT,
-	C_MODELPATTERN_RUNSTATES_INIT,
-	C_MODELPATTERN_RUNSTATES_INIT_WAIT,
+	C_MODELPATTERN_RUNSTATES_INST_SELECTION,
+	C_MODELPATTERN_RUNSTATES_INST_COM_INIT,
+	C_MODELPATTERN_RUNSTATES_INST_USB_INIT,
+	C_MODELPATTERN_RUNSTATES_RUNNING,
+	C_MODELPATTERN_RUNSTATES_COM_CLOSE,
+	C_MODELPATTERN_RUNSTATES_USB_CLOSE,
 	C_MODELPATTERN_RUNSTATES_INIT_ERROR,
 	C_MODELPATTERN_RUNSTATES_REINIT,
-	C_MODELPATTERN_RUNSTATES_RUNNING,
-	C_MODELPATTERN_RUNSTATES_CLOSE_COM,
-	C_MODELPATTERN_RUNSTATES_CLOSE_COM_WAIT,
+	C_MODELPATTERN_RUNSTATES_SHUTDOWN,
 };
 
 enum C_MODELPATTERN_PROCESSES_ENUM {
@@ -166,7 +181,8 @@ private:
 	void		threadsStop(void);
 	instrument_t*	addSerInstrument(	INSTRUMENT_ENUM_t type, 
 										agentCom* pAgtCom, uint8_t comPort, uint32_t comBaud, uint8_t comBits, uint8_t comParity, uint8_t comStopbits, 
-										bool isIec, uint8_t iecAddr);
+										bool isIec, uint8_t iecAddr,
+										string idn);
 	void		sendPos(long tickPos);
 
 public:
@@ -216,6 +232,5 @@ public:
  static long	calcDeg2Ticks(double deg);
  static DWORD	calcDeg2Ms(double deg);
  static DWORD	calcTicks2Ms(long ticks);
- static INSTRUMENT_ENUM_t findInstrumentByIdn(const string rspIdnStr, INSTRUMENT_ENUM_t instVariant);
-
+ 
 };

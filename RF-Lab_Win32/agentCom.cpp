@@ -67,6 +67,23 @@ bool agentCom::shutdown(void)
 }
 
 
+string agentCom::trim(string haystack)
+{
+	string needle;
+	int count = haystack.length();
+
+	for (int idx = 0; idx < count; idx++) {
+		char c = haystack.at(idx);
+
+		if (0x20 <= c) {
+			char ary[2] = { c, 0 };
+			needle.append(string(ary));
+		}
+	}
+	return needle;
+}
+
+
 bool agentCom::isIec(void)
 {
 	return _isIec;
@@ -128,55 +145,65 @@ string agentCom::doComRequestResponse(const string in)
 }
 
 /* Check if device reacts like a Zolix-SC300 turntable */
-bool agentCom::isZolix(void)
+string agentCom::getZolixIdn(void)
 {
-	const char C_zolix_version_str[] = C_ZOLIX_VERSION_VAL_STR;
-	const string strRequest = string(C_ZOLIX_VERSION_REQ_STR);
-
-	string resp = doComRequestResponse(strRequest);
-	size_t pos = resp.find(C_zolix_version_str, 0);
-	return (pos != string::npos);
+	doComRequestResponse(string(C_ZOLIX_VERSION_REQ_STR1));
+	string resp = doComRequestResponse(string(C_ZOLIX_VERSION_REQ_STR2));
+	size_t pos = resp.find(C_ZOLIX_VERSION_VAL_STR, 0);
+	if (pos != string::npos) {
+		return trim(resp);
+	}
+	else {
+		return string();
+	}
 }
 
 /* Prepare the IEC serial connection */
 void agentCom::iecPrepare(int iecAddr)
 {
-	const char C_iec_rsp_ok[] = "++";
-
-	if (iecAddr != C_SET_IEC_ADDR_INVALID) {  // TODO: test new code
-		xxx();
+	if (iecAddr != C_SET_IEC_ADDR_INVALID) {
 		/* check if USB<-->IEC adapter is responding */
-		const string iecSyncingStr = string("++addr\r\n");
+		const string iecSyncingStr = string("++ver\r\n");
 
 		(void)        doComRequestResponse(iecSyncingStr);		// first request for sync purposes
 		string resp = doComRequestResponse(iecSyncingStr);
-		size_t pos = resp.find(C_iec_rsp_ok, 0);
+		size_t pos = resp.find("version", 0);
 		if (pos == string::npos) {
 			return;
 		}
+
+		/* IEC adapter set to controller mode */
+		doComRequestResponse(string("++mode 1\r\n"));
 
 		/* IEC adapter target address */
 		string strRequest = string("++addr ");
 		strRequest.append(agentCom::int2String(iecAddr));
 		strRequest.append("\r\n");
-		resp = doComRequestResponse(strRequest);
-		pos = resp.find(C_iec_rsp_ok, 0);
+		doComRequestResponse(strRequest);
+		resp = doComRequestResponse(string("++addr\r\n"));
+		pos = resp.find(agentCom::int2String(iecAddr), 0);
 		if (pos == string::npos) {
 			return;
 		}
 
 		/* IEC adapter enable automatic target response handling */
-		string("++auto 1\r\n");
-		resp = doComRequestResponse("++auto 1\r\n");
-
-		while (false) { ; }
+		doComRequestResponse(string("++auto 1\r\n"));
 	}
 }
 
 /* Do an *IDN? request and return the response */
 string agentCom::getIdnResponse(void)
 {
-	return doComRequestResponse((const string) string(C_IDN_REQ_STR));
+	string idn;
+
+	for (int cnt = 5; cnt; cnt--) {
+		idn = doComRequestResponse((const string)string(C_IDN_REQ_STR));
+		if (idn.length() > 2) {
+			break;
+		}
+		Sleep(100L);
+	}
+	return trim(idn);
 }
 
 
@@ -265,7 +292,8 @@ void agentCom::run(void)
 
 						switch (comReq.cmd) {
 						case C_COMREQ_OPEN_ZOLIX:
-							comRsp.stat = isZolix() ?  C_COMRSP_OK : C_COMRSP_FAIL;
+							comRsp.data = string(getZolixIdn());
+							comRsp.stat = C_COMRSP_DATA;
 							break;
 
 						case C_COMREQ_OPEN_IDN:

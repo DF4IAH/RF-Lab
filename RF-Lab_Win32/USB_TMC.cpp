@@ -16,7 +16,6 @@
 extern agentModel *g_am;
 
 
-
 inline void* varcpy(void* dest, void* src, size_t size)
 {
 	memcpy(dest, src, size);
@@ -491,20 +490,19 @@ int USB_TMC::findInstruments(void)
 		int r = libusb_get_device_descriptor(dev, &desc);
 		if (!r) {
 			instrument_t outInst;
-			bool doCopyInst = false;
 
 			/* Look-up table for well-known instruments */
-			INSTRUMENT_ENUM_t type = checkIDTable(desc.idVendor, desc.idProduct);
+			INSTRUMENT_ENUM_t instModel = checkIDTable(desc.idVendor, desc.idProduct);
 
 			/* Second chance by a generic USB_TMC check */
-			if (type == INSTRUMENT_NONE) {
-				type = usbTmcCheck(idx - 1, &desc, &outInst);
-				doCopyInst = true;
+			INSTRUMENT_ENUM_t instModel_2nd = usbTmcCheck(idx - 1, &desc, &outInst);
+			if ((instModel == INSTRUMENT_NONE) && (instModel_2nd != INSTRUMENT_NONE)) {
+				instModel = instModel_2nd;
 			}
 
-			/* Add instrument to the Array of Instruments */
-			if (type != INSTRUMENT_NONE) {
-				instrument_t *inst = addInstrument(type, idx - 1, doCopyInst ?  &outInst : nullptr);
+			if (instModel != INSTRUMENT_NONE) {
+				/* Add instrument to the Array of Instruments */
+				instrument_t *inst = addInstrument(instModel, idx - 1, &outInst);
 				cnt++;
 			}
 		}
@@ -523,8 +521,9 @@ instrument_t* USB_TMC::addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instr
 		/* Rotors */
 		if (pAI->inst_rot_cnt < (sizeof(pAI->inst_rot) / sizeof(instrument_t))) {
 			ret = &(pAI->inst_rot[pAI->inst_rot_cnt]);
-			if (optionalInst)
+			if (optionalInst) {
 				memcpy(ret, optionalInst, sizeof(instrument_t));
+			}
 			pAI->inst_rot[pAI->inst_rot_cnt].type = type;
 			pAI->inst_rot[pAI->inst_rot_cnt].devs_idx = devs_idx;	// USB special
 			pAI->inst_rot_cnt++;
@@ -537,8 +536,9 @@ instrument_t* USB_TMC::addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instr
 		/* Transmitters */
 		if (pAI->inst_tx_cnt < (sizeof(pAI->inst_tx) / sizeof(instrument_t))) {
 			ret = &(pAI->inst_tx[pAI->inst_tx_cnt]);
-			if (optionalInst)
+			if (optionalInst) {
 				memcpy(ret, optionalInst, sizeof(instrument_t));
+			}
 			pAI->inst_tx[pAI->inst_tx_cnt].type = type;
 			pAI->inst_tx[pAI->inst_tx_cnt].devs_idx = devs_idx;	// USB special
 			pAI->inst_tx_cnt++;
@@ -551,8 +551,9 @@ instrument_t* USB_TMC::addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instr
 		/* Receivers */
 		if (pAI->inst_rx_cnt < (sizeof(pAI->inst_rx) / sizeof(instrument_t))) {
 			ret = &(pAI->inst_rx[pAI->inst_rx_cnt]);
-			if (optionalInst)
+			if (optionalInst) {
 				memcpy(ret, optionalInst, sizeof(instrument_t));
+			}
 			pAI->inst_rx[pAI->inst_rx_cnt].type = type;
 			pAI->inst_rx[pAI->inst_rx_cnt].devs_idx = devs_idx;	// USB special
 			pAI->inst_rx_cnt++;
@@ -1009,7 +1010,7 @@ INSTRUMENT_ENUM_t USB_TMC::usbTmcCheck(int devs_idx, struct libusb_device_descri
 	libusb_device							   *dev = devs[devs_idx];
 	int											r;
 	bool										isUsbTmc = false;
-	bool										isTx = false;
+	C_USB_TMC_INSTRUMENT_TYPE_t					instType = C_USB_TMC_INSTRUMENT_NONE;
 	wchar_t										strbuf[256];
 
 	for (int confidx = 0; confidx < desc->bNumConfigurations; confidx++) {
@@ -1031,26 +1032,37 @@ INSTRUMENT_ENUM_t USB_TMC::usbTmcCheck(int devs_idx, struct libusb_device_descri
 //#ifdef DEBUG_USB
 			wsprintf(strbuf, L"Found USBTMC device (VID:PID = %04x:%04x).\n", desc->idVendor, desc->idProduct);  OutputDebugString(strbuf);
 //#endif
-			isTx = usbTmcIsTx(devs_idx, outInst);
+			instType = usbTmcInstType(devs_idx, outInst);
 		}
 		libusb_free_config_descriptor(confDes);
 	}
 
 	if (!isUsbTmc)
 		return INSTRUMENT_NONE;
-	else
-		return isTx?  ((INSTRUMENT_ENUM_t)nextFreeTxId++) : ((INSTRUMENT_ENUM_t)nextFreeRxId++);
+
+	switch (instType) {
+	case C_USB_TMC_INSTRUMENT_TX:
+		return ((INSTRUMENT_ENUM_t)nextFreeTxId++);
+		break;
+	
+	case C_USB_TMC_INSTRUMENT_RX:
+		return ((INSTRUMENT_ENUM_t)nextFreeRxId++);
+		break;
+
+	default:
+		return INSTRUMENT_NONE;
+	}
 }
 
-bool USB_TMC::usbTmcIsTx(int devs_idx, instrument_t *outInst)
+C_USB_TMC_INSTRUMENT_TYPE_t USB_TMC::usbTmcInstType(int devs_idx, instrument_t *outInst)
 {
-	instrument_t	   *inst = outInst;
-	int					r;
-	uint8_t				stat = 0;
-	bool				isTx = false;
-	wchar_t				strbuf[256];
+	instrument_t				   *inst = outInst;
+	int								r;
+	uint8_t							stat = 0;
+	C_USB_TMC_INSTRUMENT_TYPE_t		instType = C_USB_TMC_INSTRUMENT_NONE;
+	wchar_t							strbuf[256];
 
-	/* Prepare TX instrument entry */
+	/* Prepare instrument entry */
 	memset(inst, 0, sizeof(instrument_t));
 
 	inst->devs_idx = devs_idx;
@@ -1062,8 +1074,10 @@ bool USB_TMC::usbTmcIsTx(int devs_idx, instrument_t *outInst)
 			}
 
 			if (!stat) {
-				if (!usbTmcGetIDN(inst))
+				if (!usbTmcGetIDN(inst)) {
 					stat |= 0x02;
+					wsprintf(strbuf, L"Can not receive IDN string.\n", inst->dev_usb_idVendor, inst->dev_usb_idProduct);  OutputDebugString(strbuf);
+				}
 			}
 
 #if 0
@@ -1086,15 +1100,28 @@ bool USB_TMC::usbTmcIsTx(int devs_idx, instrument_t *outInst)
 			if (!stat) {
 				r = scpi_usbtmc_libusb_send(inst, ":FREQ:SPAN:FULL");		// RX: Spectrum analysator knows about a full scan
 	//			r = scpi_usbtmc_libusb_send(inst, ":FREQ:CENT 1.0E+06");	// RX: Spectrum analysator knows about a center frequency
-	//			r = scpi_usbtmc_libusb_send(inst, ":OUTP:STAT OFF");		// TX: Generator knows about ...
 				if (r < 0) {
 					stat |= 0x20;
 				}
 				else {
-					/* Generator fails (TX) / Spectrum analysator passes (RX) */
+					/* Spectrum analysator passes (RX) */
 					int val = usbTmcGetSTB(inst);
-					if (val) {
-						isTx = true;
+					if (!val) {
+						instType = C_USB_TMC_INSTRUMENT_RX;
+					}
+				}
+			}
+
+			if (!stat && (instType == C_USB_TMC_INSTRUMENT_NONE)) {
+				r = scpi_usbtmc_libusb_send(inst, ":OUTP:STAT OFF");		// TX: Generator knows about ...
+				if (r < 0) {
+					stat |= 0x20;
+				}
+				else {
+					/* Generator passes (TX) */
+					int val = usbTmcGetSTB(inst);
+					if (!val) {
+						instType = C_USB_TMC_INSTRUMENT_TX;
 					}
 				}
 			}
@@ -1102,8 +1129,9 @@ bool USB_TMC::usbTmcIsTx(int devs_idx, instrument_t *outInst)
 		closeUsb(inst);  // includes closeTmc()
 	}
 
-	return isTx;
+	return instType;
 }
+
 
 bool USB_TMC::usbTmcReadLine(instrument_t *inst, char* outLine, int len)
 {
@@ -1178,7 +1206,7 @@ bool USB_TMC::usbTmcGetIDN(instrument_t *inst)
 {
 	int r = scpi_usbtmc_libusb_send(inst, "*IDN?");
 	if (!r) {
-		usbTmcReadLine(inst, inst->dev_tmc_idn, sizeof(inst->dev_tmc_idn));
+		usbTmcReadLine(inst, inst->idn, sizeof(inst->idn));
 		return true;
 	}
 	else

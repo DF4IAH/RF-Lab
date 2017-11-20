@@ -165,6 +165,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RF-Lab_Win32.h" />
     <ClInclude Include="USB_TMC.h" />
+    <ClInclude Include="USB_TMC_types.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="version_nano.h" />
     <ClInclude Include="WinSrv.h" />
@@ -176,6 +177,7 @@
     <ClCompile Include="agentModel.cpp" />
     <ClCompile Include="agentModelPattern.cpp" />
     <ClCompile Include="agentModelVariant.cpp" />
+    <ClCompile Include="instruments.cpp" />
     <ClCompile Include="RF-Lab_Win32.cpp" />
     <ClCompile Include="USB_TMC.cpp" />
     <ClCompile Include="WinSrv.cpp" />

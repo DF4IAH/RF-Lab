@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 
+
 using namespace concurrency;
 using namespace std;
 
@@ -14,8 +15,10 @@ using namespace std;
 
 #define C_OPENPARAMS_STR							":P=%d :B=%d :I=%d :A=%d :S=%d :E=%d"
 
-#define C_ZOLIX_VERSION_REQ_STR						"\rVE\r"
+#define C_ZOLIX_VERSION_REQ_STR1					"\r"
+#define C_ZOLIX_VERSION_REQ_STR2					"VE\r"
 #define C_ZOLIX_VERSION_VAL_STR						"SC300"
+#define C_SYNC_STR									"\r\n"
 #define C_IDN_REQ_STR								"*IDN?\r\n"
 
 #define C_SET_IEC_ADDR_INVALID						-1
@@ -100,17 +103,19 @@ private:
 
 public:
 	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
-	void start(void);
-	bool isRunning(void);
-	void Release(void);
-	bool shutdown(void);
+	void   start(void);
+	bool   isRunning(void);
+	void   Release(void);
+	bool   shutdown(void);
 
-	bool isIec(void);
-	void setIecAddr(int iecAddr);
-	int  getIecAddr(void);
+	string trim(string haystack);
+
+	bool   isIec(void);
+	void   setIecAddr(int iecAddr);
+	int    getIecAddr(void);
 	string doComRequestResponse(const string in);
-	bool isZolix(void);
-	void iecPrepare(int iecAddr);
+	string getZolixIdn(void);
+	void   iecPrepare(int iecAddr);
 	string getIdnResponse(void);
 
 

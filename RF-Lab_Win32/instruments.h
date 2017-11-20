@@ -1,6 +1,14 @@
 #pragma once
 
-#include "USB_TMC.h"
+/* Agents Library */
+#include <agents.h>
+#include "agentCom.h"
+
+/* LibUSB */
+#include "libusb.h"
+#include "libusbi.h"
+
+#include "USB_TMC_types.h"
 
 
 /* Instruments */
@@ -15,8 +23,9 @@ typedef enum INSTRUMENT_ENUM {
 
 	/* Transmitters */
 	INSTRUMENT_TRANSMITTERS__ALL				= 0x2000,
+	INSTRUMENT_TRANSMITTERS_SER__RS_SMR40		= 0x2101,	// IEC
+	INSTRUMENT_TRANSMITTERS_SER__AGILENT_N5173B = 0x2102,	// IEC
 	INSTRUMENT_TRANSMITTERS_SER__GENERIC		= 0x2151,	// and higher
-	INSTRUMENT_TRANSMITTERS_USB__RS_SMR40		= 0x2201,
 	INSTRUMENT_TRANSMITTERS_USB__GENERIC		= 0x2251,	// and higher
 	INSTRUMENT_TRANSMITTERS_ETH__GENERIC		= 0x2351,	// and higher
 
@@ -43,6 +52,7 @@ typedef enum INSTRUMENT_ENUM {
 typedef struct instrument {
 	INSTRUMENT_ENUM_t		 type;
 	int						 devs_idx;
+	char					 idn[256];
 
 	/* Serial entries */
 	agentCom				*pAgtCom;
@@ -72,12 +82,11 @@ typedef struct instrument {
 	uint8_t					 dev_bulkin_attributes;
 	bool					 dev_usb_up;
 	bool					 dev_tmc_up;
-	char					 dev_tmc_idn[256];
 
 	int						 response_length;
 	int						 response_bytes_read;
 	int						 remaining_length;
-	uint8_t					 buffer[MAX_TRANSFER_LENGTH];
+	uint8_t					 buffer[USB_MAX_TRANSFER_LENGTH];
 
 	struct sr_context		*ctx;						// SCPI USB-TMC code
 	struct sr_usb_dev_inst	*usb;						// SCPI USB-TMC code
@@ -98,3 +107,9 @@ typedef struct ArrayOfInstruments {
 	int					inst_rx_cnt;
 	instrument_t		inst_rx[8];
 } ArrayOfInstruments_t;
+
+
+
+/* Functions */
+
+INSTRUMENT_ENUM_t findSerInstrumentByIdn(const string rspIdnStr, INSTRUMENT_ENUM_t instVariant);

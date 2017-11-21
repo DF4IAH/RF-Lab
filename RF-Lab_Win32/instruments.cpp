@@ -4,16 +4,30 @@
 #include "instruments.h"
 
 
-INSTRUMENT_ENUM_t findSerInstrumentByIdn(const string rspIdnStr, INSTRUMENT_ENUM_t instVariant)
+INSTRUMENT_ENUM_t findSerInstrumentByIdn(const string rspIdnStr, int instVariant)
 {
 	INSTRUMENT_ENUM_t inst = (INSTRUMENT_ENUM_t)INSTRUMENT_DEVICE_GENERIC;
 
 	if (strstr(rspIdnStr.c_str(), "SMR40")) {
 		inst = INSTRUMENT_TRANSMITTERS_SER__RS_SMR40;
-	}
-	else if (strstr(rspIdnStr.c_str(), "N5173B")) {
-		inst = INSTRUMENT_TRANSMITTERS_SER__AGILENT_N5173B;
+
+	} else if (strstr(rspIdnStr.c_str(), "SMB100A")) {
+		inst = INSTRUMENT_TRANSMITTERS_SER__RS_SMB100A;
+
+	} else if (strstr(rspIdnStr.c_str(), "SMC100A")) {
+		inst = INSTRUMENT_TRANSMITTERS_USB__RS_SMC100A;
+
+	} else if (strstr(rspIdnStr.c_str(), "SMC100A")) {
+		inst = INSTRUMENT_TRANSMITTERS_USB__RS_SMC100A;
+
+	} else if (strstr(rspIdnStr.c_str(), "FSEK 20")) {
+		inst = INSTRUMENT_RECEIVERS_SER__RS_FSEK20;
 	}
 
-	return (INSTRUMENT_ENUM_t)((int)inst | ((int)instVariant & INSTRUMENT_VARIANT_MASK));
+	if (instVariant) {
+		return (INSTRUMENT_ENUM_t)((((int)inst) & INSTRUMENT_DEVICE_MASK) | (instVariant & (INSTRUMENT_VARIANT_MASK | INSTRUMENT_CONNECT_MASK)));
+
+	} else {
+		return inst == INSTRUMENT_DEVICE_GENERIC ? INSTRUMENT_NONE : inst;
+	}
 }

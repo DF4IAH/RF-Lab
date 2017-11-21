@@ -988,6 +988,18 @@ void USB_TMC::tmcGoLocal(instrument_t *inst)
 INSTRUMENT_ENUM_t USB_TMC::checkIDTable(uint16_t idVendor, uint16_t idProduct)
 {
 	switch (idVendor) {
+	case 0x0aad:
+		switch (idProduct) {
+		case 0x0054:
+			return INSTRUMENT_TRANSMITTERS_USB__RS_SMB100A;
+			break;
+
+		case 0x006e:
+			return INSTRUMENT_TRANSMITTERS_USB__RS_SMC100A;
+			break;
+		}
+		break;
+
 	case 0x1ab1:
 		switch (idProduct) {
 		case 0x0960:

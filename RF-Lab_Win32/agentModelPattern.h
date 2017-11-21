@@ -58,18 +58,26 @@ using namespace std;
 #define C_TX_COM_PARITY								 NOPARITY
 #define C_TX_COM_STOPBITS							 ONESTOPBIT
 
-#if 1
+#if 0
 /* R&S SMR40: USB-->COM-->IEC625: address == 28, COM port 4: 19200 baud, 8N1 */
-#define C_TX_COM_IEC_ADDR							 28			
+#define C_TX_COM_IEC_ADDR							 28
 #define C_TX_COM_IEC_PORT							 4
 #define C_TX_COM_IEC_BAUD							 CBR_19200
 #define C_TX_COM_IEC_BITS							 8
 #define C_TX_COM_IEC_PARITY							 NOPARITY
 #define C_TX_COM_IEC_STOPBITS						 ONESTOPBIT
 
+#elif 1
+/* R&S SMB100A: USB-->COM-->IEC625: address == 29, COM port 4: 19200 baud, 8N1 */
+#define C_TX_COM_IEC_ADDR							 29
+#define C_TX_COM_IEC_PORT							 4
+#define C_TX_COM_IEC_BAUD							 CBR_19200
+#define C_TX_COM_IEC_BITS							 8
+#define C_TX_COM_IEC_PARITY							 NOPARITY
+#define C_TX_COM_IEC_STOPBITS						 ONESTOPBIT
 #else
 /* Agilent EXG N5173B: USB-->COM-->IEC625: address == 19, COM port 4: 19200 baud, 8N1 */
-#define C_TX_COM_IEC_ADDR							 19			
+#define C_TX_COM_IEC_ADDR							 19
 #define C_TX_COM_IEC_PORT							 4
 #define C_TX_COM_IEC_BAUD							 CBR_19200
 #define C_TX_COM_IEC_BITS							 8
@@ -85,6 +93,7 @@ using namespace std;
 #define C_RX_COM_PARITY								 NOPARITY
 #define C_RX_COM_STOPBITS							 ONESTOPBIT
 
+#if 1
 /* R&S FSEK20: USB-->COM-->IEC625 - address == 20, COM port 4: 19200 baud, 8N1 */
 #define C_RX_COM_IEC_ADDR							 20
 #define C_RX_COM_IEC_PORT							 4
@@ -92,6 +101,17 @@ using namespace std;
 #define C_RX_COM_IEC_BITS							 8
 #define C_RX_COM_IEC_PARITY							 NOPARITY
 #define C_RX_COM_IEC_STOPBITS						 ONESTOPBIT
+
+#else
+/* */
+#define C_RX_COM_IEC_ADDR							 19
+#define C_RX_COM_IEC_PORT							 4
+#define C_RX_COM_IEC_BAUD							 CBR_19200
+#define C_RX_COM_IEC_BITS							 8
+#define C_RX_COM_IEC_PARITY							 NOPARITY
+#define C_RX_COM_IEC_STOPBITS						 ONESTOPBIT
+#endif
+
 
 /* Instruments */
 #include "instruments.h"

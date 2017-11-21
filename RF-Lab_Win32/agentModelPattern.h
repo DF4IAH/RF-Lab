@@ -58,7 +58,7 @@ using namespace std;
 #define C_TX_COM_PARITY								 NOPARITY
 #define C_TX_COM_STOPBITS							 ONESTOPBIT
 
-#if 0
+#if 1
 /* R&S SMR40: USB-->COM-->IEC625: address == 28, COM port 4: 19200 baud, 8N1 */
 #define C_TX_COM_IEC_ADDR							 28
 #define C_TX_COM_IEC_PORT							 4

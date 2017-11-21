@@ -93,6 +93,9 @@
     <ClInclude Include="USB_TMC_types.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="RF-Lab_Win32_InstList.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

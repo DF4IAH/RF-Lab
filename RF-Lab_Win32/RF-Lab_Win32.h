@@ -16,3 +16,6 @@ BOOL CALLBACK AskTxSettings_CB(HWND   hWnd,
 	UINT   message,
 	WPARAM wParam,
 	LPARAM lParam);
+
+
+void preloadInstruments(void);

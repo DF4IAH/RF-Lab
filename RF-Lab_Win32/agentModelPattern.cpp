@@ -213,7 +213,7 @@ void agentModelPattern::run(void)
 				break;
 
 
-			/* Request current settings for links to the instruments */
+			/* Request list of instruments with their connection settings */
 			case C_MODELPATTERN_RUNSTATES_FETCH_SETTINGS:
 				{
 					// TODO: coding
@@ -432,7 +432,7 @@ void agentModelPattern::run(void)
 
 					agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
 					if (usbRspData.stat == C_USBRSP_REGISTRATION_LIST) {
-						/* Fill in registration list */
+						/* Fill in into registration list all USB and SER/IEC devices */
 						ArrayOfInstruments_t* usbInsts = (ArrayOfInstruments_t*)usbRspData.data;
 
 						//xxx();  // TODO: implementation here

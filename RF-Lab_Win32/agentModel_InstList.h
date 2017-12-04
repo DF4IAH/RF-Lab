@@ -27,7 +27,7 @@ typedef enum LinkType {
 } LinkType_t;
 
 
-typedef struct Win32_InstListEntry {
+typedef struct am_InstListEntry {
 
 	/* List information */
 	int									listId;
@@ -100,6 +100,6 @@ typedef struct Win32_InstListEntry {
 	double								rxCurRfPwrLo;
 	double								rxCurRfPwrDynamic;
 
-} Win32_InstListEntry_t;
+} am_InstListEntry_t;
 
-typedef list<Win32_InstListEntry_t>	Win32_InstList_t;
+typedef list<am_InstListEntry_t>		am_InstList_t;

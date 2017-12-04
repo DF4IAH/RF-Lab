@@ -1,11 +1,14 @@
 #include "stdafx.h"
-#include "agentModelPattern.h"
-#include "agentModel.h"
+#include <process.h>
 
 #include "resource.h"
 #include "WinSrv.h"
 
-#include <process.h>
+#include "agentModel.h"
+
+#include "externals.h"
+
+#include "agentModelPattern.h"
 
 
 template <class T>  void SafeReleaseDelete(T **ppT)

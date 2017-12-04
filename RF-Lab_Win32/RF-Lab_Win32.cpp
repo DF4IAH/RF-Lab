@@ -18,8 +18,8 @@
 
 
 #include "RF-Lab_Win32.h"
-#include "RF-Lab_Win32_InstList.h"
 #include "WinSrv.h"
+#include "agentModel_InstList.h"
 
 
 
@@ -31,7 +31,8 @@ HINSTANCE			g_hInst;								// Aktuelle Instanz
 WCHAR				g_szTitle[MAX_LOADSTRING];				// Titelleistentext
 WCHAR				g_szWindowClass[MAX_LOADSTRING];		// Klassenname des Hauptfensters
 int					g_iCbValue;
-Win32_InstList_t	g_Win32_InstList;						// List of Instruments (rotors, TX, RX)
+agentModel		   *g_am = nullptr;
+am_InstList_t		g_am_InstList;							// List of Instruments (rotors, TX, RX)
 
 
 // Vorwärtsdeklarationen der in diesem Codemodul enthaltenen Funktionen:
@@ -58,9 +59,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	*g_szTitle = 0;
 	*g_szWindowClass = 0;
 	g_iCbValue = 0;
-
-	// TODO: remove me later!
-	preloadInstruments();
 
 	// Windows-Kommunikationsserver anstarten
 	WinSrv::srvStart();
@@ -459,101 +457,4 @@ static void ModelPatternStart(HINSTANCE g_hInst, HWND hWnd, UINT message)
 	break;
 
 	}  // switch (message) {
-}
-
-
-// TODO: remove me later!
-void preloadInstruments(void)
-{
-	Win32_InstListEntry_t		entry;
-
-	/* Rotor: Zolix SC300-1B */
-	memset(&entry, 0, sizeof(entry));
-	entry.listId				= g_Win32_InstList.size();
-	entry.listEntryName			= string("Zolix SC300-1B");
-	entry.listFunction			= INST_FUNCTION_ROTOR;
-
-	entry.actRank				= 1;	// highest of Rotors
-	entry.actSelected			= true;
-	entry.actLink				= false;
-
-	entry.linkType				= LINKTYPE_SER;
-	entry.linkÍdnSearch			= string("SC300");
-
-	entry.linkSerPort			= 3;
-	entry.linkSerBaud			= CBR_19200;
-	entry.linkSerBits			= 8;
-	entry.linkSerParity			= NOPARITY;
-	entry.linkSerStopbits		= ONESTOPBIT;
-
-	entry.rotInitTicksPer360deg	= 288000;
-	entry.rotInitTopSpeed		= 20000;
-	entry.rotInitAcclSpeed		= 30000;
-	entry.rotInitStartSpeed		= 2500;
-
-	g_Win32_InstList.push_back(entry);
-
-
-	/* TX: R&S SMR40 */
-	memset(&entry, 0, sizeof(entry));
-	entry.listId				= g_Win32_InstList.size();
-	entry.listEntryName			= string("R&S SMR40");
-	entry.listFunction			= INST_FUNCTION_TX;
-
-	entry.actRank				= 1;	// highest of TX
-	entry.actSelected			= true;
-	entry.actLink				= false;
-
-	entry.linkType				= LINKTYPE_USB;
-	entry.linkÍdnSearch			= string("SMR40");
-
-	entry.linkUsbIdVendor		= 0x0aad;
-	entry.linkUsbIdProduct		= 0xffff;  // TODO: enter correct value
-
-	entry.txInitRfOn			= false;
-	entry.txInitRfQrg			=   18e+9;
-	entry.txInitRfPwr			=    0.;
-	entry.txMinRfQrg			=  100e+3;
-	entry.txMinRfPwr			=  -30.;
-	entry.txMaxRfQrg			=   40e+9;
-	entry.txMaxRfPwr			=   10.;
-
-	g_Win32_InstList.push_back(entry);
-
-
-	/* RX: R&S FSEK20 */
-	memset(&entry, 0, sizeof(entry));
-	entry.listId				= g_Win32_InstList.size();
-	entry.listEntryName			= string("R&S FSEK20");
-	entry.listFunction			= INST_FUNCTION_RX;
-
-	entry.actRank				= 1;	// highest of RX
-	entry.actSelected			= true;
-	entry.actLink				= false;
-
-	entry.linkType				= LINKTYPE_IEC_VIA_SER;
-	entry.linkÍdnSearch			= string("FSEK 20");
-
-	entry.linkSerPort			= 4;
-	entry.linkSerBaud			= CBR_19200;
-	entry.linkSerBits			= 8;
-	entry.linkSerParity			= NOPARITY;
-	entry.linkSerStopbits		= ONESTOPBIT;
-
-	entry.linkSerIecAddr		= 20;
-
-	entry.rxInitRfQrg			= 18e+9;
-	entry.rxInitRfSpan			= 10e+6;
-	entry.rxInitRfPwrLo			= -60.;
-	entry.rxInitRfPwrDynamic	= 60.;
-	entry.rxMinRfQrg			= 1e+6;
-	entry.rxMinRfSpan			= 10e+3;
-	entry.rxMinRfPwrLo			= -60.;
-	entry.rxMinRfPwrDynamic		= 10.;
-	entry.rxMaxRfQrg			= 40e+9;
-	entry.rxMaxRfSpan			= 40e+9;
-	entry.rxMaxRfPwrLo			= 0.;
-	entry.rxMaxRfPwrDynamic		= 60.;
-
-	g_Win32_InstList.push_back(entry);
 }

@@ -65,6 +65,11 @@ public:
 protected:
 	void			run(void);
 
+private:
+
+	void			preloadInstruments(void);  // TODO: remove me!
+
+
 public:
 	/* Default class functions() to be overwritten */
 	static bool		isRunning(void);

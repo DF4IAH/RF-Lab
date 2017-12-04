@@ -1,4 +1,7 @@
 #include "stdafx.h"
+
+#include "externals.h"
+
 #include "agentCom.h"
 
 

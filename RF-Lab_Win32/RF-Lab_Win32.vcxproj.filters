@@ -93,7 +93,10 @@
     <ClInclude Include="USB_TMC_types.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="RF-Lab_Win32_InstList.h">
+    <ClInclude Include="agentModel_InstList.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="externals.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>

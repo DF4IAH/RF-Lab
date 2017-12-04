@@ -1,19 +1,20 @@
 #include "stdafx.h"
-#include "USB_TMC.h"
 
 /* Agents Library */
 #include <agents.h>
+
+#include <process.h>
+
 #include "agentCom.h"
 #include "agentModel.h"
 #include "agentModelPattern.h"
 
-#include <process.h>
+#include "externals.h"
+
+#include "USB_TMC.h"
 
 
 #define DEBUG_USB 1
-
-
-extern agentModel *g_am;
 
 
 inline void* varcpy(void* dest, void* src, size_t size)

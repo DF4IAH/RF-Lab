@@ -15,6 +15,8 @@
 #include "agentModelPattern.h"
 #include "agentCom.h"
 
+#include "externals.h"
+
 #include "WinSrv.h"
 
 

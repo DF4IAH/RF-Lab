@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "resource.h"
+#include "CommCtrl.h"
 #include "WinSrv.h"
 
 #include "agentModel_InstList.h"
@@ -21,10 +22,11 @@ template <class T>  void SafeReleaseDelete(T **ppT)
 }
 
 
-agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode)
+agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, HWND hWnd, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode)
 				 : _src(src)
 				 , _tgt(tgt)
 				 , _winSrv(winSrv)
+				 , _hWnd(hWnd)
 				 , _am_variant(am_variant)
 				 , _simuMode(mode)
 {
@@ -44,7 +46,15 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 	}
 
 	/* Inform UI about up-to-date list */
+	{
+		// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically
+		// MENUINFO x;
+		// InsertMenuItem();
 
+
+
+		// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
+	}
 
 	switch (am_variant) {
 	case AGENT_MODEL_PATTERN:

@@ -55,11 +55,12 @@ private:
 	AGENT_MODELS						 _am_variant;
 	AGENT_ALL_SIMUMODE					 _simuMode;
 	class WinSrv						*_winSrv;
+	HWND								 _hWnd;
 	class agentModelVariant				*_curModel;
 
 
 public:
-	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode);
+	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, HWND hWnd, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode);
 	~agentModel(void);
 
 protected:

@@ -11,10 +11,10 @@ class WinSrv
 {
 public:
 	typedef struct PresentationData_s {
-		char                            statusLine[100];
+		char                             statusLine[100];
 	} PresentationData_t;
 
-	const int							StatusBarParts = 3;
+	const int							 StatusBarParts = 3;
 
 
 private:
@@ -38,34 +38,36 @@ private:
 
 
 public:
-	WinSrv();
-	~WinSrv();
+					WinSrv();
+					~WinSrv();
 
-	bool isReady();
-	LRESULT setWindow(HWND hWnd);
-	void paint();
-	void resize();
+	bool			isReady();
+	LRESULT			setWindow(HWND hWnd);
+	void			paint();
+	void			resize();
+
 
 private:
-	void calculateLayout();
-	HRESULT createGraphicsResources();
-	void discardGraphicsResources();
-	void threadsStart();
-	void threadsStop();
-	void wmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
-	HWND DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts);
-	void OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size);
-	bool ready();
+	void			calculateLayout();
+	HRESULT			createGraphicsResources();
+	void			discardGraphicsResources();
+	void			threadsStart();
+	void			threadsStop();
+	void			wmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
+	HWND			DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts);
+	void			OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size);
+	bool			ready();
+
 
 public:
-	static void srvStart();
-	static void srvStop();
-	static void srvWinExit();
-	static LRESULT srvSetWindow(HWND hWnd);
-	static bool srvReady();
-	static void srvPaint();
-	static void srvResize();
-	static void srvWmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
+	static void		srvStart();
+	static void		srvStop();
+	static void		srvWinExit();
+	static LRESULT	srvSetWindow(HWND hWnd);
+	static bool		srvReady();
+	static void		srvPaint();
+	static void		srvResize();
+	static void		srvWmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
 
-	void reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo);
+	void			reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo);
 };

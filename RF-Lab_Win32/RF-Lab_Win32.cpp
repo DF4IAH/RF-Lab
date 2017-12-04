@@ -27,12 +27,14 @@
 
 
 // Globale Variablen:
-HINSTANCE			g_hInst;								// Aktuelle Instanz
-WCHAR				g_szTitle[MAX_LOADSTRING];				// Titelleistentext
-WCHAR				g_szWindowClass[MAX_LOADSTRING];		// Klassenname des Hauptfensters
-int					g_iCbValue;
-agentModel		   *g_am = nullptr;
-am_InstList_t		g_am_InstList;							// List of Instruments (rotors, TX, RX)
+HINSTANCE			g_hInst							= nullptr;	// Aktuelle Instanz
+WCHAR				g_szTitle[MAX_LOADSTRING]		= { 0 };	// Titelleistentext
+WCHAR				g_szWindowClass[MAX_LOADSTRING] = { 0 };	// Klassenname des Hauptfensters
+int					g_iCbValue						= 0;
+agentModel		   *g_am							= nullptr;
+
+bool				g_am_InstList_locked			= false;	// List of Instruments is locked
+am_InstList_t		g_am_InstList;								// List of Instruments (rotors, TX, RX)
 
 
 // Vorwärtsdeklarationen der in diesem Codemodul enthaltenen Funktionen:
@@ -42,8 +44,6 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 static int			AskRotorPosX(HINSTANCE g_hInst, HWND hWnd);
 static int			AskTxSettings(HINSTANCE g_hInst, HWND hWnd);
-static void			ModelInit(HINSTANCE g_hInst, HWND hWnd);
-static void			ModelPatternStart(HINSTANCE g_hInst, HWND hWnd, UINT wmId);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -54,11 +54,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
+#if 0
 	// init global values
-	g_hInst = nullptr;
-	*g_szTitle = 0;
-	*g_szWindowClass = 0;
-	g_iCbValue = 0;
+	g_hInst					= nullptr;
+	*g_szTitle				= nullptr;
+	*g_szWindowClass		= nullptr;
+	g_iCbValue				= 0;
+#endif
 
 	// Windows-Kommunikationsserver anstarten
 	WinSrv::srvStart();
@@ -174,7 +176,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             case IDM_ABOUT:
                 DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
-            case IDM_EXIT:
+
+			case IDM_EXIT:
 				WinSrv::srvWinExit();
                 DestroyWindow(hWnd);
                 break;
@@ -195,13 +198,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 
 			case ID_CTRL_ALL_RESET:
-				ModelInit(g_hInst, hWnd);
-				break;
-
 			case ID_MODEL_PATTERN_STOP:
 			case ID_MODEL_PATTERN_180_START:
 			case ID_MODEL_PATTERN_360_START:
-				ModelPatternStart(g_hInst, hWnd, wmId);
+				WinSrv::srvWmCmd(hWnd, wmId);
 				break;
 
 			default:
@@ -417,44 +417,4 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 		break;
 	}
 	return FALSE;
-}
-
-// Reinitialisierung der aktivierten Modell-Geräte
-static void ModelInit(HINSTANCE g_hInst, HWND hWnd)
-{
-	agentModel::initDevices();
-}
-
-// Anstarten der Pattern Mess-Prozedur
-static void ModelPatternStart(HINSTANCE g_hInst, HWND hWnd, UINT message)
-{
-	switch (message) {
-
-	case ID_MODEL_PATTERN_STOP:
-	{
-		agentModel::runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
-	}
-	break;
-
-	case ID_MODEL_PATTERN_180_START:
-	{
-		// Init display part
-		// xxx();
-
-		// Start recording of pattern
-		agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG, 0);
-	}
-	break;
-
-	case ID_MODEL_PATTERN_360_START:
-	{
-		// Init display part
-		// xxx();
-
-		// Start recording of pattern
-		agentModel::runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG, 0);
-	}
-	break;
-
-	}  // switch (message) {
 }

@@ -30,8 +30,21 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 {
 	g_am = this;
 
-	// TODO: remove me later!
-	preloadInstruments();
+	/* Set up list of instruments */
+	{
+		g_am_InstList_locked = true;
+
+		#if 0
+			FsLoadInstruments(C_FS_INSTRUMENTS_FILENAME_DEFAULT);
+		#else
+			preloadInstruments();	// TODO: remove me later!
+		#endif
+		
+		g_am_InstList_locked = false;
+	}
+
+	/* Inform UI about up-to-date list */
+
 
 	switch (am_variant) {
 	case AGENT_MODEL_PATTERN:

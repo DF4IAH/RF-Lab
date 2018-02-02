@@ -178,7 +178,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 break;
 
 			case IDM_EXIT:
-				WinSrv::srvWinExit();
                 DestroyWindow(hWnd);
                 break;
 

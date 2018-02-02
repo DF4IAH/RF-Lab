@@ -390,7 +390,7 @@ void WinSrv::srvStart()
 void WinSrv::srvStop()
 {
 	if (g_instance) {
-		//srvWinExit();  // already called
+		srvWinExit();
 
 		delete g_instance;
 		g_instance = nullptr;

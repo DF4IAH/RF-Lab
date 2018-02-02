@@ -6,6 +6,7 @@
 agentModelVariant::agentModelVariant(void)
 				 : _running(false)
 				 , _runReinit(false)
+				 , _loopShut(false)
 				 , _runState(C_MODEL_RUNSTATES_NOOP)
 				 , _noWinMsg(false)
 				 , _done(false)

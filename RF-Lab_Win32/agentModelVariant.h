@@ -18,6 +18,7 @@ class agentModelVariant
 protected:
 	bool								 _running;
 	bool								 _runReinit;
+	bool								 _loopShut;
 	short								 _runState;
 	bool								 _noWinMsg;
 	bool								 _done;

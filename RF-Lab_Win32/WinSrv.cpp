@@ -104,7 +104,7 @@ void WinSrv::threadsStart()
 		(AGENT_ALL_SIMUMODE_t) (                                                      AGENT_ALL_SIMUMODE_RUN_BARGRAPH)
 	);
 
-	// starting agent
+	// starting agent --> Execution follows: AgentModel::run() (Line 87) --> AgentModelPattern::run() (Line 179)
 	pAgtModel->start();
 }
 

@@ -152,24 +152,27 @@
     <ClInclude Include="agentModelVariant.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="externals.h" />
-    <ClInclude Include="hotplug.h" />
     <ClInclude Include="instruments.h" />
-    <ClInclude Include="libusb.h" />
-    <ClInclude Include="libusbi.h" />
-    <ClInclude Include="os\poll_windows.h" />
+    <ClInclude Include="libusb\include\hotplug.h" />
+    <ClInclude Include="libusb\include\libusb.h" />
+    <ClInclude Include="libusb\include\libusbi.h" />
+    <ClInclude Include="libusb\include\os\poll_posix.h" />
+    <ClInclude Include="libusb\include\os\poll_windows.h" />
+    <ClInclude Include="libusb\include\os\threads_windows.h" />
+    <ClInclude Include="libusb\include\os\wince_usb.h" />
+    <ClInclude Include="libusb\include\os\windows_common.h" />
+    <ClInclude Include="libusb\include\os\windows_nt_common.h" />
+    <ClInclude Include="libusb\include\os\windows_nt_shared_types.h" />
+    <ClInclude Include="libusb\include\os\windows_usbdk.h" />
+    <ClInclude Include="libusb\include\os\windows_winusb.h" />
+    <ClInclude Include="libusb\include\version.h" />
+    <ClInclude Include="libusb\include\version_nano.h" />
     <ClInclude Include="os\threads_posix.h" />
-    <ClInclude Include="os\threads_windows.h" />
-    <ClInclude Include="os\windows_common.h" />
-    <ClInclude Include="os\windows_nt_common.h" />
-    <ClInclude Include="os\windows_usbdk.h" />
-    <ClInclude Include="os\windows_winusb.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RF-Lab_Win32.h" />
     <ClInclude Include="agentModel_InstList.h" />
     <ClInclude Include="USB_TMC.h" />
     <ClInclude Include="USB_TMC_types.h" />
-    <ClInclude Include="version.h" />
-    <ClInclude Include="version_nano.h" />
     <ClInclude Include="WinSrv.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -198,14 +201,11 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagram.cd" />
-    <None Include="ClassDiagram1.cd" />
     <None Include="Docs\usbtmc_usb488_subclass_1_00.pdf" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libusb\lib\getopt.lib" />
-    <Library Include="libusb\lib\libusb-1.0.lib" />
-    <Library Include="libusb\lib\libusb-usbdk-1.0.lib" />
+    <Library Include="libusb\lib\x64\getopt.lib" />
+    <Library Include="libusb\lib\x64\libusb-1.0.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

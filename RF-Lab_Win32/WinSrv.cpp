@@ -148,7 +148,7 @@ LRESULT WinSrv::setWindow(HWND hWnd)
 				ShowWindow(hWnd, SW_MAXIMIZE);
 
 				/* Create the status bar with 3 equal spaced separations */
-				this->hWndStatus = DoCreateStatusBar(this->hWnd, 63, g_hInst, StatusBarParts);
+				this->hWndStatus = DoCreateStatusBar(this->hWnd, (HMENU)63, g_hInst, StatusBarParts);
 				if (this->hWndStatus) {
 					/* Resize back to the size before */
 					SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, rc.right, rc.bottom, 0);
@@ -284,7 +284,7 @@ void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
 // Returns:
 //   The handle to the status bar.
 //
-HWND WinSrv::DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts)
+HWND WinSrv::DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst, int cParts)
 {
 	HWND hWndStatus;
 	RECT rcClient;

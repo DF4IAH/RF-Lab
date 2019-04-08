@@ -30,7 +30,7 @@
 HINSTANCE			g_hInst							= nullptr;	// Aktuelle Instanz
 WCHAR				g_szTitle[MAX_LOADSTRING]		= { 0 };	// Titelleistentext
 WCHAR				g_szWindowClass[MAX_LOADSTRING] = { 0 };	// Klassenname des Hauptfensters
-int					g_iCbValue						= 0;
+LRESULT				g_iCbValue						= 0ULL;
 agentModel		   *g_am							= nullptr;
 
 bool				g_am_InstList_locked			= false;	// List of Instruments is locked
@@ -267,7 +267,7 @@ static int AskRotorPosX(HINSTANCE g_hInst, HWND hWnd)
 							hWnd,
 							(DLGPROC) RotorPosX_CB)) {
 		if (g_iCbValue != MAXINT16) {
-			return g_iCbValue * 1000;
+			return (int) (g_iCbValue * 1000LL);
 		}
 	}
 
@@ -292,7 +292,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			g_iCbValue = 180;
 		}
 
-		swprintf_s(szIdcRotorPosXCurrent, L"%d", g_iCbValue);
+		swprintf_s(szIdcRotorPosXCurrent, L"%lld", g_iCbValue);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_CURRENT_EDIT_RO, szIdcRotorPosXCurrent);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
 		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMIN, FALSE,   0);
@@ -314,7 +314,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			g_iCbValue = SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0) - 180;
 		}
 
-		swprintf_s(szIdcRotorPosXCurrent, L"%d", g_iCbValue);
+		swprintf_s(szIdcRotorPosXCurrent, L"%lld", g_iCbValue);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
 		break;
 
@@ -323,7 +323,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			g_iCbValue = MAXINT16;
 		} else {
 			// Process input
-			if (swscanf_s(szIdcRotorPosXNew, L"%d", &g_iCbValue)) {
+			if (swscanf_s(szIdcRotorPosXNew, L"%lld", &g_iCbValue)) {
 				SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS, TRUE, 180 + g_iCbValue);
 			}
 		}
@@ -339,7 +339,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			}
 			else {
 				// Process input
-				swscanf_s(szIdcRotorPosXNew, L"%d", &g_iCbValue);
+				swscanf_s(szIdcRotorPosXNew, L"%lld", &g_iCbValue);
 			}
 			// Fall-through.
 		case IDCANCEL:
@@ -363,7 +363,7 @@ static int AskTxSettings(HINSTANCE g_hInst, HWND hWnd)
 		(DLGPROC)AskTxSettings_CB)) {
 
 	}
-	return g_iCbValue;
+	return (int)g_iCbValue;
 }
 
 BOOL CALLBACK AskTxSettings_CB(HWND hWnd,

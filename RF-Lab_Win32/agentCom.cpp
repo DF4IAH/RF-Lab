@@ -73,9 +73,9 @@ bool agentCom::shutdown(void)
 string agentCom::trim(string haystack)
 {
 	string needle;
-	int count = haystack.length();
+	size_t count = haystack.length();
 
-	for (int idx = 0; idx < count; idx++) {
+	for (size_t idx = 0; idx < count; idx++) {
 		char c = haystack.at(idx);
 
 		if (0x20 <= c) {

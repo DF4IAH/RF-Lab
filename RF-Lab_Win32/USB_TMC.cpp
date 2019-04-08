@@ -152,7 +152,7 @@ bool USB_TMC::isDone(void)
 int USB_TMC::init_libusb(bool show)
 {
 	int r;
-	ssize_t cnt = 0;
+	ssize_t cnt = 0LL;
 
 	version = libusb_get_version();
 
@@ -161,13 +161,13 @@ int USB_TMC::init_libusb(bool show)
 		return r;
 
 	cnt = libusb_get_device_list(NULL, &devs);
-	if (cnt < 0)
+	if (cnt < 0LL)
 		return (int)cnt;
 
 	if (show)
 		print_devs_libusb(devs);
 
-	return cnt;
+	return (int)cnt;
 }
 
 void USB_TMC::shutdown_libusb(void)
@@ -408,7 +408,7 @@ int USB_TMC::scpi_usbtmc_libusb_send(void *priv, const char *command)
 	instrument_t *uscpi = (instrument_t*)priv;
 	wchar_t	strbuf[256];
 
-	if (scpi_usbtmc_bulkout(uscpi, DEV_DEP_MSG_OUT, command, strlen(command), EOM) <= 0)
+	if (scpi_usbtmc_bulkout(uscpi, DEV_DEP_MSG_OUT, command, (int32_t) strlen(command), EOM) <= 0)
 		return false;
 
 	wsprintf(strbuf, L"Successfully sent SCPI command: '%s'.", command);  OutputDebugString(strbuf);

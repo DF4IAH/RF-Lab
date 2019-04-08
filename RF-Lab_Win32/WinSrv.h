@@ -54,7 +54,7 @@ private:
 	void			threadsStart();
 	void			threadsStop();
 	void			wmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
-	HWND			DoCreateStatusBar(HWND hwndParent, int idStatus, HINSTANCE	hinst, int cParts);
+	HWND			DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst, int cParts);
 	void			OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size);
 	bool			ready();
 

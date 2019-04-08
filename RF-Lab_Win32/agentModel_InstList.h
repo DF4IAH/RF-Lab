@@ -30,7 +30,7 @@ typedef enum LinkType {
 typedef struct am_InstListEntry {
 
 	/* List information */
-	int									listId;
+	size_t								listId;
 	string								listEntryName;
 	Inst_Function_t						listFunction;
 

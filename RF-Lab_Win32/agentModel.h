@@ -58,6 +58,8 @@ private:
 	HWND								 _hWnd;
 	class agentModelVariant				*_curModel;
 
+	char								 _fs_instrument_settings_filename[256];
+
 
 public:
 	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, HWND hWnd, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode);
@@ -68,6 +70,8 @@ protected:
 
 private:
 
+	void			fsLoadInstruments(const char* filename);
+	void			scanInstruments(void);
 	void			preloadInstruments(void);  // TODO: remove me!
 
 

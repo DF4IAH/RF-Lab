@@ -12,6 +12,11 @@
 #include "agentModel.h"
 
 
+
+const char C_FS_INSTRUMENTS_FILENAME_DEFAULT[] = "/Users/Labor/RF-Lab.cfg";
+
+
+
 template <class T>  void SafeReleaseDelete(T **ppT)
 {
 	if (*ppT)
@@ -32,12 +37,15 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 {
 	g_am = this;
 
+	errno_t err = strncpy_s(_fs_instrument_settings_filename, sizeof(_fs_instrument_settings_filename) - 1, C_FS_INSTRUMENTS_FILENAME_DEFAULT, strlen(C_FS_INSTRUMENTS_FILENAME_DEFAULT));
+
 	/* Set up list of instruments */
 	{
 		g_am_InstList_locked = true;
 
-		#if 0
-			FsLoadInstruments(C_FS_INSTRUMENTS_FILENAME_DEFAULT);
+		#if 1
+			fsLoadInstruments(_fs_instrument_settings_filename);
+			scanInstruments();
 		#else
 			preloadInstruments();	// TODO: remove me later!
 		#endif
@@ -411,6 +419,166 @@ double agentModel::getRxLevelMaxValue(void)
 	else {
 		return 0.;
 	}
+}
+
+
+
+void agentModel::fsLoadInstruments(const char* filename)
+{
+	/* Load config file */
+	FILE* fh = NULL;
+	errno_t err;
+
+	err = fopen_s(&fh, filename, "rb");
+	if (!errno && fh) {
+		char variant = '-';
+		char lineBuf[256];
+
+		while (1) {
+			char* p = fgets(lineBuf, sizeof(lineBuf) - 1, fh);
+			if (!p) {
+				/* End of file */
+				if (variant != '-') {
+					//pushInstrumentDataset();
+				}
+				break;
+			}
+			
+			if (*p == '#') {
+				/* comment */
+				continue;
+			}
+
+			/* SECTIONS */
+			else if (*p == '[') {
+				/* type */
+				if (!_strnicmp(p, "[INSTRUMENT]", 12)) {
+					variant = 'I';
+				}
+				else if (!_strnicmp(p, "[COM]", 5)) {
+					variant = 'C';
+				} 
+				else if (!_strnicmp(p, "[USB]", 5)) {
+					variant = 'U';
+				}
+				else if (!_strnicmp(p, "[GPIB]", 6)) {
+					variant = 'G';
+				}
+				else if (!_strnicmp(p, "[INTERFACE]", 11)) {
+					variant = 'F';
+				}
+				else {
+					/* File format error */
+					return;
+				}
+			}
+
+			/* INTERFACE attributes */
+			else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Type=", 5)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Turn_left_max_deg=", 18)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Turn_right_max_deg=", 19)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Ticks_360deg=", 13)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Speed_Start=", 12)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Speed_Accl=", 11)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Speed_Top=", 10)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Freq_min_Hz=", 12)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Freq_max_Hz=", 12)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Amp_min_dBm=", 12)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "Amp_max_dBm=", 12)) {
+
+			}
+
+			else if ((variant == 'C') && !_strnicmp(p, "Name=", 5)) {
+
+			}
+			else if ((variant == 'C') && !_strnicmp(p, "Device=", 7)) {
+
+			}
+			else if ((variant == 'C') && !_strnicmp(p, "Baud=", 5)) {
+
+			}
+			else if ((variant == 'C') && !_strnicmp(p, "Bits=", 5)) {
+
+			}
+			else if ((variant == 'C') && !_strnicmp(p, "Par=", 4)) {
+
+			}
+			else if ((variant == 'C') && !_strnicmp(p, "Stop=", 5)) {
+
+			}
+
+			else if ((variant == 'U') && !_strnicmp(p, "Name=", 5)) {
+
+			}
+			else if ((variant == 'U') && !_strnicmp(p, "Vendor_ID=", 10)) {
+
+			}
+			else if ((variant == 'U') && !_strnicmp(p, "Product_ID=", 11)) {
+
+			}
+
+			else if ((variant == 'G') && !_strnicmp(p, "Name=", 5)) {
+
+			}
+			else if ((variant == 'G') && !_strnicmp(p, "Addr=", 5)) {
+
+			}
+
+			else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "ServerType=", 11)) {
+
+			}
+			else if ((variant == 'I') && !_strnicmp(p, "ServerPort=", 11)) {
+
+			}
+
+			else if (*p == '\r' || *p == '\n') {
+				//pushInstrumentDataset();
+				variant = '-';
+			}
+			else {
+				/* File format error */
+				return;
+			}
+		}
+		fclose(fh);
+	}
+	else {
+		/* File not found */
+		return;
+	}
+
+	/* Link Instruments, interfaces and ports together */
+}
+
+void agentModel::scanInstruments(void)
+{
+
 }
 
 

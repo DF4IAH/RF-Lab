@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <map>
+
 
 using namespace concurrency;
 using namespace std;
@@ -40,6 +42,17 @@ typedef struct agentModelRsp
 } agentModelRsp_t;
 
 
+typedef struct confAttributes
+{
+
+} confAttributes_t;
+
+
+
+int	compare(void *pvlocale, const void *str1, const void *str2);
+
+
+
 class agentModel : public agent
 {
 public:
@@ -71,6 +84,7 @@ protected:
 private:
 
 	void			fsLoadInstruments(const char* filename);
+	void			pushInstrumentDataset(map< string, confAttributes_t >* m, const string name, const confAttributes_t* cA);
 	void			scanInstruments(void);
 	void			preloadInstruments(void);  // TODO: remove me!
 

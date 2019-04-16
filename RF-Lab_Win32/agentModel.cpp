@@ -9,6 +9,11 @@
 
 #include "externals.h"
 
+#include <string>
+#include <search.h>
+#include <locale.h>
+#include <locale>
+
 #include "agentModel.h"
 
 
@@ -25,6 +30,21 @@ template <class T>  void SafeReleaseDelete(T **ppT)
 		*ppT = nullptr;
 	}
 }
+
+
+
+int compare(void *pvlocale, const void *str1, const void *str2)
+{
+	char *s1 = *(char**)str1;
+	char *s2 = *(char**)str2;
+
+	locale& loc = *(reinterpret_cast< locale * > (pvlocale));
+
+	return use_facet< collate<char> >(loc).compare(
+		s1, s1 + strlen(s1),
+		s2, s2 + strlen(s2));
+}
+
 
 
 agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, HWND hWnd, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode)
@@ -425,155 +445,213 @@ double agentModel::getRxLevelMaxValue(void)
 
 void agentModel::fsLoadInstruments(const char* filename)
 {
+	char							errMsgBuf[128];
+	uint32_t						errLine	= 0UL;
+	uint32_t						lineCtr = 0UL;
+	map< string, confAttributes_t > m;
+	string							attrName;
+	confAttributes_t				cA;
+	int								len = 0;
+
 	/* Load config file */
-	FILE* fh = NULL;
-	errno_t err;
+	{
+		FILE* fh = NULL;
+		errno_t err;
 
-	err = fopen_s(&fh, filename, "rb");
-	if (!errno && fh) {
-		char variant = '-';
-		char lineBuf[256];
+		err = fopen_s(&fh, filename, "rb");
+		if (!errno && fh) {
+			char variant = '-';
+			char lineBuf[256];
 
-		while (1) {
-			char* p = fgets(lineBuf, sizeof(lineBuf) - 1, fh);
-			if (!p) {
-				/* End of file */
-				if (variant != '-') {
-					//pushInstrumentDataset();
+			while (1) {
+				char* p = fgets(lineBuf, sizeof(lineBuf) - 1, fh);
+				if (!p) {
+					/* End of file */
+					if (variant != '-') {
+						//pushInstrumentDataset();
+					}
+					break;
 				}
-				break;
-			}
-			
-			if (*p == '#') {
-				/* comment */
-				continue;
-			}
 
-			/* SECTIONS */
-			else if (*p == '[') {
-				/* type */
-				if (!_strnicmp(p, "[INSTRUMENT]", 12)) {
-					variant = 'I';
+				/* Starting with Line 1 */
+				++lineCtr;
+
+				/* Get length of text */
+				unsigned int numOfElem = (unsigned int) strlen(p);
+				char **result = (char **) _lfind_s("\n", p, &numOfElem, sizeof(char), &compare, &locale("German_Germany.850"));
+				size_t strLen = *result - p;
+
+				if (*p == '#') {
+					/* comment */
+					continue;
 				}
-				else if (!_strnicmp(p, "[COM]", 5)) {
-					variant = 'C';
-				} 
-				else if (!_strnicmp(p, "[USB]", 5)) {
-					variant = 'U';
+
+				/* SECTIONS */
+				else if (*p == '[') {
+					/* Write attributes of previous section */
+					if (variant != '-') {
+						pushInstrumentDataset(&m, attrName, &cA);
+
+						/* Start a new set of attributes */
+						memset(&cA, 0, sizeof(cA));
+						attrName.clear();
+					}
+
+					/* Types */
+					if (!_strnicmp(p, "[INSTRUMENT]", 12)) {
+						variant = 'I';
+					}
+					else if (!_strnicmp(p, "[COM]", 5)) {
+						variant = 'C';
+					}
+					else if (!_strnicmp(p, "[USB]", 5)) {
+						variant = 'U';
+					}
+					else if (!_strnicmp(p, "[GPIB]", 6)) {
+						variant = 'G';
+					}
+					else if (!_strnicmp(p, "[INTERFACE]", 11)) {
+						variant = 'F';
+					}
+					else {
+						/* File format error */
+						const char Msg[] = "Unknown section type in brackets";
+						strncpy_s(errMsgBuf, sizeof(errMsgBuf), Msg, strlen(Msg));
+						errLine = lineCtr;
+						goto _fsLoadInstruments_Error;
+					}
 				}
-				else if (!_strnicmp(p, "[GPIB]", 6)) {
-					variant = 'G';
+
+				/* INTERFACE attributes */
+				else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
+					attrName.assign(p+5, p+len);
 				}
-				else if (!_strnicmp(p, "[INTERFACE]", 11)) {
-					variant = 'F';
+				else if ((variant == 'I') && !_strnicmp(p, "Type=", 5)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Turn_left_max_deg=", 18)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Turn_right_max_deg=", 19)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Ticks_360deg=", 13)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Speed_Start=", 12)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Speed_Accl=", 11)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Speed_Top=", 10)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Freq_min_Hz=", 12)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Freq_max_Hz=", 12)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Amp_min_dBm=", 12)) {
+
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Amp_max_dBm=", 12)) {
+
+				}
+
+				else if ((variant == 'C') && !_strnicmp(p, "Name=", 5)) {
+
+				}
+				else if ((variant == 'C') && !_strnicmp(p, "Device=", 7)) {
+
+				}
+				else if ((variant == 'C') && !_strnicmp(p, "Baud=", 5)) {
+
+				}
+				else if ((variant == 'C') && !_strnicmp(p, "Bits=", 5)) {
+
+				}
+				else if ((variant == 'C') && !_strnicmp(p, "Par=", 4)) {
+
+				}
+				else if ((variant == 'C') && !_strnicmp(p, "Stop=", 5)) {
+
+				}
+
+				else if ((variant == 'U') && !_strnicmp(p, "Name=", 5)) {
+
+				}
+				else if ((variant == 'U') && !_strnicmp(p, "Vendor_ID=", 10)) {
+
+				}
+				else if ((variant == 'U') && !_strnicmp(p, "Product_ID=", 11)) {
+
+				}
+
+				else if ((variant == 'G') && !_strnicmp(p, "Name=", 5)) {
+
+				}
+				else if ((variant == 'G') && !_strnicmp(p, "Addr=", 5)) {
+
+				}
+
+				else if ((variant == 'F') && !_strnicmp(p, "Name=", 5)) {
+
+				}
+				else if ((variant == 'F') && !_strnicmp(p, "ServerType=", 11)) {
+
+				}
+				else if ((variant == 'F') && !_strnicmp(p, "ServerPort=", 11)) {
+
+				}
+
+				/* Empty line */
+				else if (*p == '\r' || *p == '\n') {
+					/* No function */
+					continue;
 				}
 				else {
 					/* File format error */
-					return;
+					const char Msg[] = "Unknown attribute";
+					strncpy_s(errMsgBuf, sizeof(errMsgBuf) - 1, Msg, strlen(Msg));
+					errLine = lineCtr;
+					goto _fsLoadInstruments_Error;
 				}
 			}
-
-			/* INTERFACE attributes */
-			else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Type=", 5)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Turn_left_max_deg=", 18)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Turn_right_max_deg=", 19)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Ticks_360deg=", 13)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Speed_Start=", 12)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Speed_Accl=", 11)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Speed_Top=", 10)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Freq_min_Hz=", 12)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Freq_max_Hz=", 12)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Amp_min_dBm=", 12)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "Amp_max_dBm=", 12)) {
-
-			}
-
-			else if ((variant == 'C') && !_strnicmp(p, "Name=", 5)) {
-
-			}
-			else if ((variant == 'C') && !_strnicmp(p, "Device=", 7)) {
-
-			}
-			else if ((variant == 'C') && !_strnicmp(p, "Baud=", 5)) {
-
-			}
-			else if ((variant == 'C') && !_strnicmp(p, "Bits=", 5)) {
-
-			}
-			else if ((variant == 'C') && !_strnicmp(p, "Par=", 4)) {
-
-			}
-			else if ((variant == 'C') && !_strnicmp(p, "Stop=", 5)) {
-
-			}
-
-			else if ((variant == 'U') && !_strnicmp(p, "Name=", 5)) {
-
-			}
-			else if ((variant == 'U') && !_strnicmp(p, "Vendor_ID=", 10)) {
-
-			}
-			else if ((variant == 'U') && !_strnicmp(p, "Product_ID=", 11)) {
-
-			}
-
-			else if ((variant == 'G') && !_strnicmp(p, "Name=", 5)) {
-
-			}
-			else if ((variant == 'G') && !_strnicmp(p, "Addr=", 5)) {
-
-			}
-
-			else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "ServerType=", 11)) {
-
-			}
-			else if ((variant == 'I') && !_strnicmp(p, "ServerPort=", 11)) {
-
-			}
-
-			else if (*p == '\r' || *p == '\n') {
-				//pushInstrumentDataset();
-				variant = '-';
-			}
-			else {
-				/* File format error */
-				return;
-			}
+			fclose(fh);
 		}
-		fclose(fh);
-	}
-	else {
-		/* File not found */
-		return;
+		else {
+			/* File not found */
+			const char Msg[] = "File not found";
+			strncpy_s(errMsgBuf, sizeof(errMsgBuf) - 1, Msg, strlen(Msg));
+			errLine = lineCtr;
+			goto _fsLoadInstruments_Error;
+		}
 	}
 
-	/* Link Instruments, interfaces and ports together */
+	/* Link Instruments, Interfaces and Ports together */
+	{
+
+	}
+
+	return;
+
+
+_fsLoadInstruments_Error:
+	{
+		wchar_t errMsg[256] = { 0 };
+
+		swprintf_s(errMsg, sizeof(errMsg)>>1,  L"Error when reading config file\n\n%hs\n\n%hs\nLine: %ld\n", errMsgBuf, _fs_instrument_settings_filename, errLine);
+		MessageBoxW(_hWnd, errMsg, L"Configuration error", MB_ICONERROR);
+	}
+}
+
+void agentModel::pushInstrumentDataset(map< string, confAttributes_t >* m, const string name, const confAttributes_t* cA)
+{
+	if (m && cA) {
+		m->insert_or_assign(name, cA);
+	}
 }
 
 void agentModel::scanInstruments(void)

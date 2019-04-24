@@ -226,6 +226,19 @@ bool agentModel::parseStr2Double(double* ret, const char* ary, const char* fmt, 
 	return TRUE;								// Error
 }
 
+unsigned int agentModel::getLineLength(const char* p, unsigned int len)
+{
+	for (uint32_t idx = 0; idx < len; idx++) {
+		const char c = *(p + idx);
+
+		if (c == '\r' || c == '\n') {
+			return idx;
+		}
+	}
+
+	return len;
+}
+
 
 /* agentModelPattern - GENERAL */
 
@@ -446,12 +459,32 @@ double agentModel::getRxLevelMaxValue(void)
 void agentModel::fsLoadInstruments(const char* filename)
 {
 	char							errMsgBuf[128];
-	uint32_t						errLine	= 0UL;
-	uint32_t						lineCtr = 0UL;
+	uint32_t						errLine					= 0UL;
+	uint32_t						lineCtr					= 0UL;
 	map< string, confAttributes_t > m;
 	string							attrName;
+	string							attrType;
+	float							attrTurnLeftMaxDeg		= 0.0f;
+	float							attrTurnRightMaxDeg		= 0.0f;
+	uint32_t						attrTicks360Deg			= 0UL;
+	float							attrSpeedStart			= 0.0f;
+	float							attrSpeedAccl			= 0.0f;
+	float							attrSpeedTop			= 0.0f;
+	float							attrFreqMinHz			= 0.0f;
+	float							attrFreqMaxHz			= 0.0f;
+	float							attrFreqMinDbm			= 0.0f;
+	float							attrFreqMaxDbm			= 0.0f;
+	string							attrDevice;
+	uint16_t						attrComBaud				= 0U;
+	uint8_t							attrComBits				= 0U;
+	string							attrComPar;
+	uint8_t							attrComStop				= 0U;
+	uint8_t							attrGpibAddr			= 0U;
+	string							attrServerType;
+	uint16_t						attrServerPort			= 0U;
+	uint16_t						attrUsbVendorID			= 0U;
+	uint16_t						attrUsbProductID		= 0U;
 	confAttributes_t				cA;
-	int								len = 0;
 
 	/* Load config file */
 	{
@@ -477,9 +510,8 @@ void agentModel::fsLoadInstruments(const char* filename)
 				++lineCtr;
 
 				/* Get length of text */
-				unsigned int numOfElem = (unsigned int) strlen(p);
-				char **result = (char **) _lfind_s("\n", p, &numOfElem, sizeof(char), &compare, &locale("German_Germany.850"));
-				size_t strLen = *result - p;
+				const unsigned int numOfElem	= (unsigned int) strlen(p);
+				const unsigned int lineLen		= getLineLength(p, numOfElem);
 
 				if (*p == '#') {
 					/* comment */
@@ -524,86 +556,154 @@ void agentModel::fsLoadInstruments(const char* filename)
 
 				/* INTERFACE attributes */
 				else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
-					attrName.assign(p+5, p+len);
+					attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Type=", 5)) {
-
+					attrType.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Turn_left_max_deg=", 18)) {
-
+					try {
+						attrTurnLeftMaxDeg = stof(string(p + 18, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Turn_right_max_deg=", 19)) {
-
+					try {
+						attrTurnRightMaxDeg = stof(string(p + 19, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Ticks_360deg=", 13)) {
-
+					try {
+						attrTicks360Deg = stoi(string(p + 13, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Speed_Start=", 12)) {
-
+					try {
+						attrSpeedStart = stof(string(p + 12, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Speed_Accl=", 11)) {
-
+					try {
+						attrSpeedAccl = stof(string(p + 11, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Speed_Top=", 10)) {
-
+					try {
+						attrSpeedTop = stof(string(p + 10, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Freq_min_Hz=", 12)) {
-
+					try {
+						attrFreqMinHz = stof(string(p + 12, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Freq_max_Hz=", 12)) {
-
+					try {
+						attrFreqMaxHz = stof(string(p + 12, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Amp_min_dBm=", 12)) {
-
+					try {
+						attrFreqMinDbm = stof(string(p + 12, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Amp_max_dBm=", 12)) {
-
+					try {
+						attrFreqMaxDbm = stof(string(p + 12, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 
 				else if ((variant == 'C') && !_strnicmp(p, "Name=", 5)) {
-
+					attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Device=", 7)) {
-
+					attrDevice.assign(p + 7, p + lineLen);
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Baud=", 5)) {
-
+					try {
+						attrComBaud = stoi(string(p + 5, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Bits=", 5)) {
-
+					try {
+						attrComBits = stoi(string(p + 5, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Par=", 4)) {
-
+					attrComPar.assign(p + 4, p + lineLen);
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Stop=", 5)) {
-
+					try {
+						attrComStop = stoi(string(p + 5, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 
 				else if ((variant == 'U') && !_strnicmp(p, "Name=", 5)) {
-
+					attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'U') && !_strnicmp(p, "Vendor_ID=", 10)) {
-
+					try {
+						attrUsbVendorID = stoi(string(p + 10, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 				else if ((variant == 'U') && !_strnicmp(p, "Product_ID=", 11)) {
-
+					try {
+						attrUsbProductID = stoi(string(p + 11, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 
 				else if ((variant == 'G') && !_strnicmp(p, "Name=", 5)) {
-
+					attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'G') && !_strnicmp(p, "Addr=", 5)) {
-
+					try {
+						attrGpibAddr = stoi(string(p + 5, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 
 				else if ((variant == 'F') && !_strnicmp(p, "Name=", 5)) {
-
+					attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'F') && !_strnicmp(p, "ServerType=", 11)) {
-
+					attrServerType.assign(p + 11, p + lineLen);
 				}
 				else if ((variant == 'F') && !_strnicmp(p, "ServerPort=", 11)) {
-
+					try {
+						attrServerPort = stoi(string(p + 11, p + lineLen));
+					}
+					catch (...) {
+					}
 				}
 
 				/* Empty line */
@@ -650,7 +750,7 @@ _fsLoadInstruments_Error:
 void agentModel::pushInstrumentDataset(map< string, confAttributes_t >* m, const string name, const confAttributes_t* cA)
 {
 	if (m && cA) {
-		m->insert_or_assign(name, cA);
+		//m->insert_or_assign(name, cA);
 	}
 }
 

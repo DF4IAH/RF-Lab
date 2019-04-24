@@ -104,6 +104,7 @@ public:
 	static bool		parseStr2Bool(bool* ret, const char* ary, const char* fmt, char delimRight = 0);
 	static bool		parseStr2Long(long* ret, const char* ary, const char* fmt, char delimRight = 0);
 	static bool		parseStr2Double(double* ret, const char* ary, const char* fmt, char delimRight = 0);
+	static unsigned int getLineLength(const char* p, unsigned int len);
 
 
 	/* agentModelPattern - GENERAL */

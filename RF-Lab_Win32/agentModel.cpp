@@ -461,35 +461,15 @@ void agentModel::fsLoadInstruments(const char* filename)
 	char							errMsgBuf[128];
 	uint32_t						errLine					= 0UL;
 	uint32_t						lineCtr					= 0UL;
-	map< string, confAttributes_t > m;
-	string							attrName;
-	string							attrType;
-	float							attrTurnLeftMaxDeg		= 0.0f;
-	float							attrTurnRightMaxDeg		= 0.0f;
-	uint32_t						attrTicks360Deg			= 0UL;
-	float							attrSpeedStart			= 0.0f;
-	float							attrSpeedAccl			= 0.0f;
-	float							attrSpeedTop			= 0.0f;
-	float							attrFreqMinHz			= 0.0f;
-	float							attrFreqMaxHz			= 0.0f;
-	float							attrFreqMinDbm			= 0.0f;
-	float							attrFreqMaxDbm			= 0.0f;
-	string							attrDevice;
-	uint16_t						attrComBaud				= 0U;
-	uint8_t							attrComBits				= 0U;
-	string							attrComPar;
-	uint8_t							attrComStop				= 0U;
-	uint8_t							attrGpibAddr			= 0U;
-	string							attrServerType;
-	uint16_t						attrServerPort			= 0U;
-	uint16_t						attrUsbVendorID			= 0U;
-	uint16_t						attrUsbProductID		= 0U;
 	confAttributes_t				cA;
+	map< string, confAttributes_t > m;
 
 	/* Load config file */
 	{
 		FILE* fh = NULL;
 		errno_t err;
+
+		confAttrClear(&cA);
 
 		err = fopen_s(&fh, filename, "rb");
 		if (!errno && fh) {
@@ -502,6 +482,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 					/* End of file */
 					if (variant != '-') {
 						//pushInstrumentDataset();
+						confAttrClear(&cA);
 					}
 					break;
 				}
@@ -522,11 +503,11 @@ void agentModel::fsLoadInstruments(const char* filename)
 				else if (*p == '[') {
 					/* Write attributes of previous section */
 					if (variant != '-') {
-						pushInstrumentDataset(&m, attrName, &cA);
+						pushInstrumentDataset(&m, cA.attrName, &cA);
 
 						/* Start a new set of attributes */
 						memset(&cA, 0, sizeof(cA));
-						attrName.clear();
+						cA.attrName.clear();
 					}
 
 					/* Types */
@@ -556,151 +537,157 @@ void agentModel::fsLoadInstruments(const char* filename)
 
 				/* INTERFACE attributes */
 				else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
-					attrName.assign(p + 5, p + lineLen);
+					cA.attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Type=", 5)) {
-					attrType.assign(p + 5, p + lineLen);
+					cA.attrType.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Turn_left_max_deg=", 18)) {
 					try {
-						attrTurnLeftMaxDeg = stof(string(p + 18, p + lineLen));
+						cA.attrTurnLeftMaxDeg = stof(string(p + 18, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Turn_right_max_deg=", 19)) {
 					try {
-						attrTurnRightMaxDeg = stof(string(p + 19, p + lineLen));
+						cA.attrTurnRightMaxDeg = stof(string(p + 19, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Ticks_360deg=", 13)) {
 					try {
-						attrTicks360Deg = stoi(string(p + 13, p + lineLen));
+						cA.attrTicks360Deg = stoi(string(p + 13, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Speed_Start=", 12)) {
 					try {
-						attrSpeedStart = stof(string(p + 12, p + lineLen));
+						cA.attrSpeedStart = stof(string(p + 12, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Speed_Accl=", 11)) {
 					try {
-						attrSpeedAccl = stof(string(p + 11, p + lineLen));
+						cA.attrSpeedAccl = stof(string(p + 11, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Speed_Top=", 10)) {
 					try {
-						attrSpeedTop = stof(string(p + 10, p + lineLen));
+						cA.attrSpeedTop = stof(string(p + 10, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Freq_min_Hz=", 12)) {
 					try {
-						attrFreqMinHz = stof(string(p + 12, p + lineLen));
+						cA.attrFreqMinHz = stof(string(p + 12, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Freq_max_Hz=", 12)) {
 					try {
-						attrFreqMaxHz = stof(string(p + 12, p + lineLen));
+						cA.attrFreqMaxHz = stof(string(p + 12, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Amp_min_dBm=", 12)) {
 					try {
-						attrFreqMinDbm = stof(string(p + 12, p + lineLen));
+						cA.attrFreqMinDbm = stof(string(p + 12, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Amp_max_dBm=", 12)) {
 					try {
-						attrFreqMaxDbm = stof(string(p + 12, p + lineLen));
+						cA.attrFreqMaxDbm = stof(string(p + 12, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 
 				else if ((variant == 'C') && !_strnicmp(p, "Name=", 5)) {
-					attrName.assign(p + 5, p + lineLen);
+					cA.attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Device=", 7)) {
-					attrDevice.assign(p + 7, p + lineLen);
+					cA.attrDevice.assign(p + 7, p + lineLen);
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Baud=", 5)) {
 					try {
-						attrComBaud = stoi(string(p + 5, p + lineLen));
+						cA.attrComBaud = stoi(string(p + 5, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Bits=", 5)) {
 					try {
-						attrComBits = stoi(string(p + 5, p + lineLen));
+						cA.attrComBits = stoi(string(p + 5, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Par=", 4)) {
-					attrComPar.assign(p + 4, p + lineLen);
+					cA.attrComPar.assign(p + 4, p + lineLen);
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Stop=", 5)) {
 					try {
-						attrComStop = stoi(string(p + 5, p + lineLen));
+						cA.attrComStop = stoi(string(p + 5, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 
 				else if ((variant == 'U') && !_strnicmp(p, "Name=", 5)) {
-					attrName.assign(p + 5, p + lineLen);
+					cA.attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'U') && !_strnicmp(p, "Vendor_ID=", 10)) {
 					try {
-						attrUsbVendorID = stoi(string(p + 10, p + lineLen));
+						unsigned int hex = 0U;
+						if (sscanf_s(string(p + 10, p + lineLen).c_str(), "%x", &hex)) {
+							cA.attrUsbVendorID = (uint16_t) hex;
+						}
 					}
 					catch (...) {
 					}
 				}
 				else if ((variant == 'U') && !_strnicmp(p, "Product_ID=", 11)) {
 					try {
-						attrUsbProductID = stoi(string(p + 11, p + lineLen));
+						unsigned int hex = 0U;
+						if (sscanf_s(string(p + 11, p + lineLen).c_str(), "%x", &hex)) {
+							cA.attrUsbProductID = (uint16_t) hex;
+						}
 					}
 					catch (...) {
 					}
 				}
 
 				else if ((variant == 'G') && !_strnicmp(p, "Name=", 5)) {
-					attrName.assign(p + 5, p + lineLen);
+					cA.attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'G') && !_strnicmp(p, "Addr=", 5)) {
 					try {
-						attrGpibAddr = stoi(string(p + 5, p + lineLen));
+						cA.attrGpibAddr = stoi(string(p + 5, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 
 				else if ((variant == 'F') && !_strnicmp(p, "Name=", 5)) {
-					attrName.assign(p + 5, p + lineLen);
+					cA.attrName.assign(p + 5, p + lineLen);
 				}
 				else if ((variant == 'F') && !_strnicmp(p, "ServerType=", 11)) {
-					attrServerType.assign(p + 11, p + lineLen);
+					cA.attrServerType.assign(p + 11, p + lineLen);
 				}
 				else if ((variant == 'F') && !_strnicmp(p, "ServerPort=", 11)) {
 					try {
-						attrServerPort = stoi(string(p + 11, p + lineLen));
+						cA.attrServerPort = stoi(string(p + 11, p + lineLen));
 					}
 					catch (...) {
 					}
@@ -745,6 +732,32 @@ _fsLoadInstruments_Error:
 		swprintf_s(errMsg, sizeof(errMsg)>>1,  L"Error when reading config file\n\n%hs\n\n%hs\nLine: %ld\n", errMsgBuf, _fs_instrument_settings_filename, errLine);
 		MessageBoxW(_hWnd, errMsg, L"Configuration error", MB_ICONERROR);
 	}
+}
+
+void agentModel::confAttrClear(confAttributes_t* cA)
+{
+	cA->attrName.clear();
+	cA->attrType.clear();
+	cA->attrTurnLeftMaxDeg			= 0.0f;
+	cA->attrTurnRightMaxDeg			= 0.0f;
+	cA->attrTicks360Deg				= 0UL;
+	cA->attrSpeedStart				= 0.0f;
+	cA->attrSpeedAccl				= 0.0f;
+	cA->attrSpeedTop				= 0.0f;
+	cA->attrFreqMinHz				= 0.0f;
+	cA->attrFreqMaxHz				= 0.0f;
+	cA->attrFreqMinDbm				= 0.0f;
+	cA->attrFreqMaxDbm				= 0.0f;
+	cA->attrDevice.clear();
+	cA->attrComBaud					= 0U;
+	cA->attrComBits					= 0U;
+	cA->attrComPar.clear();
+	cA->attrComStop					= 0U;
+	cA->attrGpibAddr				= 0U;
+	cA->attrServerType.clear();
+	cA->attrServerPort				= 0U;
+	cA->attrUsbVendorID				= 0U;
+	cA->attrUsbProductID			= 0U;
 }
 
 void agentModel::pushInstrumentDataset(map< string, confAttributes_t >* m, const string name, const confAttributes_t* cA)

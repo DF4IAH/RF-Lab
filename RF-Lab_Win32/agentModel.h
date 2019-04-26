@@ -45,6 +45,29 @@ typedef struct agentModelRsp
 typedef struct confAttributes
 {
 
+	string								attrName;
+	string								attrType;
+	float								attrTurnLeftMaxDeg = 0.0f;
+	float								attrTurnRightMaxDeg = 0.0f;
+	uint32_t							attrTicks360Deg = 0UL;
+	float								attrSpeedStart = 0.0f;
+	float								attrSpeedAccl = 0.0f;
+	float								attrSpeedTop = 0.0f;
+	float								attrFreqMinHz = 0.0f;
+	float								attrFreqMaxHz = 0.0f;
+	float								attrFreqMinDbm = 0.0f;
+	float								attrFreqMaxDbm = 0.0f;
+	string								attrDevice;
+	uint16_t							attrComBaud = 0U;
+	uint8_t								attrComBits = 0U;
+	string								attrComPar;
+	uint8_t								attrComStop = 0U;
+	uint8_t								attrGpibAddr = 0U;
+	string								attrServerType;
+	uint16_t							attrServerPort = 0U;
+	uint16_t							attrUsbVendorID = 0U;
+	uint16_t							attrUsbProductID = 0U;
+
 } confAttributes_t;
 
 
@@ -84,6 +107,7 @@ protected:
 private:
 
 	void			fsLoadInstruments(const char* filename);
+	void			confAttrClear(confAttributes_t* cA);
 	void			pushInstrumentDataset(map< string, confAttributes_t >* m, const string name, const confAttributes_t* cA);
 	void			scanInstruments(void);
 	void			preloadInstruments(void);  // TODO: remove me!

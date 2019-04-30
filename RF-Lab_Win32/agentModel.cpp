@@ -462,7 +462,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 	uint32_t						errLine					= 0UL;
 	uint32_t						lineCtr					= 0UL;
 	confAttributes_t				cA;
-	map< string, confAttributes_t > m;
 
 	/* Load config file */
 	{
@@ -481,7 +480,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 				if (!p) {
 					/* End of file */
 					if (variant != '-') {
-						//pushInstrumentDataset();
+						pushInstrumentDataset(cA.attrName, &cA);
 						confAttrClear(&cA);
 					}
 					break;
@@ -503,16 +502,18 @@ void agentModel::fsLoadInstruments(const char* filename)
 				else if (*p == '[') {
 					/* Write attributes of previous section */
 					if (variant != '-') {
-						pushInstrumentDataset(&m, cA.attrName, &cA);
+						pushInstrumentDataset(cA.attrName, &cA);
 
 						/* Start a new set of attributes */
-						memset(&cA, 0, sizeof(cA));
-						cA.attrName.clear();
+						confAttrClear(&cA);
 					}
 
 					/* Types */
 					if (!_strnicmp(p, "[INSTRUMENT]", 12)) {
 						variant = 'I';
+					}
+					else if (!_strnicmp(p, "[INTERFACE]", 11)) {
+						variant = 'i';
 					}
 					else if (!_strnicmp(p, "[COM]", 5)) {
 						variant = 'C';
@@ -523,9 +524,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 					else if (!_strnicmp(p, "[GPIB]", 6)) {
 						variant = 'G';
 					}
-					else if (!_strnicmp(p, "[INTERFACE]", 11)) {
-						variant = 'F';
-					}
 					else {
 						/* File format error */
 						const char Msg[] = "Unknown section type in brackets";
@@ -535,9 +533,10 @@ void agentModel::fsLoadInstruments(const char* filename)
 					}
 				}
 
-				/* INTERFACE attributes */
+				/* INSTRUMENT attributes */
 				else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
 					cA.attrName.assign(p + 5, p + lineLen);
+					cA.attrSection = string("INSTRUMENT");
 				}
 				else if ((variant == 'I') && !_strnicmp(p, "Type=", 5)) {
 					cA.attrType.assign(p + 5, p + lineLen);
@@ -613,8 +612,26 @@ void agentModel::fsLoadInstruments(const char* filename)
 					}
 				}
 
+				/* INTERFACE attributes */
+				else if ((variant == 'i') && !_strnicmp(p, "Name=", 5)) {
+					cA.attrName.assign(p + 5, p + lineLen);
+					cA.attrSection = string("INTERFACE");
+				}
+				else if ((variant == 'i') && !_strnicmp(p, "ServerType=", 11)) {
+					cA.attrServerType.assign(p + 11, p + lineLen);
+				}
+				else if ((variant == 'i') && !_strnicmp(p, "ServerPort=", 11)) {
+					try {
+						cA.attrServerPort = stoi(string(p + 11, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+
+				/* Serial COM attributes */
 				else if ((variant == 'C') && !_strnicmp(p, "Name=", 5)) {
 					cA.attrName.assign(p + 5, p + lineLen);
+					cA.attrSection = string("COM");
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Device=", 7)) {
 					cA.attrDevice.assign(p + 7, p + lineLen);
@@ -644,8 +661,10 @@ void agentModel::fsLoadInstruments(const char* filename)
 					}
 				}
 
+				/* USB attributes */
 				else if ((variant == 'U') && !_strnicmp(p, "Name=", 5)) {
 					cA.attrName.assign(p + 5, p + lineLen);
+					cA.attrSection = string("USB");
 				}
 				else if ((variant == 'U') && !_strnicmp(p, "Vendor_ID=", 10)) {
 					try {
@@ -668,26 +687,14 @@ void agentModel::fsLoadInstruments(const char* filename)
 					}
 				}
 
+				/* GPIB attributes */
 				else if ((variant == 'G') && !_strnicmp(p, "Name=", 5)) {
 					cA.attrName.assign(p + 5, p + lineLen);
+					cA.attrSection = string("GPIB");
 				}
 				else if ((variant == 'G') && !_strnicmp(p, "Addr=", 5)) {
 					try {
 						cA.attrGpibAddr = stoi(string(p + 5, p + lineLen));
-					}
-					catch (...) {
-					}
-				}
-
-				else if ((variant == 'F') && !_strnicmp(p, "Name=", 5)) {
-					cA.attrName.assign(p + 5, p + lineLen);
-				}
-				else if ((variant == 'F') && !_strnicmp(p, "ServerType=", 11)) {
-					cA.attrServerType.assign(p + 11, p + lineLen);
-				}
-				else if ((variant == 'F') && !_strnicmp(p, "ServerPort=", 11)) {
-					try {
-						cA.attrServerPort = stoi(string(p + 11, p + lineLen));
 					}
 					catch (...) {
 					}
@@ -718,10 +725,43 @@ void agentModel::fsLoadInstruments(const char* filename)
 	}
 
 	/* Link Instruments, Interfaces and Ports together */
-	{
+	const size_t mSize = _mapConfig.size();
+	if (mSize) {
+		/* Find nterfaces */
+		map<string, confAttributes_t>::iterator it = _mapConfig.begin();
+		while (it != _mapConfig.end()) {
+			confAttributes_t attr = it->second;
+			if (!_stricmp(attr.attrSection.c_str(), "INTERFACE")) {
+				const string serverType = attr.attrServerType;
+				const uint16_t ifcPort = attr.attrServerPort;
 
+				/* Handle GPIB interfaces */
+				if (!_stricmp(serverType.c_str(), "GPIB")) {
+					map<string, confAttributes_t>::iterator it2 = _mapConfig.begin();
+
+					/* Search instruments ... */
+					while (it2 != _mapConfig.end()) {
+						confAttributes_t attr2 = it2->second;
+
+						/* ... having the same GPIB address */
+						if (!_stricmp(attr2.attrSection.c_str(), "INSTRUMENT") && attr2.attrGpibAddr == ifcPort) {
+							/* Instrument found - enter all communication entries */
+							attr2.attrDevice = attr.attrDevice;
+							attr2.attrComBaud = attr.attrComBaud;
+							attr2.attrComBits = attr.attrComBits;
+							attr2.attrComPar = attr.attrComPar;
+							attr2.attrComStop = attr.attrComStop;
+
+							it2->second = attr2;
+							break;
+						}
+						++it2;
+					}
+				}
+			}
+			++it;
+		}
 	}
-
 	return;
 
 
@@ -737,6 +777,7 @@ _fsLoadInstruments_Error:
 void agentModel::confAttrClear(confAttributes_t* cA)
 {
 	cA->attrName.clear();
+	cA->attrSection.clear();
 	cA->attrType.clear();
 	cA->attrTurnLeftMaxDeg			= 0.0f;
 	cA->attrTurnRightMaxDeg			= 0.0f;
@@ -760,10 +801,106 @@ void agentModel::confAttrClear(confAttributes_t* cA)
 	cA->attrUsbProductID			= 0U;
 }
 
-void agentModel::pushInstrumentDataset(map< string, confAttributes_t >* m, const string name, const confAttributes_t* cA)
+void agentModel::pushInstrumentDataset(string name, const confAttributes_t* cA)
 {
-	if (m && cA) {
-		//m->insert_or_assign(name, cA);
+	if (!name.empty() && cA) {
+		confAttributes_t attrTo = _mapConfig[name];
+		confAttributes_t attrFrom = *cA;
+
+		if (attrTo.attrName.empty() && !attrFrom.attrName.empty()) {
+			attrTo.attrName = name;
+		}
+
+		if (attrTo.attrSection.empty() && !attrFrom.attrSection.empty()) {
+			attrTo.attrSection = attrFrom.attrSection;
+		}
+
+		if (!attrFrom.attrType.empty()) {
+			attrTo.attrType = attrFrom.attrType;
+		}
+
+		if (attrFrom.attrTurnLeftMaxDeg) {
+			attrTo.attrTurnLeftMaxDeg = attrFrom.attrTurnLeftMaxDeg;
+		}
+
+		if (attrFrom.attrTurnRightMaxDeg) {
+			attrTo.attrTurnRightMaxDeg = attrFrom.attrTurnRightMaxDeg;
+		}
+
+		if (attrFrom.attrTicks360Deg) {
+			attrTo.attrTicks360Deg = attrFrom.attrTicks360Deg;
+		}
+
+		if (attrFrom.attrSpeedStart) {
+			attrTo.attrSpeedStart = attrFrom.attrSpeedStart;
+		}
+
+		if (attrFrom.attrSpeedAccl) {
+			attrTo.attrSpeedAccl = attrFrom.attrSpeedAccl;
+		}
+
+		if (attrFrom.attrSpeedTop) {
+			attrTo.attrSpeedTop = attrFrom.attrSpeedTop;
+		}
+
+		if (attrFrom.attrFreqMinHz) {
+			attrTo.attrFreqMinHz = attrFrom.attrFreqMinHz;
+		}
+
+		if (attrFrom.attrFreqMaxHz) {
+			attrTo.attrFreqMaxHz = attrFrom.attrFreqMaxHz;
+		}
+
+		if (attrFrom.attrFreqMinDbm) {
+			attrTo.attrFreqMinDbm = attrFrom.attrFreqMinDbm;
+		}
+
+		if (attrFrom.attrFreqMaxDbm) {
+			attrTo.attrFreqMaxDbm = attrFrom.attrFreqMaxDbm;
+		}
+
+		if (!attrFrom.attrDevice.empty()) {
+			attrTo.attrDevice = attrFrom.attrDevice;
+		}
+
+		if (attrFrom.attrComBaud) {
+			attrTo.attrComBaud = attrFrom.attrComBaud;
+		}
+
+		if (attrFrom.attrComBits) {
+			attrTo.attrComBits = attrFrom.attrComBits;
+		}
+
+		if (!attrFrom.attrComPar.empty()) {
+			attrTo.attrComPar = attrFrom.attrComPar;
+		}
+
+		if (attrFrom.attrComStop) {
+			attrTo.attrComStop = attrFrom.attrComStop;
+		}
+
+		if (attrFrom.attrGpibAddr) {
+			attrTo.attrGpibAddr = attrFrom.attrGpibAddr;
+		}
+
+		if (!attrFrom.attrServerType.empty()) {
+			attrTo.attrServerType = attrFrom.attrServerType;
+		}
+
+		if (attrFrom.attrServerPort) {
+			attrTo.attrServerPort = attrFrom.attrServerPort;
+		}
+
+		if (attrFrom.attrUsbVendorID) {
+			attrTo.attrUsbVendorID = attrFrom.attrUsbVendorID;
+		}
+
+		if (attrFrom.attrUsbProductID) {
+			attrTo.attrUsbProductID = attrFrom.attrUsbProductID;
+		}
+
+		/* Make map entry visible */
+		_mapConfig[name] = attrTo;
 	}
 }
 

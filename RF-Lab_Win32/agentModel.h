@@ -46,6 +46,7 @@ typedef struct confAttributes
 {
 
 	string								attrName;
+	string								attrSection;
 	string								attrType;
 	float								attrTurnLeftMaxDeg = 0.0f;
 	float								attrTurnRightMaxDeg = 0.0f;
@@ -94,6 +95,7 @@ private:
 	HWND								 _hWnd;
 	class agentModelVariant				*_curModel;
 
+	map<string, confAttributes_t>		 _mapConfig;
 	char								 _fs_instrument_settings_filename[256];
 
 
@@ -108,7 +110,7 @@ private:
 
 	void			fsLoadInstruments(const char* filename);
 	void			confAttrClear(confAttributes_t* cA);
-	void			pushInstrumentDataset(map< string, confAttributes_t >* m, const string name, const confAttributes_t* cA);
+	void			pushInstrumentDataset(string name, const confAttributes_t* cA);
 	void			scanInstruments(void);
 	void			preloadInstruments(void);  // TODO: remove me!
 

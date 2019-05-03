@@ -63,7 +63,7 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 	{
 		g_am_InstList_locked = true;
 
-		#if 1
+		#ifndef USE_PRELOAD_INSTRUMENTS
 			fsLoadInstruments(_fs_instrument_settings_filename);
 			scanInstruments();
 		#else
@@ -725,43 +725,123 @@ void agentModel::fsLoadInstruments(const char* filename)
 	}
 
 	/* Link Instruments, Interfaces and Ports together */
-	const size_t mSize = _mapConfig.size();
-	if (mSize) {
-		/* Find nterfaces */
-		map<string, confAttributes_t>::iterator it = _mapConfig.begin();
-		while (it != _mapConfig.end()) {
-			confAttributes_t attr = it->second;
-			if (!_stricmp(attr.attrSection.c_str(), "INTERFACE")) {
-				const string serverType = attr.attrServerType;
-				const uint16_t ifcPort = attr.attrServerPort;
+	{
+		const size_t mSize = _mapConfig.size();
+		if (mSize) {
+			/* Find interfaces */
+			map<string, confAttributes_t>::iterator it = _mapConfig.begin();
+			while (it != _mapConfig.end()) {
+				confAttributes_t attr = it->second;
+				if (!_stricmp(attr.attrSection.c_str(), "INTERFACE")) {
+					const string serverType = attr.attrServerType;
+					const uint16_t ifcPort = attr.attrServerPort;
 
-				/* Handle GPIB interfaces */
-				if (!_stricmp(serverType.c_str(), "GPIB")) {
-					map<string, confAttributes_t>::iterator it2 = _mapConfig.begin();
+					/* Handle GPIB interfaces */
+					if (!_stricmp(serverType.c_str(), "GPIB")) {
+						map<string, confAttributes_t>::iterator it2 = _mapConfig.begin();
 
-					/* Search instruments ... */
-					while (it2 != _mapConfig.end()) {
-						confAttributes_t attr2 = it2->second;
+						/* Search instruments ... */
+						while (it2 != _mapConfig.end()) {
+							confAttributes_t attr2 = it2->second;
 
-						/* ... having the same GPIB address */
-						if (!_stricmp(attr2.attrSection.c_str(), "INSTRUMENT") && attr2.attrGpibAddr == ifcPort) {
-							/* Instrument found - enter all communication entries */
-							attr2.attrDevice = attr.attrDevice;
-							attr2.attrComBaud = attr.attrComBaud;
-							attr2.attrComBits = attr.attrComBits;
-							attr2.attrComPar = attr.attrComPar;
-							attr2.attrComStop = attr.attrComStop;
+							/* ... having the same GPIB address */
+							if (!_stricmp(attr2.attrSection.c_str(), "INSTRUMENT") && attr2.attrGpibAddr == ifcPort) {
+								/* Instrument found - enter all communication entries */
+								attr2.attrDevice = attr.attrDevice;
+								attr2.attrComBaud = attr.attrComBaud;
+								attr2.attrComBits = attr.attrComBits;
+								attr2.attrComPar = attr.attrComPar;
+								attr2.attrComStop = attr.attrComStop;
 
-							it2->second = attr2;
-							break;
+								it2->second = attr2;
+								break;
+							}
+							++it2;
 						}
-						++it2;
 					}
 				}
+				++it;
 			}
-			++it;
 		}
 	}
+
+	/* Fill in instrument list */
+	{
+		const size_t mSize = _mapConfig.size();
+		if (mSize) {
+			/* Find interfaces */
+			map<string, confAttributes_t>::iterator it = _mapConfig.begin();
+	
+			/* Copy attributes of each instrument to global instrument list */
+			while (it != _mapConfig.end()) {
+				confAttributes_t attr = it->second;
+				am_InstListEntry_t le = { 0 };
+
+				//  s attr.attrName;
+				//  s attrSection;
+				//  s attrType;
+				
+				/* Rotor settings */
+				le.rotInitTicksPer360deg			= (int) attr.attrTicks360Deg;
+				le.rotInitTopSpeed					= (int) attr.attrSpeedTop;
+				le.rotInitAcclSpeed					= (int) attr.attrSpeedAccl;
+				le.rotInitStartSpeed				= (int) attr.attrSpeedStart;
+				le.rotCurPosition					= 0;
+				#if 0
+				float								attr.attrTurnLeftMaxDeg;
+				float								attr.attrTurnRightMaxDeg;
+				#endif
+
+				/* TX settings */
+				le.txInitRfOn						= false;
+				le.txInitRfQrg						= 24e9;
+				le.txInitRfPwr						= -30.0;
+				le.txMinRfQrg						= attr.attrFreqMinHz;
+				le.txMinRfPwr						= attr.attrFreqMinDbm;
+				le.txMaxRfQrg						= attr.attrFreqMaxHz;
+				le.txMaxRfPwr						= attr.attrFreqMaxDbm;
+				le.txCurRfOn						= le.txInitRfOn;
+				le.txCurRfQrg						= le.txInitRfQrg;
+				le.txCurRfPwr						= le.txInitRfPwr;
+
+				/* RX settings */
+				le.rxInitRfQrg						= 24e9;
+				le.rxInitRfSpan						= 1e6;
+				le.rxInitRfPwrLo					= -80.0;
+				le.rxInitRfPwrDynamic				= 100.0;
+				double								rxMinRfQrg;
+				double								rxMinRfSpan;
+				double								rxMinRfPwrLo;
+				double								rxMinRfPwrDynamic;
+				double								rxMaxRfQrg;
+				double								rxMaxRfSpan;
+				double								rxMaxRfPwrLo;
+				double								rxMaxRfPwrDynamic;
+				le.rxCurRfQrg						= xxx;
+				le.rxCurRfSpan;
+				le.rxCurRfPwrLo;
+				le.rxCurRfPwrDynamic;
+
+				s attrDevice;
+				uint16_t							attrComBaud = 0U;
+				uint8_t								attrComBits = 0U;
+				s attrComPar;
+				uint8_t								attrComStop = 0U;
+
+				uint8_t								attrGpibAddr = 0U;
+
+				s attrServerType;
+				uint16_t							attrServerPort = 0U;
+
+				uint16_t							attrUsbVendorID = 0U;
+				uint16_t							attrUsbProductID = 0U;
+
+				/* Create list */
+				g_am_InstList.push_back(le);
+			}
+		}
+	}
+
 	return;
 
 
@@ -906,10 +986,29 @@ void agentModel::pushInstrumentDataset(string name, const confAttributes_t* cA)
 
 void agentModel::scanInstruments(void)
 {
+	map<string, confAttributes_t>::iterator it = _mapConfig.begin();
+	// g_am_InstList;
 
+	/* Iterate over all instruments and check which one responds */
+	while (it != _mapConfig.end()) {
+		confAttributes_t attr = it->second;
+
+		/* From high to low priority */
+		if (instCheckUsb(&attr)) {
+			/* Use USB connection */
+			instPushListUsb(&attr);
+			//g_am_InstList.push_back();
+
+		} 
+		else if (instCheckCom(&attr)) {
+			/* Use COM connection */
+			instPushListUsb(&attr);
+		}
+	}
 }
 
 
+#ifdef USE_PRELOAD_INSTRUMENTS
 // TODO: remove me later!
 void agentModel::preloadInstruments(void)
 {
@@ -1005,3 +1104,4 @@ void agentModel::preloadInstruments(void)
 
 	g_am_InstList.push_back(entry);
 }
+#endif

@@ -43,7 +43,7 @@ typedef struct am_InstListEntry {
 
 	/* Link settings */
 	LinkType_t							linkType;
-	string								linkÍdnSearch;
+	string								linkIdnSearch;
 
 	BYTE								linkSerPort;
 	DWORD								linkSerBaud;
@@ -66,40 +66,48 @@ typedef struct am_InstListEntry {
 	int									rotInitTopSpeed;
 	int									rotInitAcclSpeed;
 	int									rotInitStartSpeed;
+
+	int									rotMinPosition;
+	int									rotMaxPosition;
+	int									rotInitPosition;
 	int									rotCurPosition;
 
 
 	/* TX settings */
 	bool								txInitRfOn;
-	double								txInitRfQrg;
-	double								txInitRfPwr;
-	double								txMinRfQrg;
-	double								txMinRfPwr;
-	double								txMaxRfQrg;
-	double								txMaxRfPwr;
 	bool								txCurRfOn;
+
+	double								txMinRfQrg;
+	double								txMaxRfQrg;
+	double								txInitRfQrg;
 	double								txCurRfQrg;
+
+	double								txMinRfPwr;
+	double								txMaxRfPwr;
+	double								txInitRfPwr;
 	double								txCurRfPwr;
 
 
 	/* RX settings */
-	double								rxInitRfQrg;
-	double								rxInitRfSpan;
-	double								rxInitRfPwrLo;
-	double								rxInitRfPwrDynamic;
 	double								rxMinRfQrg;
-	double								rxMinRfSpan;
-	double								rxMinRfPwrLo;
-	double								rxMinRfPwrDynamic;
 	double								rxMaxRfQrg;
-	double								rxMaxRfSpan;
-	double								rxMaxRfPwrLo;
-	double								rxMaxRfPwrDynamic;
+	double								rxInitRfQrg;
 	double								rxCurRfQrg;
-	double								rxCurRfSpan;
-	double								rxCurRfPwrLo;
-	double								rxCurRfPwrDynamic;
 
+	double								rxMinRfSpan;
+	double								rxMaxRfSpan;
+	double								rxInitRfSpan;
+	double								rxCurRfSpan;
+
+	double								rxMinRfPwrLo;
+	double								rxMaxRfPwrLo;
+	double								rxInitRfPwrLo;
+	double								rxCurRfPwrLo;
+
+	double								rxMinRfPwrHi;
+	double								rxMaxRfPwrHi;
+	double								rxInitRfPwrHi;
+	double								rxCurRfPwrHi;
 } am_InstListEntry_t;
 
 typedef list<am_InstListEntry_t>		am_InstList_t;

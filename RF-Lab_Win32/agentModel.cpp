@@ -461,6 +461,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 	char							errMsgBuf[128];
 	uint32_t						errLine					= 0UL;
 	uint32_t						lineCtr					= 0UL;
+	map<string, confAttributes_t>	cM;
 	confAttributes_t				cA;
 
 	/* Load config file */
@@ -480,7 +481,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 				if (!p) {
 					/* End of file */
 					if (variant != '-') {
-						pushInstrumentDataset(cA.attrName, &cA);
+						pushInstrumentDataset(&cM, cA.attrName, &cA);
 						confAttrClear(&cA);
 					}
 					break;
@@ -502,7 +503,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 				else if (*p == '[') {
 					/* Write attributes of previous section */
 					if (variant != '-') {
-						pushInstrumentDataset(cA.attrName, &cA);
+						pushInstrumentDataset(&cM, cA.attrName, &cA);
 
 						/* Start a new set of attributes */
 						confAttrClear(&cA);
@@ -583,6 +584,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 					catch (...) {
 					}
 				}
+
 				else if ((variant == 'I') && !_strnicmp(p, "Freq_min_Hz=", 12)) {
 					try {
 						cA.attrFreqMinHz = stof(string(p + 12, p + lineLen));
@@ -597,16 +599,97 @@ void agentModel::fsLoadInstruments(const char* filename)
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Amp_min_dBm=", 12)) {
+				else if ((variant == 'I') && !_strnicmp(p, "Freq_init_Hz=", 13)) {
 					try {
-						cA.attrFreqMinDbm = stof(string(p + 12, p + lineLen));
+						cA.attrFreqInitHz = stof(string(p + 13, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Amp_max_dBm=", 12)) {
+
+				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_min_dBm=", 15)) {
 					try {
-						cA.attrFreqMaxDbm = stof(string(p + 12, p + lineLen));
+						cA.attrTXlevelMinDbm = stof(string(p + 15, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_max_dBm=", 15)) {
+					try {
+						cA.attrTXlevelMaxDbm = stof(string(p + 15, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_init_dBm=", 16)) {
+					try {
+						cA.attrTXlevelInitDbm = stof(string(p + 16, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+
+				else if ((variant == 'I') && !_strnicmp(p, "Span_min_Hz=", 12)) {
+					try {
+						cA.attrSpanMinHz = stof(string(p + 12, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Span_max_Hz=", 12)) {
+					try {
+						cA.attrSpanMaxHz = stof(string(p + 12, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "Span_init_Hz=", 13)) {
+					try {
+						cA.attrSpanInitHz = stof(string(p + 13, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+
+				else if ((variant == 'I') && !_strnicmp(p, "RXLoLevel_min_dBm=", 18)) {
+					try {
+						cA.attrRXLoLevelMinDbm = stof(string(p + 18, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "RXLoLevel_max_dBm=", 18)) {
+					try {
+						cA.attrRXLoLevelMaxDbm = stof(string(p + 18, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "RXLoLevel_init_dBm=", 19)) {
+					try {
+						cA.attrRXLoLevelInitDbm = stof(string(p + 19, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+
+				else if ((variant == 'I') && !_strnicmp(p, "RXHiLevel_min_dBm=", 18)) {
+					try {
+						cA.attrRXHiLevelMinDbm = stof(string(p + 18, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "RXHiLevel_max_dBm=", 18)) {
+					try {
+						cA.attrRXHiLevelMaxDbm = stof(string(p + 18, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "RXHiLevel_init_dBm=", 19)) {
+					try {
+						cA.attrRXHiLevelInitDbm = stof(string(p + 19, p + lineLen));
 					}
 					catch (...) {
 					}
@@ -634,7 +717,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 					cA.attrSection = string("COM");
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Device=", 7)) {
-					cA.attrDevice.assign(p + 7, p + lineLen);
+					cA.attrComDevice.assign(p + 7, p + lineLen);
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Baud=", 5)) {
 					try {
@@ -726,11 +809,11 @@ void agentModel::fsLoadInstruments(const char* filename)
 
 	/* Link Instruments, Interfaces and Ports together */
 	{
-		const size_t mSize = _mapConfig.size();
+		const size_t mSize = cM.size();
 		if (mSize) {
 			/* Find interfaces */
-			map<string, confAttributes_t>::iterator it = _mapConfig.begin();
-			while (it != _mapConfig.end()) {
+			map<string, confAttributes_t>::iterator it = cM.begin();
+			while (it != cM.end()) {
 				confAttributes_t attr = it->second;
 				if (!_stricmp(attr.attrSection.c_str(), "INTERFACE")) {
 					const string serverType = attr.attrServerType;
@@ -738,16 +821,16 @@ void agentModel::fsLoadInstruments(const char* filename)
 
 					/* Handle GPIB interfaces */
 					if (!_stricmp(serverType.c_str(), "GPIB")) {
-						map<string, confAttributes_t>::iterator it2 = _mapConfig.begin();
+						map<string, confAttributes_t>::iterator it2 = cM.begin();
 
 						/* Search instruments ... */
-						while (it2 != _mapConfig.end()) {
+						while (it2 != cM.end()) {
 							confAttributes_t attr2 = it2->second;
 
 							/* ... having the same GPIB address */
 							if (!_stricmp(attr2.attrSection.c_str(), "INSTRUMENT") && attr2.attrGpibAddr == ifcPort) {
 								/* Instrument found - enter all communication entries */
-								attr2.attrDevice = attr.attrDevice;
+								attr2.attrComDevice = attr.attrComDevice;
 								attr2.attrComBaud = attr.attrComBaud;
 								attr2.attrComBits = attr.attrComBits;
 								attr2.attrComPar = attr.attrComPar;
@@ -767,13 +850,13 @@ void agentModel::fsLoadInstruments(const char* filename)
 
 	/* Fill in instrument list */
 	{
-		const size_t mSize = _mapConfig.size();
+		const size_t mSize = cM.size();
 		if (mSize) {
 			/* Find interfaces */
-			map<string, confAttributes_t>::iterator it = _mapConfig.begin();
+			map<string, confAttributes_t>::iterator it = cM.begin();
 	
 			/* Copy attributes of each instrument to global instrument list */
-			while (it != _mapConfig.end()) {
+			while (it != cM.end()) {
 				confAttributes_t attr = it->second;
 				am_InstListEntry_t le = { 0 };
 
@@ -786,61 +869,71 @@ void agentModel::fsLoadInstruments(const char* filename)
 				le.rotInitTopSpeed					= (int) attr.attrSpeedTop;
 				le.rotInitAcclSpeed					= (int) attr.attrSpeedAccl;
 				le.rotInitStartSpeed				= (int) attr.attrSpeedStart;
-				le.rotCurPosition					= 0;
-				#if 0
-				float								attr.attrTurnLeftMaxDeg;
-				float								attr.attrTurnRightMaxDeg;
-				#endif
+
+				le.rotMinPosition					= (int) attr.attrTurnLeftMaxDeg;
+				le.rotMaxPosition					= (int) attr.attrTurnRightMaxDeg;
+				le.rotInitPosition					= 0;
+				le.rotCurPosition					= le.rotInitPosition;
+
 
 				/* TX settings */
 				le.txInitRfOn						= false;
-				le.txInitRfQrg						= 24e9;
-				le.txInitRfPwr						= -30.0;
-				le.txMinRfQrg						= attr.attrFreqMinHz;
-				le.txMinRfPwr						= attr.attrFreqMinDbm;
-				le.txMaxRfQrg						= attr.attrFreqMaxHz;
-				le.txMaxRfPwr						= attr.attrFreqMaxDbm;
 				le.txCurRfOn						= le.txInitRfOn;
+
+				le.txMinRfQrg						= attr.attrFreqMinHz;
+				le.txMaxRfQrg						= attr.attrFreqMaxHz;
+				le.txInitRfQrg						= attr.attrFreqInitHz;
 				le.txCurRfQrg						= le.txInitRfQrg;
+
+				le.txMinRfPwr						= attr.attrTXlevelMinDbm;
+				le.txMaxRfPwr						= attr.attrTXlevelMaxDbm;
+				le.txInitRfPwr						= attr.attrTXlevelInitDbm;
 				le.txCurRfPwr						= le.txInitRfPwr;
 
+
 				/* RX settings */
-				le.rxInitRfQrg						= 24e9;
-				le.rxInitRfSpan						= 1e6;
-				le.rxInitRfPwrLo					= -80.0;
-				le.rxInitRfPwrDynamic				= 100.0;
-				double								rxMinRfQrg;
-				double								rxMinRfSpan;
-				double								rxMinRfPwrLo;
-				double								rxMinRfPwrDynamic;
-				double								rxMaxRfQrg;
-				double								rxMaxRfSpan;
-				double								rxMaxRfPwrLo;
-				double								rxMaxRfPwrDynamic;
-				le.rxCurRfQrg						= xxx;
-				le.rxCurRfSpan;
-				le.rxCurRfPwrLo;
-				le.rxCurRfPwrDynamic;
+				le.rxMinRfQrg						= attr.attrFreqMinHz;
+				le.rxMaxRfQrg						= attr.attrFreqMaxHz;
+				le.rxInitRfQrg						= attr.attrFreqInitHz;
+				le.rxCurRfQrg						= le.rxInitRfQrg;
 
-				s attrDevice;
-				uint16_t							attrComBaud = 0U;
-				uint8_t								attrComBits = 0U;
-				s attrComPar;
-				uint8_t								attrComStop = 0U;
+				le.rxMinRfSpan						= attr.attrSpanMinHz;
+				le.rxMaxRfSpan						= attr.attrSpanMaxHz;
+				le.rxInitRfSpan						= attr.attrSpanInitHz;
+				le.rxCurRfSpan						= le.rxInitRfSpan;
 
-				uint8_t								attrGpibAddr = 0U;
+				le.rxMinRfPwrLo						= attr.attrRXLoLevelMinDbm;
+				le.rxMaxRfPwrLo						= attr.attrRXLoLevelMaxDbm;
+				le.rxInitRfPwrLo					= attr.attrRXLoLevelInitDbm;
+				le.rxCurRfPwrLo						= le.rxInitRfPwrLo;
 
-				s attrServerType;
-				uint16_t							attrServerPort = 0U;
+				le.rxMinRfPwrHi						= attr.attrRXHiLevelMinDbm;
+				le.rxMaxRfPwrHi						= attr.attrRXHiLevelMaxDbm;
+				le.rxInitRfPwrHi					= attr.attrRXHiLevelInitDbm;
+				le.rxCurRfPwrHi						= le.rxInitRfPwrHi;
 
-				uint16_t							attrUsbVendorID = 0U;
-				uint16_t							attrUsbProductID = 0U;
+				le.linkSerPort						= atoi(attr.attrComDevice.c_str());
+				le.linkSerBaud						= attr.attrComBaud;
+				le.linkSerBits						= attr.attrComBits;
+				le.linkSerParity					= atoi(attr.attrComPar.c_str());
+				le.linkSerStopbits					= attr.attrComStop;
+
+				le.linkSerIecAddr					= attr.attrGpibAddr;
+
+				//le.serverType						= attr.attrServerType;   // TODO
+				//le.serverPort						= attr.attrServerPort;
+
+				le.linkUsbIdVendor					= attr.attrUsbVendorID;
+				le.linkUsbIdProduct					= attr.attrUsbProductID;
 
 				/* Create list */
 				g_am_InstList.push_back(le);
 			}
 		}
 	}
+
+	/* Free up structure */
+	cM.clear();
 
 	return;
 
@@ -859,32 +952,53 @@ void agentModel::confAttrClear(confAttributes_t* cA)
 	cA->attrName.clear();
 	cA->attrSection.clear();
 	cA->attrType.clear();
+
 	cA->attrTurnLeftMaxDeg			= 0.0f;
 	cA->attrTurnRightMaxDeg			= 0.0f;
 	cA->attrTicks360Deg				= 0UL;
 	cA->attrSpeedStart				= 0.0f;
 	cA->attrSpeedAccl				= 0.0f;
 	cA->attrSpeedTop				= 0.0f;
+
 	cA->attrFreqMinHz				= 0.0f;
 	cA->attrFreqMaxHz				= 0.0f;
-	cA->attrFreqMinDbm				= 0.0f;
-	cA->attrFreqMaxDbm				= 0.0f;
-	cA->attrDevice.clear();
+	cA->attrFreqInitHz				= 0.0f;
+
+	cA->attrTXlevelMinDbm			= 0.0f;
+	cA->attrTXlevelMaxDbm			= 0.0f;
+	cA->attrTXlevelInitDbm			= 0.0f;
+
+	cA->attrSpanMinHz				= 0.0f;
+	cA->attrSpanMaxHz				= 0.0f;
+	cA->attrSpanInitHz				= 0.0f;
+
+	cA->attrRXLoLevelMinDbm			= 0.0f;
+	cA->attrRXLoLevelMaxDbm			= 0.0f;
+	cA->attrRXLoLevelInitDbm		= 0.0f;
+
+	cA->attrRXHiLevelMinDbm			= 0.0f;
+	cA->attrRXHiLevelMaxDbm			= 0.0f;
+	cA->attrRXHiLevelInitDbm		= 0.0f;
+	
+	cA->attrComDevice.clear();
 	cA->attrComBaud					= 0U;
 	cA->attrComBits					= 0U;
 	cA->attrComPar.clear();
 	cA->attrComStop					= 0U;
+	
 	cA->attrGpibAddr				= 0U;
+	
 	cA->attrServerType.clear();
 	cA->attrServerPort				= 0U;
+	
 	cA->attrUsbVendorID				= 0U;
 	cA->attrUsbProductID			= 0U;
 }
 
-void agentModel::pushInstrumentDataset(string name, const confAttributes_t* cA)
+void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string name, const confAttributes_t* cA)
 {
 	if (!name.empty() && cA) {
-		confAttributes_t attrTo = _mapConfig[name];
+		confAttributes_t attrTo = (*mC)[name];
 		confAttributes_t attrFrom = *cA;
 
 		if (attrTo.attrName.empty() && !attrFrom.attrName.empty()) {
@@ -931,16 +1045,16 @@ void agentModel::pushInstrumentDataset(string name, const confAttributes_t* cA)
 			attrTo.attrFreqMaxHz = attrFrom.attrFreqMaxHz;
 		}
 
-		if (attrFrom.attrFreqMinDbm) {
-			attrTo.attrFreqMinDbm = attrFrom.attrFreqMinDbm;
+		if (attrFrom.attrTXlevelMinDbm) {
+			attrTo.attrTXlevelMinDbm = attrFrom.attrTXlevelMinDbm;
 		}
 
-		if (attrFrom.attrFreqMaxDbm) {
-			attrTo.attrFreqMaxDbm = attrFrom.attrFreqMaxDbm;
+		if (attrFrom.attrTXlevelMaxDbm) {
+			attrTo.attrTXlevelMaxDbm = attrFrom.attrTXlevelMaxDbm;
 		}
 
-		if (!attrFrom.attrDevice.empty()) {
-			attrTo.attrDevice = attrFrom.attrDevice;
+		if (!attrFrom.attrComDevice.empty()) {
+			attrTo.attrComDevice = attrFrom.attrComDevice;
 		}
 
 		if (attrFrom.attrComBaud) {
@@ -980,29 +1094,25 @@ void agentModel::pushInstrumentDataset(string name, const confAttributes_t* cA)
 		}
 
 		/* Make map entry visible */
-		_mapConfig[name] = attrTo;
+		(*mC)[name] = attrTo;
 	}
 }
 
 void agentModel::scanInstruments(void)
 {
-	map<string, confAttributes_t>::iterator it = _mapConfig.begin();
-	// g_am_InstList;
+	am_InstList_t::iterator it = g_am_InstList.begin();
 
 	/* Iterate over all instruments and check which one responds */
-	while (it != _mapConfig.end()) {
-		confAttributes_t attr = it->second;
-
+	while (it != g_am_InstList.end()) {
 		/* From high to low priority */
-		if (instCheckUsb(&attr)) {
+		if (instCheckUsb(it)) {
 			/* Use USB connection */
-			instPushListUsb(&attr);
-			//g_am_InstList.push_back();
+			instActivateUsb(it);
 
 		} 
-		else if (instCheckCom(&attr)) {
+		else if (instCheckCom(it)) {
 			/* Use COM connection */
-			instPushListUsb(&attr);
+			instActivateCom(it);
 		}
 	}
 }
@@ -1105,3 +1215,25 @@ void agentModel::preloadInstruments(void)
 	g_am_InstList.push_back(entry);
 }
 #endif
+
+
+bool agentModel::instCheckUsb(am_InstList_t::iterator it)
+{
+	return false;
+}
+
+
+bool agentModel::instCheckCom(am_InstList_t::iterator it)
+{
+	return false;
+}
+
+void agentModel::instActivateUsb(am_InstList_t::iterator it)
+{
+
+}
+
+void agentModel::instActivateCom(am_InstList_t::iterator it)
+{
+
+}

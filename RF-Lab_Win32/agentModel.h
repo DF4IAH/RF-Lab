@@ -8,6 +8,8 @@
 
 #include <map>
 
+#include "agentModel_InstList.h"
+
 
 using namespace concurrency;
 using namespace std;
@@ -48,24 +50,45 @@ typedef struct confAttributes
 	string								attrName;
 	string								attrSection;
 	string								attrType;
+
 	float								attrTurnLeftMaxDeg = 0.0f;
 	float								attrTurnRightMaxDeg = 0.0f;
 	uint32_t							attrTicks360Deg = 0UL;
 	float								attrSpeedStart = 0.0f;
 	float								attrSpeedAccl = 0.0f;
 	float								attrSpeedTop = 0.0f;
+
 	float								attrFreqMinHz = 0.0f;
 	float								attrFreqMaxHz = 0.0f;
-	float								attrFreqMinDbm = 0.0f;
-	float								attrFreqMaxDbm = 0.0f;
-	string								attrDevice;
+	float								attrFreqInitHz = 0.0f;
+
+	float								attrTXlevelMinDbm = 0.0f;
+	float								attrTXlevelMaxDbm = 0.0f;
+	float								attrTXlevelInitDbm = 0.0f;
+
+	float								attrSpanMinHz = 0.0f;
+	float								attrSpanMaxHz = 0.0f;
+	float								attrSpanInitHz = 0.0f;
+
+	float								attrRXLoLevelMinDbm = 0.0f;
+	float								attrRXLoLevelMaxDbm = 0.0f;
+	float								attrRXLoLevelInitDbm = 0.0f;
+
+	float								attrRXHiLevelMinDbm = 0.0f;
+	float								attrRXHiLevelMaxDbm = 0.0f;
+	float								attrRXHiLevelInitDbm = 0.0f;
+
+	string								attrComDevice;
 	uint16_t							attrComBaud = 0U;
 	uint8_t								attrComBits = 0U;
 	string								attrComPar;
 	uint8_t								attrComStop = 0U;
+
 	uint8_t								attrGpibAddr = 0U;
+
 	string								attrServerType;
 	uint16_t							attrServerPort = 0U;
+
 	uint16_t							attrUsbVendorID = 0U;
 	uint16_t							attrUsbProductID = 0U;
 
@@ -95,7 +118,6 @@ private:
 	HWND								 _hWnd;
 	class agentModelVariant				*_curModel;
 
-	map<string, confAttributes_t>		 _mapConfig;
 	char								 _fs_instrument_settings_filename[256];
 
 
@@ -110,9 +132,14 @@ private:
 
 	void			fsLoadInstruments(const char* filename);
 	void			confAttrClear(confAttributes_t* cA);
-	void			pushInstrumentDataset(string name, const confAttributes_t* cA);
+	void			pushInstrumentDataset(map<string, confAttributes_t>* mapConfig, string name, const confAttributes_t* cA);
 	void			scanInstruments(void);
 	void			preloadInstruments(void);  // TODO: remove me!
+
+	bool			instCheckUsb(am_InstList_t::iterator it);
+	bool			instCheckCom(am_InstList_t::iterator it);
+	void			instActivateUsb(am_InstList_t::iterator it);
+	void			instActivateCom(am_InstList_t::iterator it);
 
 
 public:

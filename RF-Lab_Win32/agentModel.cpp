@@ -542,6 +542,8 @@ void agentModel::fsLoadInstruments(const char* filename)
 				else if ((variant == 'I') && !_strnicmp(p, "Type=", 5)) {
 					cA.attrType.assign(p + 5, p + lineLen);
 				}
+
+				/* Type: Rotor */
 				else if ((variant == 'I') && !_strnicmp(p, "Turn_left_max_deg=", 18)) {
 					try {
 						cA.attrTurnLeftMaxDeg = stof(string(p + 18, p + lineLen));
@@ -585,6 +587,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 					}
 				}
 
+				/* Type: Generator & Spectrum-Analyzer */
 				else if ((variant == 'I') && !_strnicmp(p, "Freq_min_Hz=", 12)) {
 					try {
 						cA.attrFreqMinHz = stof(string(p + 12, p + lineLen));
@@ -607,28 +610,30 @@ void agentModel::fsLoadInstruments(const char* filename)
 					}
 				}
 
-				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_min_dBm=", 15)) {
+				/* Type: Generator */
+				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_min_dBm=", 16)) {
 					try {
-						cA.attrTXlevelMinDbm = stof(string(p + 15, p + lineLen));
+						cA.attrTXlevelMinDbm = stof(string(p + 16, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_max_dBm=", 15)) {
+				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_max_dBm=", 16)) {
 					try {
-						cA.attrTXlevelMaxDbm = stof(string(p + 15, p + lineLen));
+						cA.attrTXlevelMaxDbm = stof(string(p + 16, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_init_dBm=", 16)) {
+				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_init_dBm=", 17)) {
 					try {
-						cA.attrTXlevelInitDbm = stof(string(p + 16, p + lineLen));
+						cA.attrTXlevelInitDbm = stof(string(p + 17, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 
+				/* Type: Spectrum-Analyzer */
 				else if ((variant == 'I') && !_strnicmp(p, "Span_min_Hz=", 12)) {
 					try {
 						cA.attrSpanMinHz = stof(string(p + 12, p + lineLen));
@@ -650,7 +655,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 					catch (...) {
 					}
 				}
-
 				else if ((variant == 'I') && !_strnicmp(p, "RXLoLevel_min_dBm=", 18)) {
 					try {
 						cA.attrRXLoLevelMinDbm = stof(string(p + 18, p + lineLen));
@@ -672,7 +676,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 					catch (...) {
 					}
 				}
-
 				else if ((variant == 'I') && !_strnicmp(p, "RXHiLevel_min_dBm=", 18)) {
 					try {
 						cA.attrRXHiLevelMinDbm = stof(string(p + 18, p + lineLen));
@@ -1026,94 +1029,122 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		confAttributes_t attrTo = (*mC)[name];
 		confAttributes_t attrFrom = *cA;
 
+		/* Header information */
 		if (attrTo.attrName.empty() && !attrFrom.attrName.empty()) {
 			attrTo.attrName = name;
 		}
-
 		if (attrTo.attrSection.empty() && !attrFrom.attrSection.empty()) {
 			attrTo.attrSection = attrFrom.attrSection;
 		}
-
 		if (!attrFrom.attrType.empty()) {
 			attrTo.attrType = attrFrom.attrType;
 		}
 
+		/* Rotor data */
 		if (attrFrom.attrTurnLeftMaxDeg) {
 			attrTo.attrTurnLeftMaxDeg = attrFrom.attrTurnLeftMaxDeg;
 		}
-
 		if (attrFrom.attrTurnRightMaxDeg) {
 			attrTo.attrTurnRightMaxDeg = attrFrom.attrTurnRightMaxDeg;
 		}
-
 		if (attrFrom.attrTicks360Deg) {
 			attrTo.attrTicks360Deg = attrFrom.attrTicks360Deg;
 		}
-
 		if (attrFrom.attrSpeedStart) {
 			attrTo.attrSpeedStart = attrFrom.attrSpeedStart;
 		}
-
 		if (attrFrom.attrSpeedAccl) {
 			attrTo.attrSpeedAccl = attrFrom.attrSpeedAccl;
 		}
-
 		if (attrFrom.attrSpeedTop) {
 			attrTo.attrSpeedTop = attrFrom.attrSpeedTop;
 		}
 
+		/* TX & RX */
 		if (attrFrom.attrFreqMinHz) {
 			attrTo.attrFreqMinHz = attrFrom.attrFreqMinHz;
 		}
-
 		if (attrFrom.attrFreqMaxHz) {
 			attrTo.attrFreqMaxHz = attrFrom.attrFreqMaxHz;
 		}
+		if (attrFrom.attrFreqInitHz) {
+			attrTo.attrFreqInitHz = attrFrom.attrFreqInitHz;
+		}
 
+		/* TX */
 		if (attrFrom.attrTXlevelMinDbm) {
 			attrTo.attrTXlevelMinDbm = attrFrom.attrTXlevelMinDbm;
 		}
-
 		if (attrFrom.attrTXlevelMaxDbm) {
 			attrTo.attrTXlevelMaxDbm = attrFrom.attrTXlevelMaxDbm;
 		}
+		if (attrFrom.attrTXlevelInitDbm) {
+			attrTo.attrTXlevelInitDbm = attrFrom.attrTXlevelInitDbm;
+		}
 
+		/* RX */
+		if (attrFrom.attrSpanMinHz) {
+			attrTo.attrSpanMinHz = attrFrom.attrSpanMinHz;
+		}
+		if (attrFrom.attrSpanMaxHz) {
+			attrTo.attrSpanMaxHz = attrFrom.attrSpanMaxHz;
+		}
+		if (attrFrom.attrSpanInitHz) {
+			attrTo.attrSpanInitHz = attrFrom.attrSpanInitHz;
+		}
+		if (attrFrom.attrRXLoLevelMinDbm) {
+			attrTo.attrRXLoLevelMinDbm = attrFrom.attrRXLoLevelMinDbm;
+		}
+		if (attrFrom.attrRXLoLevelMaxDbm) {
+			attrTo.attrRXLoLevelMaxDbm = attrFrom.attrRXLoLevelMaxDbm;
+		}
+		if (attrFrom.attrRXLoLevelInitDbm) {
+			attrTo.attrRXLoLevelInitDbm = attrFrom.attrRXLoLevelInitDbm;
+		}
+		if (attrFrom.attrRXHiLevelMinDbm) {
+			attrTo.attrRXHiLevelMinDbm = attrFrom.attrRXHiLevelMinDbm;
+		}
+		if (attrFrom.attrRXHiLevelMaxDbm) {
+			attrTo.attrRXHiLevelMaxDbm = attrFrom.attrRXHiLevelMaxDbm;
+		}
+		if (attrFrom.attrRXHiLevelInitDbm) {
+			attrTo.attrRXHiLevelInitDbm = attrFrom.attrRXHiLevelInitDbm;
+		}
+
+		/* COM */
 		if (!attrFrom.attrComDevice.empty()) {
 			attrTo.attrComDevice = attrFrom.attrComDevice;
 		}
-
 		if (attrFrom.attrComBaud) {
 			attrTo.attrComBaud = attrFrom.attrComBaud;
 		}
-
 		if (attrFrom.attrComBits) {
 			attrTo.attrComBits = attrFrom.attrComBits;
 		}
-
 		if (!attrFrom.attrComPar.empty()) {
 			attrTo.attrComPar = attrFrom.attrComPar;
 		}
-
 		if (attrFrom.attrComStop) {
 			attrTo.attrComStop = attrFrom.attrComStop;
 		}
 
+		/* GPIB */
 		if (attrFrom.attrGpibAddr) {
 			attrTo.attrGpibAddr = attrFrom.attrGpibAddr;
 		}
 
+		/* Network  */
 		if (!attrFrom.attrServerType.empty()) {
 			attrTo.attrServerType = attrFrom.attrServerType;
 		}
-
 		if (attrFrom.attrServerPort) {
 			attrTo.attrServerPort = attrFrom.attrServerPort;
 		}
 
+		/* USB */
 		if (attrFrom.attrUsbVendorID) {
 			attrTo.attrUsbVendorID = attrFrom.attrUsbVendorID;
 		}
-
 		if (attrFrom.attrUsbProductID) {
 			attrTo.attrUsbProductID = attrFrom.attrUsbProductID;
 		}

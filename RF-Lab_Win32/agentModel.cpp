@@ -860,57 +860,78 @@ void agentModel::fsLoadInstruments(const char* filename)
 				confAttributes_t attr = it->second;
 				am_InstListEntry_t le = { 0 };
 
-				//  s attr.attrName;
-				//  s attrSection;
-				//  s attrType;
+				/* General settings */
+				le.listEntryName					= attr.attrName;
+
+				if (!_strnicmp(attr.attrType.c_str(), "Rot", 3)) {
+					le.listFunction = INST_FUNCTION_ROTOR;
+				}
+				else if (!_strnicmp(attr.attrType.c_str(), "Spec", 4)) {
+					le.listFunction = INST_FUNCTION_RX;
+				}
+				else if (!_strnicmp(attr.attrType.c_str(), "Gen", 3)) {
+					le.listFunction = INST_FUNCTION_TX;
+				}
+				else {
+					/* Do not include other devices into the instrument list */
+					it++;
+					continue;
+				}
 				
 				/* Rotor settings */
-				le.rotInitTicksPer360deg			= (int) attr.attrTicks360Deg;
-				le.rotInitTopSpeed					= (int) attr.attrSpeedTop;
-				le.rotInitAcclSpeed					= (int) attr.attrSpeedAccl;
-				le.rotInitStartSpeed				= (int) attr.attrSpeedStart;
+				if (le.listFunction == INST_FUNCTION_ROTOR) {
+					le.rotInitTicksPer360deg = (int)attr.attrTicks360Deg;
+					le.rotInitTopSpeed = (int)attr.attrSpeedTop;
+					le.rotInitAcclSpeed = (int)attr.attrSpeedAccl;
+					le.rotInitStartSpeed = (int)attr.attrSpeedStart;
 
-				le.rotMinPosition					= (int) attr.attrTurnLeftMaxDeg;
-				le.rotMaxPosition					= (int) attr.attrTurnRightMaxDeg;
-				le.rotInitPosition					= 0;
-				le.rotCurPosition					= le.rotInitPosition;
+					le.rotMinPosition = (int)attr.attrTurnLeftMaxDeg;
+					le.rotMaxPosition = (int)attr.attrTurnRightMaxDeg;
+					le.rotInitPosition = 0;
+					le.rotCurPosition = le.rotInitPosition;
+				}
 
 
 				/* TX settings */
-				le.txInitRfOn						= false;
-				le.txCurRfOn						= le.txInitRfOn;
+				if (le.listFunction == INST_FUNCTION_TX) {
+					le.txInitRfOn = false;
+					le.txCurRfOn = le.txInitRfOn;
 
-				le.txMinRfQrg						= attr.attrFreqMinHz;
-				le.txMaxRfQrg						= attr.attrFreqMaxHz;
-				le.txInitRfQrg						= attr.attrFreqInitHz;
-				le.txCurRfQrg						= le.txInitRfQrg;
+					le.txMinRfQrg = attr.attrFreqMinHz;
+					le.txMaxRfQrg = attr.attrFreqMaxHz;
+					le.txInitRfQrg = attr.attrFreqInitHz;
+					le.txCurRfQrg = le.txInitRfQrg;
 
-				le.txMinRfPwr						= attr.attrTXlevelMinDbm;
-				le.txMaxRfPwr						= attr.attrTXlevelMaxDbm;
-				le.txInitRfPwr						= attr.attrTXlevelInitDbm;
-				le.txCurRfPwr						= le.txInitRfPwr;
+					le.txMinRfPwr = attr.attrTXlevelMinDbm;
+					le.txMaxRfPwr = attr.attrTXlevelMaxDbm;
+					le.txInitRfPwr = attr.attrTXlevelInitDbm;
+					le.txCurRfPwr = le.txInitRfPwr;
+				}
 
 
 				/* RX settings */
-				le.rxMinRfQrg						= attr.attrFreqMinHz;
-				le.rxMaxRfQrg						= attr.attrFreqMaxHz;
-				le.rxInitRfQrg						= attr.attrFreqInitHz;
-				le.rxCurRfQrg						= le.rxInitRfQrg;
+				if (le.listFunction == INST_FUNCTION_RX) {
+					le.rxMinRfQrg = attr.attrFreqMinHz;
+					le.rxMaxRfQrg = attr.attrFreqMaxHz;
+					le.rxInitRfQrg = attr.attrFreqInitHz;
+					le.rxCurRfQrg = le.rxInitRfQrg;
 
-				le.rxMinRfSpan						= attr.attrSpanMinHz;
-				le.rxMaxRfSpan						= attr.attrSpanMaxHz;
-				le.rxInitRfSpan						= attr.attrSpanInitHz;
-				le.rxCurRfSpan						= le.rxInitRfSpan;
+					le.rxMinRfSpan = attr.attrSpanMinHz;
+					le.rxMaxRfSpan = attr.attrSpanMaxHz;
+					le.rxInitRfSpan = attr.attrSpanInitHz;
+					le.rxCurRfSpan = le.rxInitRfSpan;
 
-				le.rxMinRfPwrLo						= attr.attrRXLoLevelMinDbm;
-				le.rxMaxRfPwrLo						= attr.attrRXLoLevelMaxDbm;
-				le.rxInitRfPwrLo					= attr.attrRXLoLevelInitDbm;
-				le.rxCurRfPwrLo						= le.rxInitRfPwrLo;
+					le.rxMinRfPwrLo = attr.attrRXLoLevelMinDbm;
+					le.rxMaxRfPwrLo = attr.attrRXLoLevelMaxDbm;
+					le.rxInitRfPwrLo = attr.attrRXLoLevelInitDbm;
+					le.rxCurRfPwrLo = le.rxInitRfPwrLo;
 
-				le.rxMinRfPwrHi						= attr.attrRXHiLevelMinDbm;
-				le.rxMaxRfPwrHi						= attr.attrRXHiLevelMaxDbm;
-				le.rxInitRfPwrHi					= attr.attrRXHiLevelInitDbm;
-				le.rxCurRfPwrHi						= le.rxInitRfPwrHi;
+					le.rxMinRfPwrHi = attr.attrRXHiLevelMinDbm;
+					le.rxMaxRfPwrHi = attr.attrRXHiLevelMaxDbm;
+					le.rxInitRfPwrHi = attr.attrRXHiLevelInitDbm;
+					le.rxCurRfPwrHi = le.rxInitRfPwrHi;
+				}
+
 
 				le.linkSerPort						= atoi(attr.attrComDevice.c_str());
 				le.linkSerBaud						= attr.attrComBaud;
@@ -926,8 +947,12 @@ void agentModel::fsLoadInstruments(const char* filename)
 				le.linkUsbIdVendor					= attr.attrUsbVendorID;
 				le.linkUsbIdProduct					= attr.attrUsbProductID;
 
+
 				/* Create list */
 				g_am_InstList.push_back(le);
+
+				/* Continue with next entry */
+				it++;
 			}
 		}
 	}
@@ -1219,6 +1244,8 @@ void agentModel::preloadInstruments(void)
 
 bool agentModel::instCheckUsb(am_InstList_t::iterator it)
 {
+	// TODO
+	//xxx
 	return false;
 }
 

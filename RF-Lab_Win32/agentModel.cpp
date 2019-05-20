@@ -936,11 +936,13 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 
 
-				le.linkSerPort						= atoi(attr.attrComDevice.c_str());
-				le.linkSerBaud						= attr.attrComBaud;
-				le.linkSerBits						= attr.attrComBits;
-				le.linkSerParity					= atoi(attr.attrComPar.c_str());
-				le.linkSerStopbits					= attr.attrComStop;
+				if (attr.attrComDevice.length() >= 4) {
+					le.linkSerPort = atoi(attr.attrComDevice.c_str() + 3);
+					le.linkSerBaud = attr.attrComBaud;
+					le.linkSerBits = attr.attrComBits;
+					le.linkSerParity = *(attr.attrComPar.c_str());
+					le.linkSerStopbits = attr.attrComStop;
+				}
 
 				le.linkSerIecAddr					= attr.attrGpibAddr;
 

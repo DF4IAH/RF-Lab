@@ -1034,11 +1034,16 @@ void agentModelPattern::checkInstruments(void)
 			if (checkInstUsb(it)) {
 				/* Use USB connection */
 				it->actSelected = true;
+				it->actRank = 1;
 
 			}
-			else if (checkInstCom(it)) {
+
+			if (checkInstCom(it)) {
 				/* Use COM connection */
-				it->actSelected = true;
+				if (!it->actSelected) {
+					it->actSelected = true;
+					it->actRank = 2;
+				}
 			}
 
 			/* Move to next instrument */

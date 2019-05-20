@@ -129,25 +129,29 @@ void USB_TMC::run(void)
 					agentUsbRsp usbRspData;
 
 					if (_isOpen) {
-						const bool absent = false;
-						const bool connected = true;
+						const bool							absent		= false;
+						const bool							connected	= true;
+						agentComReqUsbDev_t*				rd			= (agentComReqUsbDev_t*) usbReqData.data;
+						libusb_device**						thisDev		= devs;
+						struct libusb_device_descriptor		desc;
 
 						usbRspData.stat = C_USBRSP_IS_DEV_CONNECTED;
 						usbRspData.data = (void*) &absent;
 
-						libusb_device** devAry = devs;
-						while (*devAry) {
-							//(*devAry)->bus_number;
-							//(*devAry)->device_address;
+						while (*thisDev) {
+							int r = libusb_get_device_descriptor(*thisDev, &desc);
+							if (r < 0) {
+								break;
+							}
 
 							/* Check if USB_VENDOR and USB_PRODUCT does match */
-							if (false) {
+							if ((rd->usbIdVendor == desc.idVendor) &&  (rd->usbIdProduct == desc.idProduct)) {
 								usbRspData.data = (void*)&connected;
 								break;
 							}
 
 							/* Move to next entry */
-							devAry++;
+							thisDev++;
 						}
 					}
 					else {
@@ -203,15 +207,18 @@ int USB_TMC::init_libusb(bool show)
 	version = libusb_get_version();
 
 	r = libusb_init(NULL);
-	if (r < 0)
+	if (r < 0) {
 		return r;
+	}
 
 	cnt = libusb_get_device_list(NULL, &devs);
-	if (cnt < 0LL)
+	if (cnt < 0LL) {
 		return (int)cnt;
+	}
 
-	if (show)
+	if (show) {
 		print_devs_libusb(devs);
+	}
 
 	return (int)cnt;
 }

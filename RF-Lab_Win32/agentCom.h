@@ -33,13 +33,16 @@ enum C_COMINST_ENUM {
 
 enum C_USBREQ_ENUM {
 	C_USBREQ_END = 0,
+	C_USBREQ_IS_DEV_CONNECTED,
 	C_USBREQ_DO_REGISTRATION,
 };
 
 enum C_USBRSP_ENUM {
 	C_USBRSP_END = 0,
-	C_USBRSP_REGISTRATION_LIST,
 	C_USBRSP_OK,
+	C_USBRSP_ERR,
+	C_USBRSP_IS_DEV_CONNECTED,
+	C_USBRSP_REGISTRATION_LIST,
 };
 
 enum C_COMREQ_ENUM {
@@ -61,10 +64,22 @@ enum C_COMRSP_ENUM {
 const int C_BUF_SIZE = 256;
 
 
+/* USB REQ */
+
 typedef struct agentUsbReq
 {
 	SHORT								 cmd;
+	void								*data;
 } agentUsbReq_t;
+
+typedef struct agentUsbReqDev
+{
+	WORD								usbIdVendor;
+	WORD								usbIdProduct;
+} agentComReqUsbDev_t;
+
+
+/* USB RSP */
 
 typedef struct agentUsbRsp
 {
@@ -73,17 +88,23 @@ typedef struct agentUsbRsp
 } agentUsbRsp_t;
 
 
+/* COM REQ */
+
 typedef struct agentComReq
 {
 	SHORT								 cmd;
 	string								 parm;
 } agentComReq_t;
 
+
+/* COM RSP */
+
 typedef struct agentComRsp
 {
 	SHORT								 stat;
 	string								 data;
 } agentComRsp_t;
+
 
 
 class agentCom : public agent

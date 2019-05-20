@@ -78,6 +78,7 @@ void USB_TMC::Release(void)
 
 void USB_TMC::run(void)
 {
+	/* Wait until agent is up */
 	while (!_isStarted) {
 		Sleep(10);
 	}
@@ -92,46 +93,91 @@ void USB_TMC::run(void)
 		try {
 			usbReqData = receive(*pAgtUsbTmcReq, AGENT_PATTERN_USBTMC_TIMEOUT);
 
-			if (usbReqData.cmd == C_USBREQ_DO_REGISTRATION) {
-				agentUsbRsp usbRspData;
+			switch (usbReqData.cmd) {
+			case C_USBREQ_DO_REGISTRATION:
+				{
+					agentUsbRsp usbRspData;
 
-				/* Shutdown first */
-				if (_isOpen) {
+					/* Shutdown first */
+					if (_isOpen) {
+						shutdown_libusb();
+						_isOpen = false;
+						Sleep(100);
+					}
+
+					/* Search for any USB devices */
+					int cnt = init_libusb(false);  // Results in  "devs"
+					_isOpen = true;
+
+					#if 0
+					if (cnt > 0) {
+						/* Find known or generic USB_TMC instruments attached to the USB bus */
+						cnt = findInstruments();
+					}
+					#endif
+
+					usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
+					usbRspData.data = ((agentModelPattern*)(g_am->getCurModCtx()))->getAIPtr();
+					send(pAgtUsbTmcRsp, usbRspData);
+
+					_runState = C_USB_TMC_RUNSTATES_RUN;
+				}
+				break;
+
+			case C_USBREQ_IS_DEV_CONNECTED:
+				{
+					agentUsbRsp usbRspData;
+
+					if (_isOpen) {
+						const bool absent = false;
+						const bool connected = true;
+
+						usbRspData.stat = C_USBRSP_IS_DEV_CONNECTED;
+						usbRspData.data = (void*) &absent;
+
+						libusb_device** devAry = devs;
+						while (*devAry) {
+							//(*devAry)->bus_number;
+							//(*devAry)->device_address;
+
+							/* Check if USB_VENDOR and USB_PRODUCT does match */
+							if (false) {
+								usbRspData.data = (void*)&connected;
+								break;
+							}
+
+							/* Move to next entry */
+							devAry++;
+						}
+					}
+					else {
+						usbRspData.stat = C_USBRSP_ERR;
+					}
+
+					send(pAgtUsbTmcRsp, usbRspData);
+					_runState = C_USB_TMC_RUNSTATES_RUN;
+				}
+				break;
+
+			case C_USBREQ_END:
+				{
+					agentUsbRsp usbRspData;
+
+					/* Close the libusb connections */
 					shutdown_libusb();
 					_isOpen = false;
-					Sleep(100);
+
+					usbRspData.stat = C_USBRSP_END;
+					usbRspData.data = nullptr;
+					send(pAgtUsbTmcRsp, usbRspData);
+
+					_running = false;
+					_runState = C_USB_TMC_RUNSTATES_NOOP;
 				}
+				break;
+			}  // switch ()
 
-				/* Search for any USB devices */
-				int cnt = init_libusb(false);  // Results in  "devs"
-				_isOpen = true;
-				if (cnt > 0) {
-					/* Find known or generic USB_TMC instruments attached to the USB bus */
-					cnt = findInstruments();
-				}
-
-				usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
-				usbRspData.data = ((agentModelPattern*) (g_am->getCurModCtx()))->getAIPtr();
-				send(pAgtUsbTmcRsp, usbRspData);
-
-				_runState = C_USB_TMC_RUNSTATES_RUN;
-			}
-
-			else if (usbReqData.cmd == C_USBREQ_END) {
-				agentUsbRsp usbRspData;
-
-				/* Close the libusb connections */
-				shutdown_libusb();
-				_isOpen = false;
-
-				usbRspData.stat = C_USBRSP_END;
-				usbRspData.data = nullptr;
-				send(pAgtUsbTmcRsp, usbRspData);
-
-				_running = false;
-				_runState = C_USB_TMC_RUNSTATES_NOOP;
-			}
-		}
+		}  // try {}
 		catch (const Concurrency::operation_timed_out& e) {
 			(void)e;
 		}

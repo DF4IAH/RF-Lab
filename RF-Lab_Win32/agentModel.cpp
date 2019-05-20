@@ -62,12 +62,12 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 	/* Set up list of instruments */
 	{
 		g_am_InstList_locked = true;
-
-		#ifndef USE_PRELOAD_INSTRUMENTS
-			fsLoadInstruments(_fs_instrument_settings_filename);
-		#else
-			preloadInstruments();
-		#endif
+		
+	#ifndef USE_PRELOAD_INSTRUMENTS
+		fsLoadInstruments(_fs_instrument_settings_filename);
+	#else
+		preloadInstruments();
+	#endif
 		
 		g_am_InstList_locked = false;
 	}

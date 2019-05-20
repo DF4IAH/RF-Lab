@@ -164,6 +164,7 @@ void agentModelPattern::threadsStart(void)
 
 	hThreadAgtUsbTmc = CreateMutex(NULL, FALSE, NULL);		// Mutex is still free
 	pAgtUsbTmc = new USB_TMC(pAgtUsbTmcReq, pAgtUsbTmcRsp);
+	pAgtUsbTmc->start();
 }
 
 void agentModelPattern::threadsStop(void)
@@ -218,6 +219,11 @@ void agentModelPattern::run(void)
 			case C_MODELPATTERN_RUNSTATES_FETCH_SETTINGS:
 			{
 				// TODO: coding
+				/* Check for active Instruments */
+				checkInstruments();
+
+				/* Update GUI with active/absent instruments */
+				//xxx();
 
 				_runState = C_MODELPATTERN_RUNSTATES_COM_REGISTRATION;
 			}
@@ -416,9 +422,6 @@ void agentModelPattern::run(void)
 			case C_MODELPATTERN_RUNSTATES_USB_REGISTRATION:
 			{
 				agentUsbReq usbReqData;
-
-				/* Allow USB_TMC to access communication agent */
-				pAgtUsbTmc->start();
 
 				usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
 				send(*pAgtUsbTmcReq, usbReqData);
@@ -1003,6 +1006,69 @@ void agentModelPattern::run(void)
 
 	_done = true;
 	agent::done();
+}
+
+
+void agentModelPattern::checkInstruments(void)
+{
+	if (g_am_InstList.size()) {
+		am_InstList_t::iterator it = g_am_InstList.begin();
+
+		/* Init LIBUSB */
+		{
+			agentUsbReq usbReqData;
+			usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
+			send(*pAgtUsbTmcReq, usbReqData);
+
+			/* Wait for response */
+			agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
+			SHORT stat = usbRspData.stat;
+			if (stat != C_USBRSP_REGISTRATION_LIST) {
+				return;
+			}
+		}
+
+		/* Iterate over all instruments and check which do respond */
+		while (it != g_am_InstList.end()) {
+			/* From high to low priority */
+			if (checkInstUsb(it)) {
+				/* Use USB connection */
+				it->actSelected = true;
+
+			}
+			else if (checkInstCom(it)) {
+				/* Use COM connection */
+				it->actSelected = true;
+			}
+
+			/* Move to next instrument */
+			it++;
+		}
+	}
+}
+
+bool agentModelPattern::checkInstUsb(am_InstList_t::iterator it)
+{
+	if (it->linkUsbIdVendor || it->linkUsbIdProduct) {
+		agentUsbReq usbReqData;
+		const agentUsbReqDev data = { it->linkUsbIdVendor, it->linkUsbIdProduct };
+		usbReqData.cmd = C_USBREQ_IS_DEV_CONNECTED;
+		usbReqData.data = (void*)&data;
+		send(*pAgtUsbTmcReq, usbReqData);
+
+		agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
+		bool result = *((bool*)usbRspData.data);
+		return result;
+	}
+	else {
+		return false;
+	}
+}
+
+bool agentModelPattern::checkInstCom(am_InstList_t::iterator it)
+{
+
+	return false;
 }
 
 

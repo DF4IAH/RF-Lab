@@ -190,67 +190,70 @@ private:
 
 
 public:
-	explicit	agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
-	ArrayOfInstruments_t* getAIPtr(void);
-	void		run(void);
+	explicit				agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
+	ArrayOfInstruments_t*	getAIPtr(void);
+	void					run(void);
 
 private:
-	void		agentsInit(void);
-	void		agentsShutdown(void);
-	void		threadsStart(void);
-	void		threadsStop(void);
-	instrument_t*	addSerInstrument(	INSTRUMENT_ENUM_t type, 
-										agentCom* pAgtCom, uint8_t comPort, uint32_t comBaud, uint8_t comBits, uint8_t comParity, uint8_t comStopbits, 
-										bool isIec, uint8_t iecAddr,
-										string idn);
-	void		sendPos(long tickPos);
+	void					agentsInit(void);
+	void					agentsShutdown(void);
+	void					threadsStart(void);
+	void					threadsStop(void);
+	void					checkInstruments(void);
+	bool					checkInstUsb(am_InstList_t::iterator it);
+	bool					checkInstCom(am_InstList_t::iterator it);
+	instrument_t*			addSerInstrument(INSTRUMENT_ENUM_t type,
+								agentCom* pAgtCom, uint8_t comPort, uint32_t comBaud, uint8_t comBits, uint8_t comParity, uint8_t comStopbits, 
+								bool isIec, uint8_t iecAddr,
+								string idn);
+	void					sendPos(long tickPos);
 
 public:
 	/* overwriting agentModel member functions() */
-	bool		isRunning(void);
-	bool		shutdown(void);
-	void		Release(void);
-	void		wmCmd(int wmId, LPVOID arg = nullptr);
-	static void	procThreadProcessID(void* pContext);
+	bool					isRunning(void);
+	bool					shutdown(void);
+	void					Release(void);
+	void					wmCmd(int wmId, LPVOID arg = nullptr);
+	static void				procThreadProcessID(void* pContext);
 
 	/* agentModelPattern - GENERAL */
-	void		setSimuMode(int simuMode);
-	int			getSimuMode(void);
-	void		runProcess(int processID, int arg);
-	void		initDevices(void);
-	void        setStatusPosition(double pos);
+	void					setSimuMode(int simuMode);
+	int						getSimuMode(void);
+	void					runProcess(int processID, int arg);
+	void					initDevices(void);
+	void					setStatusPosition(double pos);
 
 	/* agentModelPattern - Rotor */
-	long		requestPos(void);
-	void		setLastTickPos(long pos);
-	long		getLastTickPos(void);
+	long					requestPos(void);
+	void					setLastTickPos(long pos);
+	long					getLastTickPos(void);
 
 	/* agentModelPattern - TX */
-	void		setTxOnState(bool checked);
-	bool		getTxOnState(void);
-	bool		getTxOnDefault(void);
-	void		setTxFrequencyValue(double value);
-	double		getTxFrequencyValue(void);
-	double		getTxFrequencyDefault(void);
-	void		setTxPwrValue(double value);
-	double		getTxPwrValue(void);
-	double		getTxPwrDefault(void);
+	void					setTxOnState(bool checked);
+	bool					getTxOnState(void);
+	bool					getTxOnDefault(void);
+	void					setTxFrequencyValue(double value);
+	double					getTxFrequencyValue(void);
+	double					getTxFrequencyDefault(void);
+	void					setTxPwrValue(double value);
+	double					getTxPwrValue(void);
+	double					getTxPwrDefault(void);
 
 	/* agentModelPattern - RX */
-	void		setRxFrequencyValue(double value);
-	double		getRxFrequencyValue(void);
-	void		setRxSpanValue(double value);
-	double		getRxSpanValue(void);
-	double		getRxSpanDefault(void);
-	void		setRxLevelMaxValue(double value);
-	double		getRxLevelMaxValue(void);
-	bool		getRxMarkerPeak(double* retX, double* retY);
+	void					setRxFrequencyValue(double value);
+	double					getRxFrequencyValue(void);
+	void					setRxSpanValue(double value);
+	double					getRxSpanValue(void);
+	double					getRxSpanDefault(void);
+	void					setRxLevelMaxValue(double value);
+	double					getRxLevelMaxValue(void);
+	bool					getRxMarkerPeak(double* retX, double* retY);
 
 	/* Tools */
-	int			runningProcessPattern(double degStartPos, double degEndPos, double degResolution);
- static double	calcTicks2Deg(long ticks);
- static long	calcDeg2Ticks(double deg);
- static DWORD	calcDeg2Ms(double deg);
- static DWORD	calcTicks2Ms(long ticks);
+	int						runningProcessPattern(double degStartPos, double degEndPos, double degResolution);
+	static double			calcTicks2Deg(long ticks);
+	static long				calcDeg2Ticks(double deg);
+	static DWORD			calcDeg2Ms(double deg);
+	static DWORD			calcTicks2Ms(long ticks);
  
 };

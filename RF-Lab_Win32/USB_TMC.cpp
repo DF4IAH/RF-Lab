@@ -103,7 +103,7 @@ void USB_TMC::run(void)
 				}
 
 				/* Search for any USB devices */
-				int cnt = init_libusb(false);
+				int cnt = init_libusb(false);  // Results in  "devs"
 				_isOpen = true;
 				if (cnt > 0) {
 					/* Find known or generic USB_TMC instruments attached to the USB bus */

@@ -15,6 +15,12 @@ using namespace concurrency;
 using namespace std;
 
 
+
+// TODO: remove that historic config loader
+//#define USE_PRELOAD_INSTRUMENTS
+
+
+
 typedef enum C_MODELREQ_ENUM {
 	C_MODELREQ_END = 0
 } C_MODELREQ_ENUM_t;
@@ -130,11 +136,13 @@ protected:
 
 private:
 
+#ifndef USE_PRELOAD_INSTRUMENTS
 	void			fsLoadInstruments(const char* filename);
 	void			confAttrClear(confAttributes_t* cA);
 	void			pushInstrumentDataset(map<string, confAttributes_t>* mapConfig, string name, const confAttributes_t* cA);
-	void			scanInstruments(void);
-	void			preloadInstruments(void);  // TODO: remove me!
+#else
+	void			preloadInstruments(void);  // Old
+#endif
 
 	bool			instCheckUsb(am_InstList_t::iterator it);
 	bool			instCheckCom(am_InstList_t::iterator it);

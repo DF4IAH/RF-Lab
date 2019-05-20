@@ -65,9 +65,8 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 
 		#ifndef USE_PRELOAD_INSTRUMENTS
 			fsLoadInstruments(_fs_instrument_settings_filename);
-			scanInstruments();
 		#else
-			preloadInstruments();	// TODO: remove me later!
+			preloadInstruments();
 		#endif
 		
 		g_am_InstList_locked = false;
@@ -456,6 +455,7 @@ double agentModel::getRxLevelMaxValue(void)
 
 
 
+#ifndef USE_PRELOAD_INSTRUMENTS
 void agentModel::fsLoadInstruments(const char* filename)
 {
 	char							errMsgBuf[128];
@@ -864,7 +864,8 @@ void agentModel::fsLoadInstruments(const char* filename)
 				am_InstListEntry_t le = { 0 };
 
 				/* General settings */
-				le.listEntryName					= attr.attrName;
+				le.listId			= g_am_InstList.size();
+				le.listEntryName	= attr.attrName;
 
 				if (!_strnicmp(attr.attrType.c_str(), "Rot", 3)) {
 					le.listFunction = INST_FUNCTION_ROTOR;
@@ -1155,7 +1156,9 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		(*mC)[name] = attrTo;
 	}
 }
+#endif
 
+#ifdef NEW_UNUSED
 void agentModel::scanInstruments(void)
 {
 	am_InstList_t::iterator it = g_am_InstList.begin();
@@ -1172,12 +1175,15 @@ void agentModel::scanInstruments(void)
 			/* Use COM connection */
 			instActivateCom(it);
 		}
+
+		/* Move to next instrument */
+		it++;
 	}
 }
+#endif
 
 
 #ifdef USE_PRELOAD_INSTRUMENTS
-// TODO: remove me later!
 void agentModel::preloadInstruments(void)
 {
 	am_InstListEntry_t entry;
@@ -1193,7 +1199,7 @@ void agentModel::preloadInstruments(void)
 	entry.actLink = false;
 
 	entry.linkType = LINKTYPE_SER;
-	entry.linkÍdnSearch = string("SC300");
+	entry.linkIdnSearch = string("SC300");
 
 	entry.linkSerPort = 3;
 	entry.linkSerBaud = CBR_19200;
@@ -1220,7 +1226,7 @@ void agentModel::preloadInstruments(void)
 	entry.actLink = false;
 
 	entry.linkType = LINKTYPE_USB;
-	entry.linkÍdnSearch = string("SMR40");
+	entry.linkIdnSearch = string("SMR40");
 
 	entry.linkUsbIdVendor = 0x0aad;
 	entry.linkUsbIdProduct = 0xffff;  // TODO: enter correct value
@@ -1247,7 +1253,7 @@ void agentModel::preloadInstruments(void)
 	entry.actLink = false;
 
 	entry.linkType = LINKTYPE_IEC_VIA_SER;
-	entry.linkÍdnSearch = string("FSEK 20");
+	entry.linkIdnSearch = string("FSEK 20");
 
 	entry.linkSerPort = 4;
 	entry.linkSerBaud = CBR_19200;
@@ -1260,15 +1266,15 @@ void agentModel::preloadInstruments(void)
 	entry.rxInitRfQrg = 18e+9;
 	entry.rxInitRfSpan = 10e+6;
 	entry.rxInitRfPwrLo = -60.;
-	entry.rxInitRfPwrDynamic = 60.;
+	//entry.rxInitRfPwrDynamic = 60.;
 	entry.rxMinRfQrg = 1e+6;
 	entry.rxMinRfSpan = 10e+3;
 	entry.rxMinRfPwrLo = -60.;
-	entry.rxMinRfPwrDynamic = 10.;
+	//entry.rxMinRfPwrDynamic = 10.;
 	entry.rxMaxRfQrg = 40e+9;
 	entry.rxMaxRfSpan = 40e+9;
 	entry.rxMaxRfPwrLo = 0.;
-	entry.rxMaxRfPwrDynamic = 60.;
+	//entry.rxMaxRfPwrDynamic = 60.;
 
 	g_am_InstList.push_back(entry);
 }

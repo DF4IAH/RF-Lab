@@ -147,5 +147,4 @@ protected:
 public:
 	static string int2String(int val);
 	static string double2String(double val);
-
 };

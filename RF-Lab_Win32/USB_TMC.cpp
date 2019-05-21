@@ -95,90 +95,91 @@ void USB_TMC::run(void)
 
 			switch (usbReqData.cmd) {
 			case C_USBREQ_DO_REGISTRATION:
-				{
-					agentUsbRsp usbRspData;
+			{
+				agentUsbRsp usbRspData;
 
-					/* Shutdown first */
-					if (_isOpen) {
-						shutdown_libusb();
-						_isOpen = false;
-						Sleep(100);
-					}
-
-					/* Search for any USB devices */
-					int cnt = init_libusb(false);  // Results in  "devs"
-					_isOpen = true;
-
-					#if 0
-					if (cnt > 0) {
-						/* Find known or generic USB_TMC instruments attached to the USB bus */
-						cnt = findInstruments();
-					}
-					#endif
-
-					usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
-					usbRspData.data = ((agentModelPattern*)(g_am->getCurModCtx()))->getAIPtr();
-					send(pAgtUsbTmcRsp, usbRspData);
-
-					_runState = C_USB_TMC_RUNSTATES_RUN;
-				}
-				break;
-
-			case C_USBREQ_IS_DEV_CONNECTED:
-				{
-					agentUsbRsp usbRspData;
-
-					if (_isOpen) {
-						const bool							absent		= false;
-						const bool							connected	= true;
-						agentComReqUsbDev_t*				rd			= (agentComReqUsbDev_t*) usbReqData.data;
-						libusb_device**						thisDev		= devs;
-						struct libusb_device_descriptor		desc;
-
-						usbRspData.stat = C_USBRSP_IS_DEV_CONNECTED;
-						usbRspData.data = (void*) &absent;
-
-						while (*thisDev) {
-							int r = libusb_get_device_descriptor(*thisDev, &desc);
-							if (r < 0) {
-								break;
-							}
-
-							/* Check if USB_VENDOR and USB_PRODUCT does match */
-							if ((rd->usbIdVendor == desc.idVendor) &&  (rd->usbIdProduct == desc.idProduct)) {
-								usbRspData.data = (void*)&connected;
-								break;
-							}
-
-							/* Move to next entry */
-							thisDev++;
-						}
-					}
-					else {
-						usbRspData.stat = C_USBRSP_ERR;
-					}
-
-					send(pAgtUsbTmcRsp, usbRspData);
-					_runState = C_USB_TMC_RUNSTATES_RUN;
-				}
-				break;
-
-			case C_USBREQ_END:
-				{
-					agentUsbRsp usbRspData;
-
-					/* Close the libusb connections */
+				/* Shutdown first */
+				if (_isOpen) {
 					shutdown_libusb();
 					_isOpen = false;
-
-					usbRspData.stat = C_USBRSP_END;
-					usbRspData.data = nullptr;
-					send(pAgtUsbTmcRsp, usbRspData);
-
-					_running = false;
-					_runState = C_USB_TMC_RUNSTATES_NOOP;
+					Sleep(100);
 				}
-				break;
+
+				/* Search for any USB devices */
+				int cnt = init_libusb(false);  // Results in  "devs"
+				_isOpen = true;
+
+				#if 0
+				if (cnt > 0) {
+					/* Find known or generic USB_TMC instruments attached to the USB bus */
+					cnt = findInstruments();
+				}
+				#endif
+
+				usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
+				usbRspData.data = ((agentModelPattern*)(g_am->getCurModCtx()))->getAIPtr();
+				send(pAgtUsbTmcRsp, usbRspData);
+
+				_runState = C_USB_TMC_RUNSTATES_RUN;
+			}
+			break;
+
+			case C_USBREQ_IS_DEV_CONNECTED:
+			{
+				agentUsbRsp usbRspData;
+
+				if (_isOpen) {
+					const bool							absent		= false;
+					const bool							connected	= true;
+					agentComReqUsbDev_t*				rd			= (agentComReqUsbDev_t*) usbReqData.data;
+					libusb_device**						thisDev		= devs;
+					struct libusb_device_descriptor		desc;
+
+					usbRspData.stat = C_USBRSP_IS_DEV_CONNECTED;
+					usbRspData.data = (void*) &absent;
+
+					while (*thisDev) {
+						int r = libusb_get_device_descriptor(*thisDev, &desc);
+						if (r < 0) {
+							break;
+						}
+
+						/* Check if USB_VENDOR and USB_PRODUCT does match */
+						if ((rd->usbIdVendor == desc.idVendor) &&  (rd->usbIdProduct == desc.idProduct)) {
+							usbRspData.data = (void*)&connected;
+							break;
+						}
+
+						/* Move to next entry */
+						thisDev++;
+					}
+				}
+				else {
+					usbRspData.stat = C_USBRSP_ERR;
+				}
+
+				send(pAgtUsbTmcRsp, usbRspData);
+				_runState = C_USB_TMC_RUNSTATES_RUN;
+			}
+			break;
+
+			case C_USBREQ_END:
+			{
+				agentUsbRsp usbRspData;
+
+				/* Close the libusb connections */
+				shutdown_libusb();
+				_isOpen = false;
+
+				usbRspData.stat = C_USBRSP_END;
+				usbRspData.data = nullptr;
+				send(pAgtUsbTmcRsp, usbRspData);
+
+				_running = false;
+				_runState = C_USB_TMC_RUNSTATES_NOOP;
+			}
+			break;
+
 			}  // switch ()
 
 		}  // try {}
@@ -292,7 +293,8 @@ void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descripto
 	wchar_t strbuf[256];
 
 	switch (dev_cap->bDevCapabilityType) {
-	case LIBUSB_BT_USB_2_0_EXTENSION: {
+	case LIBUSB_BT_USB_2_0_EXTENSION: 
+	{
 		struct libusb_usb_2_0_extension_descriptor *usb_2_0_ext = NULL;
 		libusb_get_usb_2_0_extension_descriptor(NULL, dev_cap, &usb_2_0_ext);
 		if (usb_2_0_ext) {
@@ -300,9 +302,11 @@ void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descripto
 			wsprintf(strbuf, L"      attributes             : %02X\n", usb_2_0_ext->bmAttributes);  OutputDebugString(strbuf);
 			libusb_free_usb_2_0_extension_descriptor(usb_2_0_ext);
 		}
-		break;
 	}
-	case LIBUSB_BT_SS_USB_DEVICE_CAPABILITY: {
+	break;
+
+	case LIBUSB_BT_SS_USB_DEVICE_CAPABILITY: 
+	{
 		struct libusb_ss_usb_device_capability_descriptor *ss_usb_device_cap = NULL;
 		libusb_get_ss_usb_device_capability_descriptor(NULL, dev_cap, &ss_usb_device_cap);
 		if (ss_usb_device_cap) {
@@ -312,17 +316,20 @@ void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descripto
 			wsprintf(strbuf, L"      supported functionality: %02X\n", ss_usb_device_cap->bFunctionalitySupport);  OutputDebugString(strbuf);
 			libusb_free_ss_usb_device_capability_descriptor(ss_usb_device_cap);
 		}
-		break;
 	}
-	case LIBUSB_BT_CONTAINER_ID: {
+	break;
+
+	case LIBUSB_BT_CONTAINER_ID: 
+	{
 		struct libusb_container_id_descriptor *container_id = NULL;
 		libusb_get_container_id_descriptor(NULL, dev_cap, &container_id);
 		if (container_id) {
 			wsprintf(strbuf, L"    Container ID:\n      %s\n", uuid_to_string_libusb(container_id->ContainerID));  OutputDebugString(strbuf);
 			libusb_free_container_id_descriptor(container_id);
 		}
-		break;
 	}
+	break;
+
 	default:
 		wsprintf(strbuf, L"    Unknown BOS device capability %02x:\n", dev_cap->bDevCapabilityType);  OutputDebugString(strbuf);
 	}
@@ -2053,7 +2060,8 @@ static void read_ms_winsub_feature_descriptors(libusb_device_handle *handle, uin
 static void print_device_cap(struct libusb_bos_dev_capability_descriptor *dev_cap)
 {
 	switch (dev_cap->bDevCapabilityType) {
-	case LIBUSB_BT_USB_2_0_EXTENSION: {
+	case LIBUSB_BT_USB_2_0_EXTENSION: 
+	{
 		struct libusb_usb_2_0_extension_descriptor *usb_2_0_ext = NULL;
 		libusb_get_usb_2_0_extension_descriptor(NULL, dev_cap, &usb_2_0_ext);
 		if (usb_2_0_ext) {
@@ -2061,9 +2069,11 @@ static void print_device_cap(struct libusb_bos_dev_capability_descriptor *dev_ca
 			printf("      attributes             : %02X\n", usb_2_0_ext->bmAttributes);
 			libusb_free_usb_2_0_extension_descriptor(usb_2_0_ext);
 		}
-		break;
 	}
-	case LIBUSB_BT_SS_USB_DEVICE_CAPABILITY: {
+	break;
+
+	case LIBUSB_BT_SS_USB_DEVICE_CAPABILITY: 
+	{
 		struct libusb_ss_usb_device_capability_descriptor *ss_usb_device_cap = NULL;
 		libusb_get_ss_usb_device_capability_descriptor(NULL, dev_cap, &ss_usb_device_cap);
 		if (ss_usb_device_cap) {
@@ -2073,17 +2083,20 @@ static void print_device_cap(struct libusb_bos_dev_capability_descriptor *dev_ca
 			printf("      supported functionality: %02X\n", ss_usb_device_cap->bFunctionalitySupport);
 			libusb_free_ss_usb_device_capability_descriptor(ss_usb_device_cap);
 		}
-		break;
 	}
-	case LIBUSB_BT_CONTAINER_ID: {
+	break;
+
+	case LIBUSB_BT_CONTAINER_ID: 
+	{
 		struct libusb_container_id_descriptor *container_id = NULL;
 		libusb_get_container_id_descriptor(NULL, dev_cap, &container_id);
 		if (container_id) {
 			printf("    Container ID:\n      %s\n", uuid_to_string(container_id->ContainerID));
 			libusb_free_container_id_descriptor(container_id);
 		}
-		break;
 	}
+	break;
+
 	default:
 		printf("    Unknown BOS device capability %02x:\n", dev_cap->bDevCapabilityType);
 	}

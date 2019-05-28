@@ -84,6 +84,10 @@ typedef struct confAttributes
 	float								attrRXHiLevelMaxDbm = 0.0f;
 	float								attrRXHiLevelInitDbm = 0.0f;
 
+	float								attrVnaNbPointsMin = 0.0f;
+	float								attrVnaNbPointsMax = 0.0f;
+	float								attrVnaNbPointsInit = 0.0f;
+
 	string								attrComDevice;
 	uint16_t							attrComBaud = 0U;
 	uint8_t								attrComBits = 0U;

@@ -14,6 +14,7 @@ typedef enum Inst_Function {
 	INST_FUNCTION_ROTOR,
 	INST_FUNCTION_TX,
 	INST_FUNCTION_RX,
+	INST_FUNCTION_VNA,
 } Inst_Function_t;
 
 
@@ -108,6 +109,14 @@ typedef struct am_InstListEntry {
 	double								rxMaxRfPwrHi;
 	double								rxInitRfPwrHi;
 	double								rxCurRfPwrHi;
+
+
+	/* VNA extras */
+	double								vnaMinNbPoints;
+	double								vnaMaxNbPoints;
+	double								vnaInitNbPoints;
+	double								vnaCurNbPoints;
+
 } am_InstListEntry_t;
 
 typedef list<am_InstListEntry_t>		am_InstList_t;

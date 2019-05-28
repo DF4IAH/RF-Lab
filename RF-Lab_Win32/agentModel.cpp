@@ -544,159 +544,183 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 
 				/* Type: Rotor */
-				else if ((variant == 'I') && !_strnicmp(p, "Turn_left_max_deg=", 18)) {
+				else if ((variant == 'I') && !_strnicmp(p, "Rot_Turn_left_max_deg=", 22)) {
 					try {
-						cA.attrTurnLeftMaxDeg = stof(string(p + 18, p + lineLen));
+						cA.attrTurnLeftMaxDeg = stof(string(p + 22, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Turn_right_max_deg=", 19)) {
+				else if ((variant == 'I') && !_strnicmp(p, "Rot_Turn_right_max_deg=", 23)) {
 					try {
-						cA.attrTurnRightMaxDeg = stof(string(p + 19, p + lineLen));
+						cA.attrTurnRightMaxDeg = stof(string(p + 23, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Ticks_360deg=", 13)) {
+				else if ((variant == 'I') && !_strnicmp(p, "Rot_Ticks_360deg=", 17)) {
 					try {
-						cA.attrTicks360Deg = stoi(string(p + 13, p + lineLen));
+						cA.attrTicks360Deg = stoi(string(p + 17, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Speed_Start=", 12)) {
+				else if ((variant == 'I') && !_strnicmp(p, "Rot_Speed_Start=", 16)) {
 					try {
-						cA.attrSpeedStart = stof(string(p + 12, p + lineLen));
+						cA.attrSpeedStart = stof(string(p + 16, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Speed_Accl=", 11)) {
+				else if ((variant == 'I') && !_strnicmp(p, "Rot_Speed_Accl=", 15)) {
 					try {
-						cA.attrSpeedAccl = stof(string(p + 11, p + lineLen));
+						cA.attrSpeedAccl = stof(string(p + 15, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Speed_Top=", 10)) {
+				else if ((variant == 'I') && !_strnicmp(p, "Rot_Speed_Top=", 14)) {
 					try {
-						cA.attrSpeedTop = stof(string(p + 10, p + lineLen));
+						cA.attrSpeedTop = stof(string(p + 14, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 
 				/* Type: Generator & Spectrum-Analyzer */
-				else if ((variant == 'I') && !_strnicmp(p, "Freq_min_Hz=", 12)) {
+				else if ((variant == 'I') && !_strnicmp(p, "TXRX_Freq_min_Hz=", 17)) {
 					try {
-						cA.attrFreqMinHz = stof(string(p + 12, p + lineLen));
+						cA.attrFreqMinHz = stof(string(p + 17, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Freq_max_Hz=", 12)) {
+				else if ((variant == 'I') && !_strnicmp(p, "TXRX_Freq_max_Hz=", 17)) {
 					try {
-						cA.attrFreqMaxHz = stof(string(p + 12, p + lineLen));
+						cA.attrFreqMaxHz = stof(string(p + 17, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Freq_init_Hz=", 13)) {
+				else if ((variant == 'I') && !_strnicmp(p, "TXRX_Freq_init_Hz=", 18)) {
 					try {
-						cA.attrFreqInitHz = stof(string(p + 13, p + lineLen));
+						cA.attrFreqInitHz = stof(string(p + 18, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 
 				/* Type: Generator */
-				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_min_dBm=", 16)) {
+				else if ((variant == 'I') && !_strnicmp(p, "TX_Level_min_dBm=", 17)) {
 					try {
-						cA.attrTXlevelMinDbm = stof(string(p + 16, p + lineLen));
+						cA.attrTXlevelMinDbm = stof(string(p + 17, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_max_dBm=", 16)) {
+				else if ((variant == 'I') && !_strnicmp(p, "TX_Level_max_dBm=", 17)) {
 					try {
-						cA.attrTXlevelMaxDbm = stof(string(p + 16, p + lineLen));
+						cA.attrTXlevelMaxDbm = stof(string(p + 17, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "TXlevel_init_dBm=", 17)) {
+				else if ((variant == 'I') && !_strnicmp(p, "TX_Level_init_dBm=", 18)) {
 					try {
-						cA.attrTXlevelInitDbm = stof(string(p + 17, p + lineLen));
+						cA.attrTXlevelInitDbm = stof(string(p + 18, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
 
 				/* Type: Spectrum-Analyzer */
-				else if ((variant == 'I') && !_strnicmp(p, "Span_min_Hz=", 12)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_Span_min_Hz=", 15)) {
 					try {
-						cA.attrSpanMinHz = stof(string(p + 12, p + lineLen));
+						cA.attrSpanMinHz = stof(string(p + 15, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Span_max_Hz=", 12)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_Span_max_Hz=", 15)) {
 					try {
-						cA.attrSpanMaxHz = stof(string(p + 12, p + lineLen));
+						cA.attrSpanMaxHz = stof(string(p + 15, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "Span_init_Hz=", 13)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_Span_init_Hz=", 16)) {
 					try {
-						cA.attrSpanInitHz = stof(string(p + 13, p + lineLen));
+						cA.attrSpanInitHz = stof(string(p + 16, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "RXLoLevel_min_dBm=", 18)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_LoLevel_min_dBm=", 19)) {
 					try {
-						cA.attrRXLoLevelMinDbm = stof(string(p + 18, p + lineLen));
+						cA.attrRXLoLevelMinDbm = stof(string(p + 19, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "RXLoLevel_max_dBm=", 18)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_LoLevel_max_dBm=", 19)) {
 					try {
-						cA.attrRXLoLevelMaxDbm = stof(string(p + 18, p + lineLen));
+						cA.attrRXLoLevelMaxDbm = stof(string(p + 19, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "RXLoLevel_init_dBm=", 19)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_LoLevel_init_dBm=", 20)) {
 					try {
-						cA.attrRXLoLevelInitDbm = stof(string(p + 19, p + lineLen));
+						cA.attrRXLoLevelInitDbm = stof(string(p + 20, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "RXHiLevel_min_dBm=", 18)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_HiLevel_min_dBm=", 19)) {
 					try {
-						cA.attrRXHiLevelMinDbm = stof(string(p + 18, p + lineLen));
+						cA.attrRXHiLevelMinDbm = stof(string(p + 19, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "RXHiLevel_max_dBm=", 18)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_HiLevel_max_dBm=", 19)) {
 					try {
-						cA.attrRXHiLevelMaxDbm = stof(string(p + 18, p + lineLen));
+						cA.attrRXHiLevelMaxDbm = stof(string(p + 19, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
-				else if ((variant == 'I') && !_strnicmp(p, "RXHiLevel_init_dBm=", 19)) {
+				else if ((variant == 'I') && !_strnicmp(p, "RX_HiLevel_init_dBm=", 20)) {
 					try {
-						cA.attrRXHiLevelInitDbm = stof(string(p + 19, p + lineLen));
+						cA.attrRXHiLevelInitDbm = stof(string(p + 20, p + lineLen));
 					}
 					catch (...) {
 					}
 				}
+
+				/* Type: VNA extras */
+				else if ((variant == 'I') && !_strnicmp(p, "VNA_NbPoints_min=", 17)) {
+					try {
+						cA.attrVnaNbPointsMin = stof(string(p + 17, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "VNA_NbPoints_max=", 17)) {
+					try {
+						cA.attrVnaNbPointsMax = stof(string(p + 17, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'I') && !_strnicmp(p, "VNA_NbPoints_init=", 18)) {
+					try {
+						cA.attrVnaNbPointsInit = stof(string(p + 18, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+
 
 				/* INTERFACE attributes */
 				else if ((variant == 'i') && !_strnicmp(p, "Name=", 5)) {
@@ -873,6 +897,9 @@ void agentModel::fsLoadInstruments(const char* filename)
 				else if (!_strnicmp(attr.attrType.c_str(), "Spec", 4)) {
 					le.listFunction = INST_FUNCTION_RX;
 				}
+				else if (!_strnicmp(attr.attrType.c_str(), "VNA", 3)) {
+					le.listFunction = INST_FUNCTION_VNA;
+				}
 				else if (!_strnicmp(attr.attrType.c_str(), "Gen", 3)) {
 					le.listFunction = INST_FUNCTION_TX;
 				}
@@ -934,6 +961,15 @@ void agentModel::fsLoadInstruments(const char* filename)
 					le.rxMaxRfPwrHi = attr.attrRXHiLevelMaxDbm;
 					le.rxInitRfPwrHi = attr.attrRXHiLevelInitDbm;
 					le.rxCurRfPwrHi = le.rxInitRfPwrHi;
+				}
+
+
+				/* VNA extra settings */
+				if (le.listFunction == INST_FUNCTION_RX) {
+					le.vnaMinNbPoints = attr.attrVnaNbPointsMin;
+					le.vnaMaxNbPoints = attr.attrVnaNbPointsMax;
+					le.vnaInitNbPoints = attr.attrVnaNbPointsInit;
+					le.vnaCurNbPoints = le.vnaInitNbPoints;
 				}
 
 
@@ -1010,7 +1046,11 @@ void agentModel::confAttrClear(confAttributes_t* cA)
 	cA->attrRXHiLevelMinDbm			= 0.0f;
 	cA->attrRXHiLevelMaxDbm			= 0.0f;
 	cA->attrRXHiLevelInitDbm		= 0.0f;
-	
+
+	cA->attrVnaNbPointsMin			= 0.0f;
+	cA->attrVnaNbPointsMax			= 0.0f;
+	cA->attrVnaNbPointsInit			= 0.0f;
+
 	cA->attrComDevice.clear();
 	cA->attrComBaud					= 0U;
 	cA->attrComBits					= 0U;
@@ -1112,6 +1152,17 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		}
 		if (attrFrom.attrRXHiLevelInitDbm) {
 			attrTo.attrRXHiLevelInitDbm = attrFrom.attrRXHiLevelInitDbm;
+		}
+
+		/* VNA extras */
+		if (attrFrom.attrVnaNbPointsMin) {
+			attrTo.attrVnaNbPointsMin = attrFrom.attrVnaNbPointsMin;
+		}
+		if (attrFrom.attrVnaNbPointsMax) {
+			attrTo.attrVnaNbPointsMax = attrFrom.attrVnaNbPointsMax;
+		}
+		if (attrFrom.attrVnaNbPointsInit) {
+			attrTo.attrVnaNbPointsInit = attrFrom.attrVnaNbPointsInit;
 		}
 
 		/* COM */

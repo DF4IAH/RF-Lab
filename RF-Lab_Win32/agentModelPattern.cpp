@@ -1083,7 +1083,7 @@ bool agentModelPattern::checkInstCom(am_InstList_t::iterator it)
 
 	/* Different handling of the serial stream */
 	switch (it->listFunction) {
-	case INST_FUNCTION_ROTOR:
+	case INST_FUNC_ROTOR:
 	{
 		if (pAgtCom[C_COMINST_ROT]) {
 			/* Start COM server for the rotor (turntable) */
@@ -1105,7 +1105,7 @@ bool agentModelPattern::checkInstCom(am_InstList_t::iterator it)
 					comReqData.cmd = C_COMREQ_CLOSE;
 					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 					receive(*(pAgtComRsp[C_COMINST_ROT]));
-XXX // TODO: here, new code to check!
+// TODO: here, new code to check!
 				}
 				else {
 					addSerInstrument(INSTRUMENT_ROTORS_SER__ZOLIX_SC300,
@@ -1122,7 +1122,7 @@ XXX // TODO: here, new code to check!
 	}
 	break;
 
-	case INST_FUNCTION_TX:
+	case INST_FUNC_GEN:
 	{
 		/* Start COM server for the TX */
 		if (pAgtCom[C_COMINST_TX]) {
@@ -1132,7 +1132,7 @@ XXX // TODO: here, new code to check!
 	}
 	break;
 
-	case INST_FUNCTION_RX:
+	case INST_FUNC_SPEC:
 	{
 		/* Start COM server for the RX */
 		if (pAgtCom[C_COMINST_RX]) {

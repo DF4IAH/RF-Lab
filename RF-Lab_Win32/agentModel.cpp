@@ -892,16 +892,16 @@ void agentModel::fsLoadInstruments(const char* filename)
 				le.listEntryName	= attr.attrName;
 
 				if (!_strnicmp(attr.attrType.c_str(), "Rot", 3)) {
-					le.listFunction = INST_FUNCTION_ROTOR;
+					le.listFunction = INST_FUNC_ROTOR;
 				}
 				else if (!_strnicmp(attr.attrType.c_str(), "Spec", 4)) {
-					le.listFunction = INST_FUNCTION_RX;
+					le.listFunction = INST_FUNC_SPEC;
 				}
 				else if (!_strnicmp(attr.attrType.c_str(), "VNA", 3)) {
-					le.listFunction = INST_FUNCTION_VNA;
+					le.listFunction = INST_FUNC_VNA;
 				}
 				else if (!_strnicmp(attr.attrType.c_str(), "Gen", 3)) {
-					le.listFunction = INST_FUNCTION_TX;
+					le.listFunction = INST_FUNC_GEN;
 				}
 				else {
 					/* Do not include other devices into the instrument list */
@@ -909,8 +909,8 @@ void agentModel::fsLoadInstruments(const char* filename)
 					continue;
 				}
 				
-				/* Rotor settings */
-				if (le.listFunction == INST_FUNCTION_ROTOR) {
+				/* ROTOR settings */
+				if (le.listFunction == INST_FUNC_ROTOR) {
 					le.rotInitTicksPer360deg = (int)attr.attrTicks360Deg;
 					le.rotInitTopSpeed = (int)attr.attrSpeedTop;
 					le.rotInitAcclSpeed = (int)attr.attrSpeedAccl;
@@ -923,8 +923,8 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 
 
-				/* TX settings */
-				if (le.listFunction == INST_FUNCTION_TX) {
+				/* GEN settings */
+				if (le.listFunction == INST_FUNC_GEN) {
 					le.txInitRfOn = false;
 					le.txCurRfOn = le.txInitRfOn;
 
@@ -940,8 +940,8 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 
 
-				/* RX settings */
-				if (le.listFunction == INST_FUNCTION_RX) {
+				/* SPEC settings */
+				if (le.listFunction == INST_FUNC_SPEC) {
 					le.rxMinRfQrg = attr.attrFreqMinHz;
 					le.rxMaxRfQrg = attr.attrFreqMaxHz;
 					le.rxInitRfQrg = attr.attrFreqInitHz;
@@ -964,8 +964,18 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 
 
-				/* VNA extra settings */
-				if (le.listFunction == INST_FUNCTION_RX) {
+				/* VNA */
+				if (le.listFunction == INST_FUNC_VNA) {
+					le.txMinRfQrg = attr.attrFreqMinHz;
+					le.txMaxRfQrg = attr.attrFreqMaxHz;
+					le.txInitRfQrg = attr.attrFreqInitHz;
+					le.txCurRfQrg = le.txInitRfQrg;
+
+					le.txMinRfPwr = attr.attrTXlevelMinDbm;
+					le.txMaxRfPwr = attr.attrTXlevelMaxDbm;
+					le.txInitRfPwr = attr.attrTXlevelInitDbm;
+					le.txCurRfPwr = le.txInitRfPwr;
+
 					le.vnaMinNbPoints = attr.attrVnaNbPointsMin;
 					le.vnaMaxNbPoints = attr.attrVnaNbPointsMax;
 					le.vnaInitNbPoints = attr.attrVnaNbPointsInit;

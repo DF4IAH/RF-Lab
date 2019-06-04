@@ -47,26 +47,25 @@ typedef struct {
 
 	/* Link settings */
 	LinkType_BM_t						linkType;
-	string								linkIdnSearch;
+
+	string								linkEthHostname;
+	string								linkEthMAC;
+	WORD								linkEthPort;
+	//int								linkEthScpiXXX;
+	//int								linkEthLxiXXX;
+
+	WORD								linkUsbIdVendor;
+	WORD								linkUsbIdProduct;
+
+	//string							linkIdnSearch;
+
+	BYTE								linkSerIecAddr;
 
 	BYTE								linkSerPort;
 	DWORD								linkSerBaud;
 	BYTE								linkSerBits;
 	BYTE								linkSerParity;
 	BYTE								linkSerStopbits;
-
-	BYTE								linkSerIecAddr;
-
-	WORD								linkUsbIdVendor;
-	WORD								linkUsbIdProduct;
-
-	string								linkEthHostname;
-	string								linkEthMAC;
-	WORD								linkEthPort;
-
-	//int								linkEthScpiXXX;
-
-	//int								linkEthLxiXXX;
 
 
 	/* Rotor settings */
@@ -79,8 +78,7 @@ typedef struct {
 	int									rotMaxPosition;
 	int									rotInitPosition;
 	int									rotCurPosition;
-
-
+	
 	/* TX settings */
 	bool								txInitRfOn;
 	bool								txCurRfOn;
@@ -94,8 +92,7 @@ typedef struct {
 	double								txMaxRfPwr;
 	double								txInitRfPwr;
 	double								txCurRfPwr;
-
-
+	
 	/* RX settings */
 	double								rxMinRfQrg;
 	double								rxMaxRfQrg;
@@ -116,7 +113,6 @@ typedef struct {
 	double								rxMaxRfPwrHi;
 	double								rxInitRfPwrHi;
 	double								rxCurRfPwrHi;
-
 
 	/* VNA extras */
 	double								vnaMinNbPoints;

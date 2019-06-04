@@ -753,6 +753,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 					}
 				}
 
+
 				/* Ethernet attributes */
 				else if ((variant == 'E') && !_strnicmp(p, "Name=", 5)) {
 					cA.attrName.assign(p + 5, p + lineLen);
@@ -764,10 +765,12 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 				else if ((variant == 'E') && !_strnicmp(p, "MAC=", 4)) {
 					cA.attrEthMAC.assign(p + 4, p + lineLen);
+					cA.attrLinkType |= LINKTYPE_ETH;
 				}
 				else if ((variant == 'E') && !_strnicmp(p, "Port=", 5)) {
 					try {
 						cA.attrEthPort = stoi(string(p + 5, p + lineLen));
+						cA.attrLinkType |= LINKTYPE_ETH;
 					}
 					catch (...) {
 					}
@@ -945,6 +948,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 					continue;
 				}
 				
+
 				/* ROTOR settings */
 				if (le.listFunction == INST_FUNC_ROTOR) {
 					le.rotInitTicksPer360deg = (int)attr.attrTicks360Deg;
@@ -957,7 +961,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 					le.rotInitPosition = 0;
 					le.rotCurPosition = le.rotInitPosition;
 				}
-
 
 				/* GEN settings */
 				if (le.listFunction == INST_FUNC_GEN) {
@@ -974,7 +977,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 					le.txInitRfPwr = attr.attrTXlevelInitDbm;
 					le.txCurRfPwr = le.txInitRfPwr;
 				}
-
 
 				/* SPEC settings */
 				if (le.listFunction == INST_FUNC_SPEC) {
@@ -999,7 +1001,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 					le.rxCurRfPwrHi = le.rxInitRfPwrHi;
 				}
 
-
 				/* VNA */
 				if (le.listFunction == INST_FUNC_VNA) {
 					le.txMinRfQrg = attr.attrFreqMinHz;
@@ -1019,11 +1020,24 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 
 
-				/* Connection interface */
+				/* Connection to the Instrument */
 				le.linkType = attr.attrLinkType;
 
+				/* ETH */
+				if (le.linkType & LINKTYPE_ETH) {
+					le.linkEthHostname = attr.attrEthHostname;
+					le.linkEthMAC = attr.attrEthMAC;
+					le.linkEthPort = attr.attrEthPort;
+				}
+
+				/* USB */
+				if (le.linkType & LINKTYPE_USB) {
+					le.linkUsbIdVendor = attr.attrUsbVendorID;
+					le.linkUsbIdProduct = attr.attrUsbProductID;
+				}
+
 				/* COM */
-				if (attr.attrComDevice.length() >= 4) {
+				if (le.linkType & LINKTYPE_COM) {
 					le.linkSerPort = atoi(attr.attrComDevice.c_str() + 3);
 					le.linkSerBaud = attr.attrComBaud;
 					le.linkSerBits = attr.attrComBits;
@@ -1032,22 +1046,13 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 
 				/* IEC */
-				le.linkSerIecAddr = attr.attrGpibAddr;
-
-				/* ETH */
-				if (attr.attrEthHostname.length() > 0) {
-					le.linkEthHostname = attr.attrEthHostname;
-					le.linkEthMAC = attr.attrEthMAC;
-					le.linkEthPort = attr.attrEthPort;
+				if (le.linkType & LINKTYPE_IEC) {
+					le.linkSerIecAddr = attr.attrGpibAddr;
 				}
 
-				//le.serverType						= attr.attrServerType;   // TODO
-				//le.serverPort						= attr.attrServerPort;
-
-				/* USB */
-				le.linkUsbIdVendor = attr.attrUsbVendorID;
-				le.linkUsbIdProduct = attr.attrUsbProductID;
-
+				//le.serverType	= attr.attrServerType;   // TODO
+				//le.serverPort	= attr.attrServerPort;
+				
 
 				/* Create list */
 				g_am_InstList.push_back(le);
@@ -1113,6 +1118,13 @@ void agentModel::confAttrClear(confAttributes_t* cA)
 
 	cA->attrLinkType				= LINKTYPE_UNKNOWN;
 
+	cA->attrEthHostname.clear();
+	cA->attrEthMAC.clear();
+	cA->attrEthPort					= 0U;
+
+	cA->attrUsbVendorID				= 0U;
+	cA->attrUsbProductID			= 0U;
+
 	cA->attrComDevice.clear();
 	cA->attrComBaud					= 0U;
 	cA->attrComBits					= 0U;
@@ -1123,13 +1135,6 @@ void agentModel::confAttrClear(confAttributes_t* cA)
 	
 	cA->attrServerType.clear();
 	cA->attrServerPort				= 0U;
-	
-	cA->attrUsbVendorID				= 0U;
-	cA->attrUsbProductID			= 0U;
-
-	cA->attrEthHostname.clear();
-	cA->attrEthMAC.clear();
-	cA->attrEthPort					= 0U;
 }
 
 void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string name, const confAttributes_t* cA)
@@ -1235,47 +1240,41 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 
 		/* Communication */
 		if (attrFrom.attrLinkType != LINKTYPE_UNKNOWN) {
-			attrTo.attrLinkType = attrFrom.attrLinkType;
+			attrTo.attrLinkType |= attrFrom.attrLinkType;
 		}
 
-		/* COM */
-		if (!attrFrom.attrComDevice.empty()) {
-			attrTo.attrComDevice = attrFrom.attrComDevice;
-		}
-		if (attrFrom.attrComBaud) {
-			attrTo.attrComBaud = attrFrom.attrComBaud;
-		}
-		if (attrFrom.attrComBits) {
-			attrTo.attrComBits = attrFrom.attrComBits;
-		}
-		if (!attrFrom.attrComPar.empty()) {
-			attrTo.attrComPar = attrFrom.attrComPar;
-		}
-		if (attrFrom.attrComStop) {
-			attrTo.attrComStop = attrFrom.attrComStop;
-		}
+		/* ETH */
+		if (attrFrom.attrLinkType & LINKTYPE_ETH) {
+			attrTo.attrEthHostname = attrFrom.attrEthHostname;
+			attrTo.attrEthMAC = attrFrom.attrEthMAC;
+			attrTo.attrEthPort = attrFrom.attrEthPort;
 
-		/* GPIB */
-		if (attrFrom.attrGpibAddr) {
-			attrTo.attrGpibAddr = attrFrom.attrGpibAddr;
-		}
-
-		/* Network  */
-		if (!attrFrom.attrServerType.empty()) {
+#if 0
+			/* Network  OLD */
 			attrTo.attrServerType = attrFrom.attrServerType;
-		}
-		if (attrFrom.attrServerPort) {
 			attrTo.attrServerPort = attrFrom.attrServerPort;
+#endif
 		}
 
 		/* USB */
-		if (attrFrom.attrUsbVendorID) {
+		if (attrFrom.attrLinkType & LINKTYPE_USB) {
 			attrTo.attrUsbVendorID = attrFrom.attrUsbVendorID;
-		}
-		if (attrFrom.attrUsbProductID) {
 			attrTo.attrUsbProductID = attrFrom.attrUsbProductID;
 		}
 
+		/* GPIB */
+		if (attrFrom.attrLinkType & LINKTYPE_IEC) {
+			attrTo.attrGpibAddr = attrFrom.attrGpibAddr;
+		}
+
+		/* COM */
+		if (attrFrom.attrLinkType & LINKTYPE_COM) {
+			attrTo.attrComDevice = attrFrom.attrComDevice;
+			attrTo.attrComBaud = attrFrom.attrComBaud;
+			attrTo.attrComBits = attrFrom.attrComBits;
+			attrTo.attrComPar = attrFrom.attrComPar;
+			attrTo.attrComStop = attrFrom.attrComStop;
+		}
 
 		/* Make map entry visible */
 		(*mC)[name] = attrTo;

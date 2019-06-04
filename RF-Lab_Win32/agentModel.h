@@ -91,23 +91,28 @@ typedef struct confAttributes
 
 	LinkType_BM_t						attrLinkType;
 
+	/* INTERFACE */
+	string								attrServerType;
+	uint16_t							attrServerPort;
+
+	/* ETH */
+	string								attrEthHostname;
+	string								attrEthMAC;
+	uint16_t							attrEthPort;
+
+	/* USB */
+	uint16_t							attrUsbVendorID;
+	uint16_t							attrUsbProductID;
+
+	/* IEC */
+	uint8_t								attrGpibAddr;
+
+	/* COM */
 	string								attrComDevice;
 	uint16_t							attrComBaud;
 	uint8_t								attrComBits;
 	string								attrComPar;
 	uint8_t								attrComStop;
-
-	uint8_t								attrGpibAddr;
-
-	string								attrServerType;
-	uint16_t							attrServerPort;
-
-	uint16_t							attrUsbVendorID;
-	uint16_t							attrUsbProductID;
-
-	string								attrEthHostname;
-	string								attrEthMAC;
-	uint16_t							attrEthPort;
 
 } confAttributes_t;
 

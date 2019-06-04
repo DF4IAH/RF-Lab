@@ -9,7 +9,7 @@
 using namespace std;
 
 
-typedef enum Inst_Function {
+typedef enum {
 	INST_FUNC_UNKNOWN = 0,
 	INST_FUNC_ROTOR,
 	INST_FUNC_GEN,
@@ -18,17 +18,20 @@ typedef enum Inst_Function {
 } Inst_Function_t;
 
 
-typedef enum LinkType {
-	LINKTYPE_UNKNOWN					= 0,
-	LINKTYPE_SER,
-	LINKTYPE_IEC_VIA_SER,
-	LINKTYPE_USB,
-	LINKTYPE_ETH_SCPI,
-	LINKTYPE_ETH_LXI,
-} LinkType_t;
+/* LinkType bitmask */
+typedef uint16_t						LinkType_BM_t;
+
+#define LINKTYPE_UNKNOWN				0x0000U
+#define LINKTYPE_COM					0x0001U
+#define LINKTYPE_IEC_VIA_SER			0x0002U
+#define LINKTYPE_IEC					0x0010U
+#define LINKTYPE_USB					0x0100U
+#define LINKTYPE_ETH					0x1000U
+#define LINKTYPE_ETH_SCPI				0x2000U
+#define LINKTYPE_ETH_LXI				0x4000U
 
 
-typedef struct am_InstListEntry {
+typedef struct {
 
 	/* List information */
 	size_t								listId;
@@ -43,7 +46,7 @@ typedef struct am_InstListEntry {
 	
 
 	/* Link settings */
-	LinkType_t							linkType;
+	LinkType_BM_t						linkType;
 	string								linkIdnSearch;
 
 	BYTE								linkSerPort;
@@ -56,6 +59,10 @@ typedef struct am_InstListEntry {
 
 	WORD								linkUsbIdVendor;
 	WORD								linkUsbIdProduct;
+
+	string								linkEthHostname;
+	string								linkEthMAC;
+	WORD								linkEthPort;
 
 	//int								linkEthScpiXXX;
 

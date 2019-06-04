@@ -469,12 +469,12 @@ void agentModel::fsLoadInstruments(const char* filename)
 		FILE* fh = NULL;
 		errno_t err;
 
-		confAttrClear(&cA);
-
 		err = fopen_s(&fh, filename, "rb");
 		if (!errno && fh) {
 			char variant = '-';
 			char lineBuf[256];
+
+			confAttrClear(&cA);
 
 			while (1) {
 				char* p = fgets(lineBuf, sizeof(lineBuf) - 1, fh);
@@ -482,7 +482,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 					/* End of file */
 					if (variant != '-') {
 						pushInstrumentDataset(&cM, cA.attrName, &cA);
-						confAttrClear(&cA);
 					}
 					break;
 				}
@@ -516,11 +515,14 @@ void agentModel::fsLoadInstruments(const char* filename)
 					else if (!_strnicmp(p, "[INTERFACE]", 11)) {
 						variant = 'i';
 					}
-					else if (!_strnicmp(p, "[COM]", 5)) {
-						variant = 'C';
+					else if (!_strnicmp(p, "[ETH]", 5)) {
+						variant = 'E';
 					}
 					else if (!_strnicmp(p, "[USB]", 5)) {
 						variant = 'U';
+					}
+					else if (!_strnicmp(p, "[COM]", 5)) {
+						variant = 'C';
 					}
 					else if (!_strnicmp(p, "[GPIB]", 6)) {
 						variant = 'G';
@@ -533,6 +535,13 @@ void agentModel::fsLoadInstruments(const char* filename)
 						goto _fsLoadInstruments_Error;
 					}
 				}
+
+				/* Empty line */
+				else if (*p == '\r' || *p == '\n') {
+					/* No function */
+					continue;
+				}
+
 
 				/* INSTRUMENT attributes */
 				else if ((variant == 'I') && !_strnicmp(p, "Name=", 5)) {
@@ -729,10 +738,64 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 				else if ((variant == 'i') && !_strnicmp(p, "ServerType=", 11)) {
 					cA.attrServerType.assign(p + 11, p + lineLen);
+
+#if 0
+					if (!_strnicmp(cA.attrServerType.c_str(), "GPIB", 4)) {
+						cA.attrLinkType |= LINKTYPE_IEC_VIA_SER;
+					}
+#endif
 				}
 				else if ((variant == 'i') && !_strnicmp(p, "ServerPort=", 11)) {
 					try {
 						cA.attrServerPort = stoi(string(p + 11, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+
+				/* Ethernet attributes */
+				else if ((variant == 'E') && !_strnicmp(p, "Name=", 5)) {
+					cA.attrName.assign(p + 5, p + lineLen);
+					cA.attrSection = string("ETH");
+				}
+				else if ((variant == 'E') && !_strnicmp(p, "Hostname=", 9)) {
+					cA.attrEthHostname.assign(p + 9, p + lineLen);
+					cA.attrLinkType |= LINKTYPE_ETH;
+				}
+				else if ((variant == 'E') && !_strnicmp(p, "MAC=", 4)) {
+					cA.attrEthMAC.assign(p + 4, p + lineLen);
+				}
+				else if ((variant == 'E') && !_strnicmp(p, "Port=", 5)) {
+					try {
+						cA.attrEthPort = stoi(string(p + 5, p + lineLen));
+					}
+					catch (...) {
+					}
+				}
+
+				/* USB attributes */
+				else if ((variant == 'U') && !_strnicmp(p, "Name=", 5)) {
+					cA.attrName.assign(p + 5, p + lineLen);
+					cA.attrSection = string("USB");
+				}
+				else if ((variant == 'U') && !_strnicmp(p, "Vendor_ID=", 10)) {
+					try {
+						unsigned int hex = 0U;
+						if (sscanf_s(string(p + 10, p + lineLen).c_str(), "%x", &hex)) {
+							cA.attrUsbVendorID = (uint16_t)hex;
+							cA.attrLinkType |= LINKTYPE_USB;
+						}
+					}
+					catch (...) {
+					}
+				}
+				else if ((variant == 'U') && !_strnicmp(p, "Product_ID=", 11)) {
+					try {
+						unsigned int hex = 0U;
+						if (sscanf_s(string(p + 11, p + lineLen).c_str(), "%x", &hex)) {
+							cA.attrUsbProductID = (uint16_t)hex;
+							cA.attrLinkType |= LINKTYPE_USB;
+						}
 					}
 					catch (...) {
 					}
@@ -745,6 +808,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Device=", 7)) {
 					cA.attrComDevice.assign(p + 7, p + lineLen);
+					cA.attrLinkType |= LINKTYPE_COM;
 				}
 				else if ((variant == 'C') && !_strnicmp(p, "Baud=", 5)) {
 					try {
@@ -771,32 +835,6 @@ void agentModel::fsLoadInstruments(const char* filename)
 					}
 				}
 
-				/* USB attributes */
-				else if ((variant == 'U') && !_strnicmp(p, "Name=", 5)) {
-					cA.attrName.assign(p + 5, p + lineLen);
-					cA.attrSection = string("USB");
-				}
-				else if ((variant == 'U') && !_strnicmp(p, "Vendor_ID=", 10)) {
-					try {
-						unsigned int hex = 0U;
-						if (sscanf_s(string(p + 10, p + lineLen).c_str(), "%x", &hex)) {
-							cA.attrUsbVendorID = (uint16_t) hex;
-						}
-					}
-					catch (...) {
-					}
-				}
-				else if ((variant == 'U') && !_strnicmp(p, "Product_ID=", 11)) {
-					try {
-						unsigned int hex = 0U;
-						if (sscanf_s(string(p + 11, p + lineLen).c_str(), "%x", &hex)) {
-							cA.attrUsbProductID = (uint16_t) hex;
-						}
-					}
-					catch (...) {
-					}
-				}
-
 				/* GPIB attributes */
 				else if ((variant == 'G') && !_strnicmp(p, "Name=", 5)) {
 					cA.attrName.assign(p + 5, p + lineLen);
@@ -805,16 +843,12 @@ void agentModel::fsLoadInstruments(const char* filename)
 				else if ((variant == 'G') && !_strnicmp(p, "Addr=", 5)) {
 					try {
 						cA.attrGpibAddr = stoi(string(p + 5, p + lineLen));
+						cA.attrLinkType |= LINKTYPE_IEC;
 					}
 					catch (...) {
 					}
 				}
 
-				/* Empty line */
-				else if (*p == '\r' || *p == '\n') {
-					/* No function */
-					continue;
-				}
 				else {
 					/* File format error */
 					const char Msg[] = "Unknown attribute";
@@ -855,13 +889,15 @@ void agentModel::fsLoadInstruments(const char* filename)
 							confAttributes_t attr2 = it2->second;
 
 							/* ... having the same GPIB address */
-							if (!_stricmp(attr2.attrSection.c_str(), "INSTRUMENT") && attr2.attrGpibAddr == ifcPort) {
+							if (!_stricmp(attr2.attrSection.c_str(), "INSTRUMENT") && attr2.attrGpibAddr == ifcPort && !attr.attrComDevice.empty()) {
 								/* Instrument found - enter all communication entries */
 								attr2.attrComDevice = attr.attrComDevice;
 								attr2.attrComBaud = attr.attrComBaud;
 								attr2.attrComBits = attr.attrComBits;
 								attr2.attrComPar = attr.attrComPar;
 								attr2.attrComStop = attr.attrComStop;
+
+								attr2.attrLinkType = LINKTYPE_IEC_VIA_SER;
 
 								it2->second = attr2;
 								break;
@@ -983,6 +1019,10 @@ void agentModel::fsLoadInstruments(const char* filename)
 				}
 
 
+				/* Connection interface */
+				le.linkType = attr.attrLinkType;
+
+				/* COM */
 				if (attr.attrComDevice.length() >= 4) {
 					le.linkSerPort = atoi(attr.attrComDevice.c_str() + 3);
 					le.linkSerBaud = attr.attrComBaud;
@@ -991,13 +1031,22 @@ void agentModel::fsLoadInstruments(const char* filename)
 					le.linkSerStopbits = attr.attrComStop;
 				}
 
-				le.linkSerIecAddr					= attr.attrGpibAddr;
+				/* IEC */
+				le.linkSerIecAddr = attr.attrGpibAddr;
+
+				/* ETH */
+				if (attr.attrEthHostname.length() > 0) {
+					le.linkEthHostname = attr.attrEthHostname;
+					le.linkEthMAC = attr.attrEthMAC;
+					le.linkEthPort = attr.attrEthPort;
+				}
 
 				//le.serverType						= attr.attrServerType;   // TODO
 				//le.serverPort						= attr.attrServerPort;
 
-				le.linkUsbIdVendor					= attr.attrUsbVendorID;
-				le.linkUsbIdProduct					= attr.attrUsbProductID;
+				/* USB */
+				le.linkUsbIdVendor = attr.attrUsbVendorID;
+				le.linkUsbIdProduct = attr.attrUsbProductID;
 
 
 				/* Create list */
@@ -1061,6 +1110,9 @@ void agentModel::confAttrClear(confAttributes_t* cA)
 	cA->attrVnaNbPointsMax			= 0.0f;
 	cA->attrVnaNbPointsInit			= 0.0f;
 
+
+	cA->attrLinkType				= LINKTYPE_UNKNOWN;
+
 	cA->attrComDevice.clear();
 	cA->attrComBaud					= 0U;
 	cA->attrComBits					= 0U;
@@ -1074,6 +1126,10 @@ void agentModel::confAttrClear(confAttributes_t* cA)
 	
 	cA->attrUsbVendorID				= 0U;
 	cA->attrUsbProductID			= 0U;
+
+	cA->attrEthHostname.clear();
+	cA->attrEthMAC.clear();
+	cA->attrEthPort					= 0U;
 }
 
 void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string name, const confAttributes_t* cA)
@@ -1092,6 +1148,7 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		if (!attrFrom.attrType.empty()) {
 			attrTo.attrType = attrFrom.attrType;
 		}
+
 
 		/* Rotor data */
 		if (attrFrom.attrTurnLeftMaxDeg) {
@@ -1175,6 +1232,12 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 			attrTo.attrVnaNbPointsInit = attrFrom.attrVnaNbPointsInit;
 		}
 
+
+		/* Communication */
+		if (attrFrom.attrLinkType != LINKTYPE_UNKNOWN) {
+			attrTo.attrLinkType = attrFrom.attrLinkType;
+		}
+
 		/* COM */
 		if (!attrFrom.attrComDevice.empty()) {
 			attrTo.attrComDevice = attrFrom.attrComDevice;
@@ -1212,6 +1275,7 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		if (attrFrom.attrUsbProductID) {
 			attrTo.attrUsbProductID = attrFrom.attrUsbProductID;
 		}
+
 
 		/* Make map entry visible */
 		(*mC)[name] = attrTo;

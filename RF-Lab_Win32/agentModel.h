@@ -22,85 +22,92 @@ using namespace std;
 
 
 typedef enum C_MODELREQ_ENUM {
-	C_MODELREQ_END = 0
+	C_MODELREQ_END						= 0
 } C_MODELREQ_ENUM_t;
 
 typedef enum C_MODELRSP_ENUM {
-	C_MODELRSP_END = 0
+	C_MODELRSP_END						= 0
 } C_MODELRSP_ENUM_t;
 
 typedef enum AGENT_ALL_SIMUMODE {
-	AGENT_ALL_SIMUMODE_NONE = 0x00,
-	AGENT_ALL_SIMUMODE_NO_TX = 0x01,
-	AGENT_ALL_SIMUMODE_NO_RX = 0x02,
-	AGENT_ALL_SIMUMODE_RUN_BARGRAPH = 0x10,
+	AGENT_ALL_SIMUMODE_NONE				= 0x00,
+	AGENT_ALL_SIMUMODE_NO_TX			= 0x01,
+	AGENT_ALL_SIMUMODE_NO_RX			= 0x02,
+	AGENT_ALL_SIMUMODE_RUN_BARGRAPH		= 0x10,
 } AGENT_ALL_SIMUMODE_t;
 
 
 typedef struct agentModelReq
 {
-	SHORT								 cmd;
-	ULONG32								 data;
+	SHORT								cmd;
+	ULONG32								data;
 } agentModelReq_t;
 
 typedef struct agentModelRsp
 {
-	SHORT								 stat;
-	ULONG32								 data;
+	SHORT								stat;
+	ULONG32								data;
 } agentModelRsp_t;
 
 
 typedef struct confAttributes
 {
-
 	string								attrName;
 	string								attrSection;
 	string								attrType;
 
-	float								attrTurnLeftMaxDeg = 0.0f;
-	float								attrTurnRightMaxDeg = 0.0f;
-	uint32_t							attrTicks360Deg = 0UL;
-	float								attrSpeedStart = 0.0f;
-	float								attrSpeedAccl = 0.0f;
-	float								attrSpeedTop = 0.0f;
+	float								attrTurnLeftMaxDeg;
+	float								attrTurnRightMaxDeg;
+	uint32_t							attrTicks360Deg;
+	float								attrSpeedStart;
+	float								attrSpeedAccl;
+	float								attrSpeedTop;
 
-	float								attrFreqMinHz = 0.0f;
-	float								attrFreqMaxHz = 0.0f;
-	float								attrFreqInitHz = 0.0f;
 
-	float								attrTXlevelMinDbm = 0.0f;
-	float								attrTXlevelMaxDbm = 0.0f;
-	float								attrTXlevelInitDbm = 0.0f;
+	float								attrFreqMinHz;
+	float								attrFreqMaxHz;
+	float								attrFreqInitHz;
 
-	float								attrSpanMinHz = 0.0f;
-	float								attrSpanMaxHz = 0.0f;
-	float								attrSpanInitHz = 0.0f;
+	float								attrTXlevelMinDbm;
+	float								attrTXlevelMaxDbm;
+	float								attrTXlevelInitDbm;
 
-	float								attrRXLoLevelMinDbm = 0.0f;
-	float								attrRXLoLevelMaxDbm = 0.0f;
-	float								attrRXLoLevelInitDbm = 0.0f;
+	float								attrSpanMinHz;
+	float								attrSpanMaxHz;
+	float								attrSpanInitHz;
 
-	float								attrRXHiLevelMinDbm = 0.0f;
-	float								attrRXHiLevelMaxDbm = 0.0f;
-	float								attrRXHiLevelInitDbm = 0.0f;
+	float								attrRXLoLevelMinDbm;
+	float								attrRXLoLevelMaxDbm;
+	float								attrRXLoLevelInitDbm;
 
-	float								attrVnaNbPointsMin = 0.0f;
-	float								attrVnaNbPointsMax = 0.0f;
-	float								attrVnaNbPointsInit = 0.0f;
+	float								attrRXHiLevelMinDbm;
+	float								attrRXHiLevelMaxDbm;
+	float								attrRXHiLevelInitDbm;
+
+	float								attrVnaNbPointsMin;
+	float								attrVnaNbPointsMax;
+	float								attrVnaNbPointsInit;
+
+
+	LinkType_BM_t						attrLinkType;
 
 	string								attrComDevice;
-	uint16_t							attrComBaud = 0U;
-	uint8_t								attrComBits = 0U;
+	uint16_t							attrComBaud;
+	uint8_t								attrComBits;
 	string								attrComPar;
-	uint8_t								attrComStop = 0U;
+	uint8_t								attrComStop;
 
-	uint8_t								attrGpibAddr = 0U;
+	uint8_t								attrGpibAddr;
 
 	string								attrServerType;
-	uint16_t							attrServerPort = 0U;
+	uint16_t							attrServerPort;
 
-	uint16_t							attrUsbVendorID = 0U;
-	uint16_t							attrUsbProductID = 0U;
+	uint16_t							attrUsbVendorID;
+	uint16_t							attrUsbProductID;
+
+	string								attrEthHostname;
+	string								attrEthMAC;
+	uint16_t							attrEthPort;
 
 } confAttributes_t;
 
@@ -114,7 +121,7 @@ class agentModel : public agent
 {
 public:
 	enum AGENT_MODELS {
-		AGENT_MODEL_NONE = 0,
+		AGENT_MODEL_NONE				= 0,
 		AGENT_MODEL_PATTERN,
 	};
 

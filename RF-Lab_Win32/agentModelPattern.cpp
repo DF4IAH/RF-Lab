@@ -1013,6 +1013,34 @@ void agentModelPattern::run(void)
 
 void agentModelPattern::checkInstruments(void)
 {
+#ifndef NEW
+	am_InstList_t::iterator it = g_am_InstList.begin();
+
+	/* Iterate over all instruments and check which one responds */
+	while (it != g_am_InstList.end()) {
+		const LinkType_BM_t linkType = it->linkType;
+
+		/* Try Ethernet connection */
+		if (linkType & LINKTYPE_ETH) {
+			instTryEth(it);
+		}
+
+		/* Try USB connection */
+		if (linkType & LINKTYPE_USB) {
+			instTryUsb(it);
+		}
+
+		/* Try COM connection, even when IEC is interfaced to a COM port */
+		if (linkType & LINKTYPE_COM) {
+			instTryCom(it);
+		}
+
+		/* Move to next instrument */
+		it++;
+	}
+#endif
+
+#ifdef OLD
 	if (g_am_InstList.size()) {
 		am_InstList_t::iterator it = g_am_InstList.begin();
 
@@ -1055,7 +1083,28 @@ void agentModelPattern::checkInstruments(void)
 			it++;
 		}
 	}
+#endif
 }
+
+
+bool agentModelPattern::instTryEth(am_InstList_t::iterator it)
+{
+
+	return false;
+}
+
+bool agentModelPattern::instTryUsb(am_InstList_t::iterator it)
+{
+
+	return false;
+}
+
+bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
+{
+
+	return false;
+}
+
 
 bool agentModelPattern::checkInstUsb(am_InstList_t::iterator it)
 {

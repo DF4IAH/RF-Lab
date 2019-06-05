@@ -155,7 +155,6 @@ private:
 	void			fsLoadInstruments(const char* filename);
 	void			confAttrClear(confAttributes_t* cA);
 	void			pushInstrumentDataset(map<string, confAttributes_t>* mapConfig, string name, const confAttributes_t* cA);
-	void			scanInstruments(void);
 
 	bool			instTryEth(am_InstList_t::iterator it);
 	bool			instTryUsb(am_InstList_t::iterator it);

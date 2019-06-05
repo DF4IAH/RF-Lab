@@ -65,7 +65,7 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 		
 	#ifndef USE_PRELOAD_INSTRUMENTS
 		fsLoadInstruments(_fs_instrument_settings_filename);
-		scanInstruments();
+		//scanInstruments();  --> move to agentModelPattern::checkInstruments() ...
 	#else
 		preloadInstruments();
 	#endif
@@ -1280,52 +1280,6 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		/* Make map entry visible */
 		(*mC)[name] = attrTo;
 	}
-}
-
-void agentModel::scanInstruments(void)
-{
-	am_InstList_t::iterator it = g_am_InstList.begin();
-
-	/* Iterate over all instruments and check which one responds */
-	while (it != g_am_InstList.end()) {
-		const LinkType_BM_t linkType = it->linkType;
-
-		/* Try Ethernet connection */
-		if (linkType & LINKTYPE_ETH) {
-			instTryEth(it);
-		}
-
-		/* Try USB connection */
-		if (linkType & LINKTYPE_USB) {
-			instTryUsb(it);
-		} 
-
-		/* Try COM connection, even when IEC is interfaced to a COM port */
-		if (linkType & LINKTYPE_COM) {
-			instTryCom(it);
-		}
-
-		/* Move to next instrument */
-		it++;
-	}
-}
-
-bool agentModel::instTryEth(am_InstList_t::iterator it)
-{
-
-	return false;
-}
-
-bool agentModel::instTryUsb(am_InstList_t::iterator it)
-{
-
-	return false;
-}
-
-bool agentModel::instTryCom(am_InstList_t::iterator it)
-{
-
-	return false;
 }
 
 

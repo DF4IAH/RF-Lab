@@ -199,7 +199,12 @@ private:
 	void					agentsShutdown(void);
 	void					threadsStart(void);
 	void					threadsStop(void);
+
 	void					checkInstruments(void);
+	bool					instTryEth(am_InstList_t::iterator it);
+	bool					instTryUsb(am_InstList_t::iterator it);
+	bool					instTryCom(am_InstList_t::iterator it);
+
 	bool					checkInstUsb(am_InstList_t::iterator it);
 	bool					checkInstCom(am_InstList_t::iterator it);
 	instrument_t*			addSerInstrument(INSTRUMENT_ENUM_t type,

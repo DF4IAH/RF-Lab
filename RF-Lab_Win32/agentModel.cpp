@@ -65,6 +65,7 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 		
 	#ifndef USE_PRELOAD_INSTRUMENTS
 		fsLoadInstruments(_fs_instrument_settings_filename);
+		scanInstruments();
 	#else
 		preloadInstruments();
 	#endif
@@ -454,8 +455,67 @@ double agentModel::getRxLevelMaxValue(void)
 }
 
 
+void agentModel::confAttrClear(confAttributes_t* cA)
+{
+	cA->attrName.clear();
+	cA->attrSection.clear();
+	cA->attrType.clear();
 
-#ifndef USE_PRELOAD_INSTRUMENTS
+	cA->attrTurnLeftMaxDeg = 0.0f;
+	cA->attrTurnRightMaxDeg = 0.0f;
+	cA->attrTicks360Deg = 0UL;
+	cA->attrSpeedStart = 0.0f;
+	cA->attrSpeedAccl = 0.0f;
+	cA->attrSpeedTop = 0.0f;
+
+	cA->attrFreqMinHz = 0.0f;
+	cA->attrFreqMaxHz = 0.0f;
+	cA->attrFreqInitHz = 0.0f;
+
+	cA->attrTXlevelMinDbm = 0.0f;
+	cA->attrTXlevelMaxDbm = 0.0f;
+	cA->attrTXlevelInitDbm = 0.0f;
+
+	cA->attrSpanMinHz = 0.0f;
+	cA->attrSpanMaxHz = 0.0f;
+	cA->attrSpanInitHz = 0.0f;
+
+	cA->attrRXLoLevelMinDbm = 0.0f;
+	cA->attrRXLoLevelMaxDbm = 0.0f;
+	cA->attrRXLoLevelInitDbm = 0.0f;
+
+	cA->attrRXHiLevelMinDbm = 0.0f;
+	cA->attrRXHiLevelMaxDbm = 0.0f;
+	cA->attrRXHiLevelInitDbm = 0.0f;
+
+	cA->attrVnaNbPointsMin = 0.0f;
+	cA->attrVnaNbPointsMax = 0.0f;
+	cA->attrVnaNbPointsInit = 0.0f;
+
+
+	cA->attrLinkType = LINKTYPE_UNKNOWN;
+
+	cA->attrEthHostname.clear();
+	cA->attrEthMAC.clear();
+	cA->attrEthPort = 0U;
+
+	cA->attrUsbVendorID = 0U;
+	cA->attrUsbProductID = 0U;
+
+	cA->attrComDevice.clear();
+	cA->attrComBaud = 0U;
+	cA->attrComBits = 0U;
+	cA->attrComPar.clear();
+	cA->attrComStop = 0U;
+
+	cA->attrGpibAddr = 0U;
+
+	cA->attrServerType.clear();
+	cA->attrServerPort = 0U;
+}
+
+/* Load configuration data for potential instruments connected to this host */
+
 void agentModel::fsLoadInstruments(const char* filename)
 {
 	char							errMsgBuf[128];
@@ -1078,65 +1138,6 @@ _fsLoadInstruments_Error:
 	}
 }
 
-void agentModel::confAttrClear(confAttributes_t* cA)
-{
-	cA->attrName.clear();
-	cA->attrSection.clear();
-	cA->attrType.clear();
-
-	cA->attrTurnLeftMaxDeg			= 0.0f;
-	cA->attrTurnRightMaxDeg			= 0.0f;
-	cA->attrTicks360Deg				= 0UL;
-	cA->attrSpeedStart				= 0.0f;
-	cA->attrSpeedAccl				= 0.0f;
-	cA->attrSpeedTop				= 0.0f;
-
-	cA->attrFreqMinHz				= 0.0f;
-	cA->attrFreqMaxHz				= 0.0f;
-	cA->attrFreqInitHz				= 0.0f;
-
-	cA->attrTXlevelMinDbm			= 0.0f;
-	cA->attrTXlevelMaxDbm			= 0.0f;
-	cA->attrTXlevelInitDbm			= 0.0f;
-
-	cA->attrSpanMinHz				= 0.0f;
-	cA->attrSpanMaxHz				= 0.0f;
-	cA->attrSpanInitHz				= 0.0f;
-
-	cA->attrRXLoLevelMinDbm			= 0.0f;
-	cA->attrRXLoLevelMaxDbm			= 0.0f;
-	cA->attrRXLoLevelInitDbm		= 0.0f;
-
-	cA->attrRXHiLevelMinDbm			= 0.0f;
-	cA->attrRXHiLevelMaxDbm			= 0.0f;
-	cA->attrRXHiLevelInitDbm		= 0.0f;
-
-	cA->attrVnaNbPointsMin			= 0.0f;
-	cA->attrVnaNbPointsMax			= 0.0f;
-	cA->attrVnaNbPointsInit			= 0.0f;
-
-
-	cA->attrLinkType				= LINKTYPE_UNKNOWN;
-
-	cA->attrEthHostname.clear();
-	cA->attrEthMAC.clear();
-	cA->attrEthPort					= 0U;
-
-	cA->attrUsbVendorID				= 0U;
-	cA->attrUsbProductID			= 0U;
-
-	cA->attrComDevice.clear();
-	cA->attrComBaud					= 0U;
-	cA->attrComBits					= 0U;
-	cA->attrComPar.clear();
-	cA->attrComStop					= 0U;
-	
-	cA->attrGpibAddr				= 0U;
-	
-	cA->attrServerType.clear();
-	cA->attrServerPort				= 0U;
-}
-
 void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string name, const confAttributes_t* cA)
 {
 	if (!name.empty() && cA) {
@@ -1280,31 +1281,52 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		(*mC)[name] = attrTo;
 	}
 }
-#endif
 
-#ifdef NEW_UNUSED
 void agentModel::scanInstruments(void)
 {
 	am_InstList_t::iterator it = g_am_InstList.begin();
 
 	/* Iterate over all instruments and check which one responds */
 	while (it != g_am_InstList.end()) {
-		/* From high to low priority */
-		if (instCheckUsb(it)) {
-			/* Use USB connection */
-			instActivateUsb(it);
+		const LinkType_BM_t linkType = it->linkType;
 
+		/* Try Ethernet connection */
+		if (linkType & LINKTYPE_ETH) {
+			instTryEth(it);
+		}
+
+		/* Try USB connection */
+		if (linkType & LINKTYPE_USB) {
+			instTryUsb(it);
 		} 
-		else if (instCheckCom(it)) {
-			/* Use COM connection */
-			instActivateCom(it);
+
+		/* Try COM connection, even when IEC is interfaced to a COM port */
+		if (linkType & LINKTYPE_COM) {
+			instTryCom(it);
 		}
 
 		/* Move to next instrument */
 		it++;
 	}
 }
-#endif
+
+bool agentModel::instTryEth(am_InstList_t::iterator it)
+{
+
+	return false;
+}
+
+bool agentModel::instTryUsb(am_InstList_t::iterator it)
+{
+
+	return false;
+}
+
+bool agentModel::instTryCom(am_InstList_t::iterator it)
+{
+
+	return false;
+}
 
 
 #ifdef USE_PRELOAD_INSTRUMENTS
@@ -1403,27 +1425,3 @@ void agentModel::preloadInstruments(void)
 	g_am_InstList.push_back(entry);
 }
 #endif
-
-
-bool agentModel::instCheckUsb(am_InstList_t::iterator it)
-{
-	// TODO
-	//xxx
-	return false;
-}
-
-
-bool agentModel::instCheckCom(am_InstList_t::iterator it)
-{
-	return false;
-}
-
-void agentModel::instActivateUsb(am_InstList_t::iterator it)
-{
-
-}
-
-void agentModel::instActivateCom(am_InstList_t::iterator it)
-{
-
-}

@@ -152,18 +152,18 @@ protected:
 
 private:
 
-#ifndef USE_PRELOAD_INSTRUMENTS
 	void			fsLoadInstruments(const char* filename);
 	void			confAttrClear(confAttributes_t* cA);
 	void			pushInstrumentDataset(map<string, confAttributes_t>* mapConfig, string name, const confAttributes_t* cA);
-#else
-	void			preloadInstruments(void);  // Old
-#endif
+	void			scanInstruments(void);
 
-	bool			instCheckUsb(am_InstList_t::iterator it);
-	bool			instCheckCom(am_InstList_t::iterator it);
-	void			instActivateUsb(am_InstList_t::iterator it);
-	void			instActivateCom(am_InstList_t::iterator it);
+	bool			instTryEth(am_InstList_t::iterator it);
+	bool			instTryUsb(am_InstList_t::iterator it);
+	bool			instTryCom(am_InstList_t::iterator it);
+
+#ifdef USE_PRELOAD_INSTRUMENTS
+	void			preloadInstruments(void);  // Old variant
+#endif
 
 
 public:

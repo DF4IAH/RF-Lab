@@ -1153,7 +1153,74 @@ bool agentModelPattern::instTryUsb(am_InstList_t::iterator it)
 bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 {
 	/* Open COM connection */
+	char buf[C_BUF_SIZE];
+	agentComReq comReqData;
 
+	/* Different handling of the serial stream */
+	switch (it->listFunction) {
+
+	case INST_FUNC_ROTOR:
+	{
+		/* Start COM server for the rotor (turntable) */
+		bool isConnected = false;
+		pAgtCom[C_COMINST_ROT]->start();
+		Sleep(25);
+
+		int len = _snprintf_s(buf, C_BUF_SIZE, 
+			C_OPENPARAMS_STR,
+			C_ROT_COM_PORT, C_ROT_COM_BAUD, C_ROT_COM_BITS, C_ROT_COM_PARITY, C_ROT_COM_STOPBITS,
+			C_SET_IEC_ADDR_INVALID);
+		buf[len] = 0;
+
+		comReqData.cmd  = C_COMREQ_OPEN_ZOLIX;
+		comReqData.parm = string(buf);
+		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+		agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+		if (comRspData.stat == C_COMRSP_DATA) {
+			string rspIdnStr = string(comRspData.data);
+			/* Rotor IDN string */
+			if (!rspIdnStr.empty()) {
+				isConnected = true;
+			}
+		}
+
+		if (isConnected) {
+			if (!_noWinMsg)
+				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor found", L"");
+		}
+		else {
+			/* Remove COM link bit(s) */
+			it->linkType &= ~(LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
+		}
+
+		/* Close connection again */
+		comReqData.cmd = C_COMREQ_CLOSE;
+		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+		comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
+		if (comRspData.stat == C_COMRSP_OK) {
+			/* Connection closed */
+			if (!_noWinMsg)
+				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor port closed again", L"");
+		}
+	}
+	break;
+
+	case INST_FUNC_GEN:
+	{
+
+	}
+	break;
+
+	case INST_FUNC_SPEC:
+	{
+
+	}
+	break;
+
+	default: { }
+	}  // switch (it->listFunction)
 
 	return false;
 }
@@ -1161,6 +1228,7 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 
 bool agentModelPattern::checkInstUsb(am_InstList_t::iterator it)
 {
+#ifdef OLD
 	if (it->linkUsbIdVendor || it->linkUsbIdProduct) {
 		const agentUsbReqDev data = { it->linkUsbIdVendor, it->linkUsbIdProduct };
 
@@ -1176,10 +1244,13 @@ bool agentModelPattern::checkInstUsb(am_InstList_t::iterator it)
 	else {
 		return false;
 	}
+#endif
+	return false;
 }
 
 bool agentModelPattern::checkInstCom(am_InstList_t::iterator it)
 {
+#ifdef OLD
 	char buf[C_BUF_SIZE];
 	agentComReq comReqData;
 
@@ -1246,7 +1317,7 @@ bool agentModelPattern::checkInstCom(am_InstList_t::iterator it)
 
 	default: { }
 	}  // switch ()
-
+#endif
 	return false;
 }
 

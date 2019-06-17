@@ -120,7 +120,7 @@ using namespace std;
 enum C_MODELPATTERN_RUNSTATES_ENUM {
 	C_MODELPATTERN_RUNSTATES_NOOP = 0,
 	C_MODELPATTERN_RUNSTATES_BEGIN,
-	C_MODELPATTERN_RUNSTATES_FETCH_SETTINGS,
+	C_MODELPATTERN_RUNSTATES_CHECK_CONNECTIONS,
 	C_MODELPATTERN_RUNSTATES_COM_REGISTRATION,
 	C_MODELPATTERN_RUNSTATES_USB_REGISTRATION,
 	C_MODELPATTERN_RUNSTATES_INST_SELECTION,
@@ -160,8 +160,8 @@ private:
 	class agentModel					*pAgtMod;
 	threadDataAgentModelPattern_t		 sThreadDataAgentModelPattern;
 
-	/* All Instruments detected */
-	ArrayOfInstruments_t				 ai;
+	/* All Instruments detected */  // --> use   g_am_InstList  (RF-Lab_Win32.cpp)  instead
+	//ArrayOfInstruments_t				 ai;
 
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
@@ -191,7 +191,9 @@ private:
 
 public:
 	explicit				agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
+#ifdef OLD
 	ArrayOfInstruments_t*	getAIPtr(void);
+#endif
 	void					run(void);
 
 private:

@@ -100,7 +100,9 @@ private:
 	unbounded_buffer<agentUsbReq>		*pAgtUsbTmcReq;
 	unbounded_buffer<agentUsbRsp>		*pAgtUsbTmcRsp;
 
+#ifdef OLD
 	ArrayOfInstruments_t*				 pAI;
+#endif
 
 	bool								 _isStarted;
 	bool								 _running;

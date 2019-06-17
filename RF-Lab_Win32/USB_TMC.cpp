@@ -36,9 +36,11 @@ USB_TMC::USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbTmcReq, unbounded_buffer<
 {
 	g_usb_tmc = this;
 
+#ifdef OLD
 	if (g_am) {
 		pAI = ((agentModelPattern*)(g_am->getCurModCtx()))->getAIPtr();
 	}
+#endif
 }
 
 USB_TMC::~USB_TMC()
@@ -109,15 +111,8 @@ void USB_TMC::run(void)
 				int cnt = init_libusb(false);  // Results in  "devs"
 				_isOpen = true;
 
-				#if 0
-				if (cnt > 0) {
-					/* Find known or generic USB_TMC instruments attached to the USB bus */
-					cnt = findInstruments();
-				}
-				#endif
-
-				usbRspData.stat = C_USBRSP_REGISTRATION_LIST;
-				usbRspData.data = ((agentModelPattern*)(g_am->getCurModCtx()))->getAIPtr();
+				usbRspData.stat = C_USBRSP_REGISTRATION_DONE;
+				usbRspData.data = 0UL;
 				send(pAgtUsbTmcRsp, usbRspData);
 
 				_runState = C_USB_TMC_RUNSTATES_RUN;
@@ -226,6 +221,7 @@ int USB_TMC::init_libusb(bool show)
 
 void USB_TMC::shutdown_libusb(void)
 {
+#ifdef OLD
 	/* Release all USB attached instruments */
 	releaseInstrument_usb_iface(pAI->inst_rot,	pAI->inst_rot_cnt);		pAI->inst_rot_cnt	= 0;
 	releaseInstrument_usb_iface(pAI->inst_tx,	pAI->inst_tx_cnt);		pAI->inst_tx_cnt	= 0;
@@ -248,6 +244,7 @@ void USB_TMC::shutdown_libusb(void)
 		if (pAI->inst_rx[idx].dev_handle)
 			libusb_close(pAI->inst_rx[idx].dev_handle);
 	pAI->inst_rx_cnt = 0;
+#endif
 
 	/* Release the device list */
 	if (devs) {
@@ -575,6 +572,7 @@ instrument_t* USB_TMC::addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instr
 {
 	instrument_t *ret = NULL;
 
+#ifdef OLD
 	switch (type & INSTRUMENT_VARIANT_MASK) {
 
 	case INSTRUMENT_ROTORS__ALL:
@@ -623,6 +621,7 @@ instrument_t* USB_TMC::addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instr
 	break;
 
 	}  // switch();
+#endif
 
 	return ret;
 }

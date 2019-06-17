@@ -107,6 +107,7 @@ typedef struct instrument {
 } instrument_t;
 
 
+#ifdef OLD
 typedef struct ArrayOfInstruments {
 	int					inst_rot_cnt;
 	instrument_t		inst_rot[8];
@@ -117,7 +118,7 @@ typedef struct ArrayOfInstruments {
 	int					inst_rx_cnt;
 	instrument_t		inst_rx[8];
 } ArrayOfInstruments_t;
-
+#endif
 
 
 /* Functions */

@@ -42,7 +42,9 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , hThreadAgtUsbTmc(nullptr)
 				 , sThreadDataAgentModelPattern( { 0 } )
 
+#ifdef OLD
 				 , ai( { 0 } )
+#endif
 
 				 , pAgtUsbTmc(nullptr)
 
@@ -61,14 +63,18 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , rxSpan(0.0)
 				 , rxLevelMax(0.0)
 {
+#ifdef OLD
 	/* Clear instrument structure */
 	memset(&ai, 0, sizeof(ArrayOfInstruments_t));
+#endif
 }
 
+#ifdef OLD
 ArrayOfInstruments_t* agentModelPattern::getAIPtr(void)
 {
 	return &ai;
 }
+#endif
 
 inline bool agentModelPattern::isRunning(void)
 {
@@ -179,6 +185,8 @@ void agentModelPattern::threadsStop(void)
 
 void agentModelPattern::run(void)
 {
+	agentComReq comReqData = { 0 };
+
 	/* Delay until window is up and ready */
 	while (!(WinSrv::srvReady())) {
 		Sleep(25);
@@ -189,6 +197,7 @@ void agentModelPattern::run(void)
 	_runReinit	= false;
 	_runState	= C_MODELPATTERN_RUNSTATES_BEGIN;
 	while (_running) {
+
 		try {
 			switch (_runState) {
 
@@ -210,20 +219,46 @@ void agentModelPattern::run(void)
 				if (!_noWinMsg)
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM threads created", L"");
 
-				_runState = C_MODELPATTERN_RUNSTATES_FETCH_SETTINGS;
+
+				/* Request libusb to init */
+				{
+					agentUsbReq usbReqData;
+
+					usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
+					send(*pAgtUsbTmcReq, usbReqData);
+
+					agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
+					if (usbRspData.stat == C_USBRSP_REGISTRATION_DONE) {
+						/* USB ready */
+
+						if (!_noWinMsg)
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB bus registration done", L"");
+					}
+				}
+
+				_runState = C_MODELPATTERN_RUNSTATES_CHECK_CONNECTIONS;
 			}
 			break;
 
 
 			/* Request list of instruments with their connection settings */
-			case C_MODELPATTERN_RUNSTATES_FETCH_SETTINGS:
+			case C_MODELPATTERN_RUNSTATES_CHECK_CONNECTIONS:
 			{
 				// TODO: coding
 				/* Check for active Instruments */
 				checkInstruments();
 
 				/* Update GUI with active/absent instruments */
-				//xxx();
+				{
+					/* Inform UI about up-to-date list */
+
+					// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically
+					// MENUINFO x;
+					// InsertMenuItem();
+
+
+					// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
+				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_COM_REGISTRATION;
 			}
@@ -233,8 +268,7 @@ void agentModelPattern::run(void)
 			/* Find COM / IEC instruments for registration */
 			case C_MODELPATTERN_RUNSTATES_COM_REGISTRATION:
 			{
-				char buf[C_BUF_SIZE];
-				agentComReq comReqData;
+				//char buf[C_BUF_SIZE];
 
 				/* Start serial communication servers if not already done */
 				{
@@ -289,6 +323,7 @@ void agentModelPattern::run(void)
 
 				/* Open TX */
 				if (pAgtCom[C_COMINST_TX]) {
+#ifdef OLD_CODE
 					comReqData.cmd = C_COMREQ_OPEN_IDN;
 					if (C_TX_COM_IS_IEC) {
 						pAgtCom[C_COMINST_TX]->setIecAddr(C_TX_COM_IEC_ADDR);
@@ -349,10 +384,12 @@ void agentModelPattern::run(void)
 							}
 						}
 					}
+#endif
 				}
 
 				/* Open RX */
 				if (pAgtCom[C_COMINST_RX]) {
+#ifdef OLD_CODE
 					comReqData.cmd = C_COMREQ_OPEN_IDN;
 					if (C_RX_COM_IS_IEC) {
 						pAgtCom[C_COMINST_RX]->setIecAddr(C_RX_COM_IEC_ADDR);
@@ -416,13 +453,15 @@ void agentModelPattern::run(void)
 				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_USB_REGISTRATION;
-			}
+#endif
+				}
 			break;
 
 
 			/* Find USB instruments for registration */
 			case C_MODELPATTERN_RUNSTATES_USB_REGISTRATION:
 			{
+#ifdef OLD_CODE
 				agentUsbReq usbReqData;
 
 				usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
@@ -448,6 +487,7 @@ void agentModelPattern::run(void)
 				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_INST_SELECTION;
+#endif
 			}
 			break;
 
@@ -455,12 +495,14 @@ void agentModelPattern::run(void)
 			/* WinSrv user interaction: selection of instruments */
 			case C_MODELPATTERN_RUNSTATES_INST_SELECTION:
 			{
+#ifdef OLD_CODE
 				/* Wait until the instruments are selected */
 				{
 					// TODO: code
 				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_INST_COM_INIT;
+#endif
 			}
 			break;
 
@@ -468,6 +510,7 @@ void agentModelPattern::run(void)
 			/* Initilization of selected COM / IEC instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_COM_INIT:
 			{
+#ifdef OLD_CODE
 				agentComReq comReqData;
 				agentComRsp comRspData;
 
@@ -660,8 +703,8 @@ void agentModelPattern::run(void)
 							//agentModel::setTxPwrValue(getTxPwrDefault());
 							initState = 0x8F;
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
+						}
 					}
-				}
 #else
 					// set TX device default parameters
 					{
@@ -676,7 +719,7 @@ void agentModelPattern::run(void)
 							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX default parameters are set", L"");
 					}
 #endif
-			}
+				}
 
 				// RX init
 				if (pAgtCom[C_COMINST_RX]) {
@@ -785,6 +828,7 @@ void agentModelPattern::run(void)
 						}
 					}
 				}
+#endif
 			}
 			break;
 
@@ -797,21 +841,21 @@ void agentModelPattern::run(void)
 				initState = 0xD0;
 				if (!_noWinMsg)
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ waiting for response from the rotor", L"");
-					bool state = try_receive(*(pAgtComRsp[C_COMINST_ROT]), comRspData);
-					if (state) {
-						// consume each reported state
-						if (comRspData.stat == C_COMRSP_FAIL) {
-							initState = 0xDF;
-							if (!_noWinMsg)
-								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 1 ~ no response from the rotor", L"ERROR!");
-							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
-						}
-					}
-					else {
-						initState = 0xD1;
+				bool state = try_receive(*(pAgtComRsp[C_COMINST_ROT]), comRspData);
+				if (state) {
+					// consume each reported state
+					if (comRspData.stat == C_COMRSP_FAIL) {
+						initState = 0xDF;
 						if (!_noWinMsg)
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
-						_runState = C_MODELPATTERN_RUNSTATES_USB_INST_INIT;
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 1 ~ no response from the rotor", L"ERROR!");
+						_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
+					}
+				}
+				else {
+					initState = 0xD1;
+					if (!_noWinMsg)
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
+					_runState = C_MODELPATTERN_RUNSTATES_USB_INST_INIT;
 				}
 			}
 			break;
@@ -821,13 +865,15 @@ void agentModelPattern::run(void)
 			/* Initilization of selected USB instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_USB_INIT:
 			{
+#ifdef OLD_CODE
 				// TODO: coding
-				
+
 				if (!_noWinMsg)
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
 
 				/* success, all devices are ready */
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
+#endif
 			}
 			break;
 
@@ -838,7 +884,7 @@ void agentModelPattern::run(void)
 				break;
 
 
-			/* Error during any INIT stage */
+				/* Error during any INIT stage */
 			case C_MODELPATTERN_RUNSTATES_INIT_ERROR:
 			{
 				/* Init Error occured, show requester */
@@ -865,6 +911,7 @@ void agentModelPattern::run(void)
 			/* Closing COM / IEC instrument connection */
 			case C_MODELPATTERN_RUNSTATES_COM_CLOSE:
 			{
+#ifdef OLD_CODE
 				agentUsbReq usbReqData;
 				agentComReq comReqData;
 				usbReqData.cmd = C_USBREQ_END;
@@ -895,6 +942,7 @@ void agentModelPattern::run(void)
 				catch (const Concurrency::operation_timed_out& e) {
 					(void)e;
 				}
+#endif
 			}
 			break;
 
@@ -941,15 +989,16 @@ void agentModelPattern::run(void)
 					if (!_noWinMsg)
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"REINIT");
 
-				} else {
+				}
+				else {
 					_runState = C_MODELPATTERN_RUNSTATES_NOOP;
 					_running = false;
 					if (!_noWinMsg)
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"CLOSED");
 				}
 			}
-#endif
 			break;
+#endif
 
 
 			/* WinSrv SHUTDOWN request */
@@ -966,8 +1015,8 @@ void agentModelPattern::run(void)
 			case C_MODELPATTERN_RUNSTATES_REINIT:
 			{
 				/* Close any devices and restart init process */
-				_runReinit	= true;
-				_runState	= C_MODELPATTERN_RUNSTATES_USB_CLOSE;
+				_runReinit = true;
+				_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE;
 			}
 			break;
 
@@ -978,6 +1027,7 @@ void agentModelPattern::run(void)
 				Sleep(25L);
 				break;
 			}  // switch ()
+			}
 		}
 
 		catch (const Concurrency::operation_timed_out& e) {
@@ -1013,7 +1063,6 @@ void agentModelPattern::run(void)
 
 void agentModelPattern::checkInstruments(void)
 {
-#ifndef NEW
 	am_InstList_t::iterator it = g_am_InstList.begin();
 
 	/* Iterate over all instruments and check which one responds */
@@ -1038,25 +1087,10 @@ void agentModelPattern::checkInstruments(void)
 		/* Move to next instrument */
 		it++;
 	}
-#endif
 
 #ifdef OLD
 	if (g_am_InstList.size()) {
 		am_InstList_t::iterator it = g_am_InstList.begin();
-
-		/* Init LIBUSB */
-		{
-			agentUsbReq usbReqData;
-			usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
-			send(*pAgtUsbTmcReq, usbReqData);
-
-			/* Wait for response */
-			agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
-			SHORT stat = usbRspData.stat;
-			if (stat != C_USBRSP_REGISTRATION_LIST) {
-				return;
-			}
-		}
 
 		/* Iterate over all instruments and check which do respond */
 		while (it != g_am_InstList.end()) {
@@ -1095,12 +1129,31 @@ bool agentModelPattern::instTryEth(am_InstList_t::iterator it)
 
 bool agentModelPattern::instTryUsb(am_InstList_t::iterator it)
 {
+	bool isConnected = false;
+	agentComReqUsbDev_t usbDev;
+	usbDev.usbIdVendor = it->linkUsbIdVendor;
+	usbDev.usbIdProduct = it->linkUsbIdProduct;
 
-	return false;
+	agentUsbReq usbReqData;
+	usbReqData.cmd = C_USBREQ_IS_DEV_CONNECTED;
+	usbReqData.data = (void*) &usbDev;
+	send(*pAgtUsbTmcReq, usbReqData);
+
+	agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
+	if (usbRspData.stat == C_USBRSP_IS_DEV_CONNECTED) {
+		isConnected = *((bool*) usbRspData.data);
+		if (!isConnected) {
+			/* Remove USB link bit */
+			it->linkType &= ~(LINKTYPE_USB);
+		}
+	}
+	return isConnected;
 }
 
 bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 {
+	/* Open COM connection */
+
 
 	return false;
 }
@@ -1205,6 +1258,7 @@ instrument_t* agentModelPattern::addSerInstrument(	INSTRUMENT_ENUM_t type,
 {
 	instrument_t *ret = NULL;
 
+#ifdef OLD
 	switch (type & INSTRUMENT_VARIANT_MASK) {
 
 	case INSTRUMENT_ROTORS__ALL:
@@ -1292,6 +1346,7 @@ instrument_t* agentModelPattern::addSerInstrument(	INSTRUMENT_ENUM_t type,
 	break;
 
 	}  // switch();
+#endif
 
 	return ret;
 }

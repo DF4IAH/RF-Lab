@@ -788,11 +788,9 @@ void agentModel::fsLoadInstruments(const char* filename)
 				else if ((variant == 'i') && !_strnicmp(p, "ServerType=", 11)) {
 					cA.attrServerType.assign(p + 11, p + lineLen);
 
-#if 0
 					if (!_strnicmp(cA.attrServerType.c_str(), "GPIB", 4)) {
 						cA.attrLinkType |= LINKTYPE_IEC_VIA_SER;
 					}
-#endif
 				}
 				else if ((variant == 'i') && !_strnicmp(p, "ServerPort=", 11)) {
 					try {
@@ -949,7 +947,8 @@ void agentModel::fsLoadInstruments(const char* filename)
 								attr2.attrComPar = attr.attrComPar;
 								attr2.attrComStop = attr.attrComStop;
 
-								attr2.attrLinkType = LINKTYPE_IEC_VIA_SER;
+								/* Link to COM port established */
+								attr2.attrLinkType |= (LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
 
 								it2->second = attr2;
 								break;
@@ -1255,6 +1254,12 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		/* GPIB */
 		if (attrFrom.attrLinkType & LINKTYPE_IEC) {
 			attrTo.attrGpibAddr = attrFrom.attrGpibAddr;
+		}
+
+		/* GPIB via COM */
+		if (attrFrom.attrLinkType & LINKTYPE_IEC_VIA_SER) {
+			attrTo.attrServerType = attrFrom.attrServerType;
+			attrTo.attrServerPort = attrFrom.attrServerPort;
 		}
 
 		/* COM */

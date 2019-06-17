@@ -1087,37 +1087,6 @@ void agentModelPattern::checkInstruments(void)
 		/* Move to next instrument */
 		it++;
 	}
-
-#ifdef OLD
-	if (g_am_InstList.size()) {
-		am_InstList_t::iterator it = g_am_InstList.begin();
-
-		/* Iterate over all instruments and check which do respond */
-		while (it != g_am_InstList.end()) {
-			/* From high to low priority */
-
-			/* USB */
-			if (checkInstUsb(it)) {
-				/* Use USB connection */
-				it->actSelected = true;
-				it->actRank = 1;
-
-			}
-
-			/* COM */
-			if (checkInstCom(it)) {
-				/* Use COM connection */
-				if (!it->actSelected) {
-					it->actSelected = true;
-					it->actRank = 2;
-				}
-			}
-
-			/* Move to next instrument */
-			it++;
-		}
-	}
-#endif
 }
 
 
@@ -1161,15 +1130,16 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 
 	case INST_FUNC_ROTOR:
 	{
-		/* Start COM server for the rotor (turntable) */
 		bool isConnected = false;
+
+		/* Start COM server for the rotor (turntable) */
 		pAgtCom[C_COMINST_ROT]->start();
 		Sleep(25);
 
 		int len = _snprintf_s(buf, C_BUF_SIZE, 
 			C_OPENPARAMS_STR,
-			C_ROT_COM_PORT, C_ROT_COM_BAUD, C_ROT_COM_BITS, C_ROT_COM_PARITY, C_ROT_COM_STOPBITS,
-			C_SET_IEC_ADDR_INVALID);
+			it->linkSerPort, it->linkSerBaud, it->linkSerBits, it->linkSerParity, it->linkSerStopbits,
+			it->linkSerIecAddr);
 		buf[len] = 0;
 
 		comReqData.cmd  = C_COMREQ_OPEN_ZOLIX;
@@ -1208,116 +1178,62 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 	break;
 
 	case INST_FUNC_GEN:
-	{
-
-	}
-	break;
-
 	case INST_FUNC_SPEC:
 	{
+		const int agtComIdx = (it->listFunction == INST_FUNC_GEN ?  C_COMINST_TX : C_COMINST_RX);
 
+		if (pAgtCom[agtComIdx]) {
+			bool isConnected = false;
+
+			/* Start COM server for the TX */
+			pAgtCom[agtComIdx]->start();
+			Sleep(25);
+
+			int len = _snprintf_s(buf, C_BUF_SIZE,
+				C_OPENPARAMS_STR,
+				it->linkSerPort, it->linkSerBaud, it->linkSerBits, it->linkSerParity, it->linkSerStopbits,
+				C_SET_IEC_ADDR_INVALID);
+			buf[len] = 0;
+
+			comReqData.cmd = C_COMREQ_OPEN_IDN;
+			comReqData.parm = string(buf);
+			send(*(pAgtComReq[agtComIdx]), comReqData);
+
+			agentComRsp comRspData = receive(*(pAgtComRsp[agtComIdx]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+			if (comRspData.stat == C_COMRSP_DATA) {
+				string rspIdnStr = string(comRspData.data);
+				/* IDN string */
+				if (!rspIdnStr.empty()) {
+					isConnected = true;
+				}
+			}
+
+			if (isConnected) {
+				if (!_noWinMsg)
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: device found", L"");
+			}
+			else {
+				/* Remove COM link bit(s) */
+				it->linkType &= ~(LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
+			}
+
+			/* Close connection again */
+			comReqData.cmd = C_COMREQ_CLOSE;
+			send(*(pAgtComReq[agtComIdx]), comReqData);
+
+			comRspData = receive(*(pAgtComRsp[agtComIdx]));
+			if (comRspData.stat == C_COMRSP_OK) {
+				/* Connection closed */
+				if (!_noWinMsg)
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: device port closed again", L"");
+			}
+		}
 	}
 	break;
 
 	default: { }
 	}  // switch (it->listFunction)
 
-	return false;
-}
-
-
-bool agentModelPattern::checkInstUsb(am_InstList_t::iterator it)
-{
-#ifdef OLD
-	if (it->linkUsbIdVendor || it->linkUsbIdProduct) {
-		const agentUsbReqDev data = { it->linkUsbIdVendor, it->linkUsbIdProduct };
-
-		agentUsbReq usbReqData;
-		usbReqData.cmd = C_USBREQ_IS_DEV_CONNECTED;
-		usbReqData.data = (void*)&data;
-		send(*pAgtUsbTmcReq, usbReqData);
-
-		agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
-		bool result = *((bool*)usbRspData.data);
-		return result;
-	}
-	else {
-		return false;
-	}
-#endif
-	return false;
-}
-
-bool agentModelPattern::checkInstCom(am_InstList_t::iterator it)
-{
-#ifdef OLD
-	char buf[C_BUF_SIZE];
-	agentComReq comReqData;
-
-	/* Different handling of the serial stream */
-	switch (it->listFunction) {
-	case INST_FUNC_ROTOR:
-	{
-		if (pAgtCom[C_COMINST_ROT]) {
-			/* Start COM server for the rotor (turntable) */
-			pAgtCom[C_COMINST_ROT]->start();
-			Sleep(25);
-
-			int len = _snprintf_s(buf, C_BUF_SIZE, C_OPENPARAMS_STR,
-				C_ROT_COM_PORT, C_ROT_COM_BAUD, C_ROT_COM_BITS, C_ROT_COM_PARITY, C_ROT_COM_STOPBITS,
-				C_SET_IEC_ADDR_INVALID);
-			buf[len] = 0;
-			comReqData.cmd	= C_COMREQ_OPEN_ZOLIX;
-			comReqData.parm = string(buf);
-			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-
-			agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
-			if (comRspData.stat == C_COMRSP_DATA) {
-				string rspIdnStr = string(comRspData.data);
-				if (rspIdnStr.empty()) {
-					comReqData.cmd = C_COMREQ_CLOSE;
-					send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-					receive(*(pAgtComRsp[C_COMINST_ROT]));
-// TODO: here, new code to check!
-				}
-				else {
-					addSerInstrument(INSTRUMENT_ROTORS_SER__ZOLIX_SC300,
-						pAgtCom[C_COMINST_ROT], C_ROT_COM_PORT, C_ROT_COM_BAUD, C_ROT_COM_BITS, C_ROT_COM_PARITY, C_ROT_COM_STOPBITS,
-						false, 0,
-						rspIdnStr);
-
-					initState = 0x02;
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor port opened", L"");
-				}
-			}
-		}
-	}
-	break;
-
-	case INST_FUNC_GEN:
-	{
-		/* Start COM server for the TX */
-		if (pAgtCom[C_COMINST_TX]) {
-			pAgtCom[C_COMINST_TX]->start();
-		}
-
-	}
-	break;
-
-	case INST_FUNC_SPEC:
-	{
-		/* Start COM server for the RX */
-		if (pAgtCom[C_COMINST_RX]) {
-			pAgtCom[C_COMINST_RX]->start();
-		}
-
-	}
-	break;
-
-	default: { }
-	}  // switch ()
-#endif
 	return false;
 }
 

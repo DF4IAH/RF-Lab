@@ -246,6 +246,41 @@ void agentCom::run(void)
 					&data_iec_addr
 					);  // COM PORT
 
+				/* Convert Stopbits */
+				switch (data_stopbits) {
+				case 1:
+					data_stopbits = ONESTOPBIT;
+					break;
+
+				case 2:
+					data_stopbits = TWOSTOPBITS;
+					break;
+
+				default:
+					data_stopbits = ONESTOPBIT;
+				}
+
+				/* Convert Parity */
+				switch (data_parity) {
+				case 'N':
+				case 'n':
+					data_parity = NOPARITY;
+					break;
+
+				case 'E':
+				case 'e':
+					data_parity = EVENPARITY;
+					break;
+
+				case 'O':
+				case 'o':
+					data_parity = ODDPARITY;
+					break;
+
+				default:
+					data_parity = NOPARITY;
+				}
+
 				wchar_t cbuf[C_BUF_SIZE];
 				wsprintf(cbuf, L"\\\\.\\COM%d%c", data_port, 0);
 				_hCom = CreateFile(cbuf,           // port name

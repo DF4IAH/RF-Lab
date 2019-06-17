@@ -13,6 +13,9 @@ using namespace std;
 
 #define AGENT_PATTERN_RECEIVE_TIMEOUT			  2500
 
+
+//#ifdef OLD_CODE
+
 /* ROTOR: Count of ticks to turn 1° right */
 #define AGENT_PATTERN_ROT_TICKS_PER_DEGREE		   800
 
@@ -41,15 +44,19 @@ using namespace std;
 
 /* RX: Rohde & Schwarz FSEK20 (spectrum analyzer) - frequency span 100 kHz */
 #define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT		 100e3
+//#endif
+
+
+#ifdef OLD_CODE
 
 /* Serial communication parameters, as long as they are not stored non-volatile */
 /* Zolix: USB-->COM port 3: 19200 baud, 8N1 */
-#define C_ROT_COM_IS_IEC							 false
-#define C_ROT_COM_PORT								 3
-#define C_ROT_COM_BAUD								 CBR_19200
-#define C_ROT_COM_BITS								 8
-#define C_ROT_COM_PARITY							 NOPARITY
-#define C_ROT_COM_STOPBITS							 ONESTOPBIT
+//#define C_ROT_COM_IS_IEC							 false
+//#define C_ROT_COM_PORT								 3
+//#define C_ROT_COM_BAUD								 CBR_19200
+//#define C_ROT_COM_BITS								 8
+//#define C_ROT_COM_PARITY							 NOPARITY
+//#define C_ROT_COM_STOPBITS							 ONESTOPBIT
 
 #define C_TX_COM_IS_IEC								 true
 #define C_TX_COM_PORT								 1
@@ -111,6 +118,8 @@ using namespace std;
 #define C_RX_COM_IEC_PARITY							 NOPARITY
 #define C_RX_COM_IEC_STOPBITS						 ONESTOPBIT
 #endif
+
+#endif  // OLD_CODE
 
 
 /* Instruments */
@@ -207,8 +216,6 @@ private:
 	bool					instTryUsb(am_InstList_t::iterator it);
 	bool					instTryCom(am_InstList_t::iterator it);
 
-	bool					checkInstUsb(am_InstList_t::iterator it);
-	bool					checkInstCom(am_InstList_t::iterator it);
 	instrument_t*			addSerInstrument(INSTRUMENT_ENUM_t type,
 								agentCom* pAgtCom, uint8_t comPort, uint32_t comBaud, uint8_t comBits, uint8_t comParity, uint8_t comStopbits, 
 								bool isIec, uint8_t iecAddr,

@@ -244,19 +244,19 @@ void agentModelPattern::run(void)
 			/* Request list of instruments with their connection settings */
 			case C_MODELPATTERN_RUNSTATES_CHECK_CONNECTIONS:
 			{
-				// TODO: coding
 				/* Check for active Instruments */
 				checkInstruments();
 
+				// TODO: coding
 				/* Update GUI with active/absent instruments */
 				{
 					/* Inform UI about up-to-date list */
+					guiUpdateConnectedInstruments();
 
 					// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically
 					// MENUINFO x;
 					// InsertMenuItem();
-
-
+					
 					// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
 				}
 

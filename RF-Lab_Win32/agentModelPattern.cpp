@@ -247,23 +247,20 @@ void agentModelPattern::run(void)
 				/* Check for active Instruments */
 				checkInstruments();
 
-				// TODO: coding
 				/* Update GUI with active/absent instruments */
-				{
-					/* Inform UI about up-to-date list */
-					guiUpdateConnectedInstruments();
+				guiUpdateConnectedInstruments();
 
-					// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically
-					// MENUINFO x;
-					// InsertMenuItem();
-					
-					// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
-				}
-
-				_runState = C_MODELPATTERN_RUNSTATES_COM_REGISTRATION;
+				_runState = C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI;
 			}
 			break;
 
+			case C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI:
+			{
+				/* Wait for User decission at the GUI */
+				if (false) {
+					_runState = C_MODELPATTERN_RUNSTATES_COM_REGISTRATION;
+				}
+			}
 
 			/* Find COM / IEC instruments for registration */
 			case C_MODELPATTERN_RUNSTATES_COM_REGISTRATION:
@@ -1336,6 +1333,20 @@ instrument_t* agentModelPattern::addSerInstrument(	INSTRUMENT_ENUM_t type,
 #endif
 
 	return ret;
+}
+
+
+void agentModelPattern::guiUpdateConnectedInstruments(void)
+{
+	/* Update GUI with the latest connceted instruments */
+
+	/* Inform UI about up-to-date list */
+
+	// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically
+	// MENUINFO x;
+	// InsertMenuItem();
+
+	// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
 }
 
 void agentModelPattern::wmCmd(int wmId, LPVOID arg)

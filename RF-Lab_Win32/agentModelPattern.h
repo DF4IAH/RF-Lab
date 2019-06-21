@@ -130,6 +130,7 @@ enum C_MODELPATTERN_RUNSTATES_ENUM {
 	C_MODELPATTERN_RUNSTATES_NOOP = 0,
 	C_MODELPATTERN_RUNSTATES_BEGIN,
 	C_MODELPATTERN_RUNSTATES_CHECK_CONNECTIONS,
+	C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI,
 	C_MODELPATTERN_RUNSTATES_COM_REGISTRATION,
 	C_MODELPATTERN_RUNSTATES_USB_REGISTRATION,
 	C_MODELPATTERN_RUNSTATES_INST_SELECTION,
@@ -220,7 +221,11 @@ private:
 								agentCom* pAgtCom, uint8_t comPort, uint32_t comBaud, uint8_t comBits, uint8_t comParity, uint8_t comStopbits, 
 								bool isIec, uint8_t iecAddr,
 								string idn);
+
+	void					guiUpdateConnectedInstruments(void);
+
 	void					sendPos(long tickPos);
+
 
 public:
 	/* overwriting agentModel member functions() */

@@ -70,4 +70,7 @@ public:
 	static void		srvWmCmd(HWND hWnd, int wmId, LPVOID arg = nullptr);
 
 	void			reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo);
+
+	void			guiUpdateConnectedInstruments(void);
+
 };

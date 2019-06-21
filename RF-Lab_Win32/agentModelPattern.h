@@ -167,6 +167,7 @@ class agentModelPattern : public agentModelVariant, public agent
 private:
 	LPVOID								 _arg;
 
+	class WinSrv						*_winSrv;
 	class agentModel					*pAgtMod;
 	threadDataAgentModelPattern_t		 sThreadDataAgentModelPattern;
 
@@ -200,7 +201,7 @@ private:
 
 
 public:
-	explicit				agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
+	explicit				agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
 #ifdef OLD
 	ArrayOfInstruments_t*	getAIPtr(void);
 #endif
@@ -221,8 +222,6 @@ private:
 								agentCom* pAgtCom, uint8_t comPort, uint32_t comBaud, uint8_t comBits, uint8_t comParity, uint8_t comStopbits, 
 								bool isIec, uint8_t iecAddr,
 								string idn);
-
-	void					guiUpdateConnectedInstruments(void);
 
 	void					sendPos(long tickPos);
 

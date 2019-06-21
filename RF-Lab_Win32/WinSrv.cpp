@@ -455,3 +455,31 @@ void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelI
 		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)modelInfo);
 	}
 }
+
+void WinSrv::guiUpdateConnectedInstruments(void)
+{
+	/* Update UI with the latest connected instruments */
+
+	// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically
+	// MENUINFO x;
+	// InsertMenuItemA(HMENU hmenu, UINT item, BOOL fByPosition, LPCMENUITEMINFOA lpmi);
+	// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
+
+	// ID_AKTOR_
+
+	/* Get all names of instruments and do enter into the menu */
+	{
+		/* Get all names of rotors */
+		{
+			g_am_InstList.begin();
+		}
+
+		/* Get all names of RF-generators */
+		{
+		}
+
+		/* Get all names of specs */
+		{
+		}
+	}
+}

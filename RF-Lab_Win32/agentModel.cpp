@@ -75,7 +75,7 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 
 	switch (am_variant) {
 	case AGENT_MODEL_PATTERN:
-		_curModel = new agentModelPattern(src, tgt, this, mode);
+		_curModel = new agentModelPattern(src, tgt, _winSrv, this, mode);
 		break;
 
 	case AGENT_MODEL_NONE:

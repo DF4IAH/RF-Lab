@@ -31,11 +31,13 @@ template <class T>  void SafeDelete(T **ppT)
 }
 
 
-agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class agentModel *am, AGENT_ALL_SIMUMODE_t mode)
+agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, class agentModel *am, AGENT_ALL_SIMUMODE_t mode)
 				 : pAgtComReq{ nullptr }
 				 , pAgtComRsp{ nullptr }
 				 , pAgtCom{ nullptr }
 				 , _arg(nullptr)
+
+				, _winSrv(winSrv)
 
 				 , pAgtMod(am)
 
@@ -248,7 +250,7 @@ void agentModelPattern::run(void)
 				checkInstruments();
 
 				/* Update GUI with active/absent instruments */
-				guiUpdateConnectedInstruments();
+				_winSrv->guiUpdateConnectedInstruments();
 
 				_runState = C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI;
 			}
@@ -1335,19 +1337,6 @@ instrument_t* agentModelPattern::addSerInstrument(	INSTRUMENT_ENUM_t type,
 	return ret;
 }
 
-
-void agentModelPattern::guiUpdateConnectedInstruments(void)
-{
-	/* Update GUI with the latest connceted instruments */
-
-	/* Inform UI about up-to-date list */
-
-	// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically
-	// MENUINFO x;
-	// InsertMenuItem();
-
-	// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
-}
 
 void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 {

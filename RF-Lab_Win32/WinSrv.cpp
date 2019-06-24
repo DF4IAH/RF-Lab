@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "resource.h"
 
 // COM-style
 #include <shobjidl.h>
@@ -460,12 +461,156 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 {
 	/* Update UI with the latest connected instruments */
 
-	// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically
-	// MENUINFO x;
+	// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically "Menu Creation Functions"
+	// @see https://docs.microsoft.com/de-de/windows/desktop/winmsg/window-features
+	// @see http://www.winprog.org/tutorial/
+	// @see https://www.codeproject.com/Articles/7503/An-examination-of-menus-from-a-beginner-s-point-of
+	// @see https://www.codeproject.com/Articles/7503/An-examination-of-menus-from-a-beginner-s-point-of#advanced1
 	// InsertMenuItemA(HMENU hmenu, UINT item, BOOL fByPosition, LPCMENUITEMINFOA lpmi);
 	// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
 
+	HMENU hmenu = GetMenu(hWnd);
+
+	MENUITEMINFO menuItemInfo;
+	memset(&menuItemInfo, 0, sizeof(MENUITEMINFO));
+	menuItemInfo.cbSize = sizeof(MENUITEMINFO);
+	menuItemInfo.fMask = MIIM_TYPE | MIIM_STATE | MIIM_ID | MIIM_SUBMENU;
+
+	/* Iterate over all menu entries */
+	int menuItemCnt = GetMenuItemCount(hmenu);
+	for (int menuItemIdx = 0; menuItemIdx < menuItemCnt; menuItemIdx++) {
+		GetMenuItemInfo(
+			hmenu,
+			menuItemIdx,
+			TRUE,
+			&menuItemInfo);
+
+		/* Visit each popup menu */
+		if (menuItemInfo.hSubMenu) {
+			TCHAR buffer[MAX_PATH];
+
+			GetMenuString(
+				hmenu,
+				menuItemIdx,
+				buffer,
+				MAX_PATH,
+				MF_BYPOSITION);
+
+			/* Is it the popup menu we do search for? */
+			if (!lstrcmp(L"Instrumenten-Liste", buffer)) {
+				/**/
+				HMENU hInstrPopupMenu = menuItemInfo.hSubMenu;
+				int instrMenuCnt = GetMenuItemCount(hInstrPopupMenu);
+
+				for (int instMenuIdx = 0; instMenuIdx < instrMenuCnt; instMenuIdx++) {
+					GetMenuString(
+						hInstrPopupMenu,
+						instMenuIdx,
+						buffer,
+						MAX_PATH,
+						MF_BYPOSITION);
+
+					if (!lstrcmp(L"Aktoren", buffer)) {
+						GetMenuItemInfo(
+							hInstrPopupMenu,
+							instMenuIdx,
+							TRUE,
+							&menuItemInfo);
+						if (menuItemInfo.hSubMenu) {
+							/* Aktoren found */
+							HMENU hAktorenMenu = menuItemInfo.hSubMenu;
+							int aktorenMenuCnt = GetMenuItemCount(hAktorenMenu);
+
+							for (int aktorenMenuIdx = 0; aktorenMenuIdx < aktorenMenuCnt; aktorenMenuIdx++) {
+								GetMenuString(
+									hAktorenMenu,
+									aktorenMenuIdx,
+									buffer,
+									MAX_PATH,
+									MF_BYPOSITION);
+
+								/* Entrypoint for actors found? */
+								if (!lstrcmp(L"_aktor_", buffer)) {
+#if 0
+									wchar_t testStr[] = L"Test";
+									MENUITEMINFOW aktorMiia;
+									memset(&aktorMiia, 0, sizeof(MENUITEMINFO));
+									aktorMiia.cbSize = sizeof(MENUITEMINFO);
+									aktorMiia.fMask = MIIM_STRING | MIIM_ID /* | MIIM_SUBMENU  */;
+									aktorMiia.fType = MFT_STRING;
+									aktorMiia.fState = MFS_ENABLED;
+									aktorMiia.wID = 0;
+									//aktorMiia.wID = 49152;
+									aktorMiia.hSubMenu = NULL;
+									//aktorMiia.hSubMenu = hAktorenMenu;
+									aktorMiia.hbmpChecked = NULL;
+									aktorMiia.hbmpUnchecked = NULL;
+									aktorMiia.dwTypeData = (LPWSTR) &testStr;
+									aktorMiia.cch = lstrlenW(testStr);
+
+									if (InsertMenuItem(
+										hAktorenMenu,
+										#if 0
+										(UINT) ID_AKTOR_,
+										FALSE,
+										#else
+										(UINT) 0,
+										TRUE,
+										#endif
+										&menuItemInfo)) {
+										__nop();
+										break;
+									}
+#else
+									AppendMenu(
+										hAktorenMenu,
+										MF_STRING | MF_CHECKED,
+										(UINT) ID_AKTOR_ITEM0_,
+										L"Test 1");
+
+									AppendMenu(
+										hAktorenMenu,
+										MF_STRING,
+										(UINT) (ID_AKTOR_ITEM0_ + 1),
+										L"Test 2");
+#endif
+
+									/* Remove anchor */
+									RemoveMenu(
+										hAktorenMenu,
+										(UINT) ID_AKTOR_,
+										MF_BYCOMMAND);
+									break;
+								}
+							}
+						}
+					}
+
+					else if (!lstrcmp(L"HF-Generatoren", buffer)) {
+
+					}
+
+					else if (!lstrcmp(L"Spektrumanalysatoren", buffer)) {
+
+					}
+
+				}
+			}
+		}
+	}
+
+	//InsertMenuItemA(hmenu, /*UINT item*/ 0, /*fByPosition*/ false, /*LPCMENUITEMINFOA*/ L"Test");
+
+	//MENUINFO mi;
+	//memset(&mi, 0, sizeof(MENUINFO));
+	//mi.cbSize = sizeof(MENUINFO);
+	//BOOL r = GetMenuInfo(hm, &mi);  // #define IDC_RFLAB_WIN32   109
+
+	//HWND hw = GetDlgItem(this->hWnd, 105);
+
 	// ID_AKTOR_
+
+	DrawMenuBar(this->hWnd);
 
 	/* Get all names of instruments and do enter into the menu */
 	{

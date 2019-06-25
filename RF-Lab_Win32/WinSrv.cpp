@@ -461,16 +461,28 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 {
 	/* Update UI with the latest connected instruments */
 
+#ifdef TUTORIALS
 	// @see https://msdn.microsoft.com/en-us/library/windows/desktop/ms647553(v=vs.85).aspx#accessing_menu_items_programmatically "Menu Creation Functions"
 	// @see https://docs.microsoft.com/de-de/windows/desktop/winmsg/window-features
 	// @see http://www.winprog.org/tutorial/
 	// @see https://www.codeproject.com/Articles/7503/An-examination-of-menus-from-a-beginner-s-point-of
 	// @see https://www.codeproject.com/Articles/7503/An-examination-of-menus-from-a-beginner-s-point-of#advanced1
-	// InsertMenuItemA(HMENU hmenu, UINT item, BOOL fByPosition, LPCMENUITEMINFOA lpmi);
-	// SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
+	InsertMenuItemA(HMENU hmenu, UINT item, BOOL fByPosition, LPCMENUITEMINFOA lpmi);
+	SendMessageW(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0);
+	InsertMenuItemA(hmenu, /*UINT item*/ 0, /*fByPosition*/ false, /*LPCMENUITEMINFOA*/ L"Test");
 
+	MENUINFO mi;
+	memset(&mi, 0, sizeof(MENUINFO));
+	mi.cbSize = sizeof(MENUINFO);
+	BOOL r = GetMenuInfo(hm, &mi);  // #define IDC_RFLAB_WIN32   109
+
+	HWND hw = GetDlgItem(this->hWnd, 105);
+#endif
+
+	/* Get menu class */
 	HMENU hmenu = GetMenu(hWnd);
 
+	/* Prepare request attributes of the items */
 	MENUITEMINFO menuItemInfo;
 	memset(&menuItemInfo, 0, sizeof(MENUITEMINFO));
 	menuItemInfo.cbSize = sizeof(MENUITEMINFO);
@@ -547,7 +559,7 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 											it->winID = aktorID;
 											AppendMenu(
 												hAktorenMenu,
-												MF_STRING | (it->actSelected ?  MF_CHECKED : 0) | (it->actLink ?  0 : MF_DISABLED),
+												MF_STRING | (it->actSelected ?  MF_CHECKED : 0) | (it->linkType ?  0 : MF_DISABLED),
 												(UINT) aktorID,
 												wName);
 										}
@@ -685,32 +697,5 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 		}
 	}
 
-	//InsertMenuItemA(hmenu, /*UINT item*/ 0, /*fByPosition*/ false, /*LPCMENUITEMINFOA*/ L"Test");
-
-	//MENUINFO mi;
-	//memset(&mi, 0, sizeof(MENUINFO));
-	//mi.cbSize = sizeof(MENUINFO);
-	//BOOL r = GetMenuInfo(hm, &mi);  // #define IDC_RFLAB_WIN32   109
-
-	//HWND hw = GetDlgItem(this->hWnd, 105);
-
-	// ID_AKTOR_
-
 	DrawMenuBar(this->hWnd);
-
-	/* Get all names of instruments and do enter into the menu */
-	{
-		/* Get all names of rotors */
-		{
-			g_am_InstList.begin();
-		}
-
-		/* Get all names of RF-generators */
-		{
-		}
-
-		/* Get all names of specs */
-		{
-		}
-	}
 }

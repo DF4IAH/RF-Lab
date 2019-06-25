@@ -1155,6 +1155,9 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 		}
 
 		if (isConnected) {
+			/* This rotor is selected by default */
+			it->actSelected = true;
+
 			if (!_noWinMsg)
 				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor found", L"");
 		}

@@ -43,6 +43,7 @@ typedef struct {
 	int									actRank;
 	bool								actSelected;
 	bool								actLink;
+	UINT								winID;
 	
 
 	/* Link settings */

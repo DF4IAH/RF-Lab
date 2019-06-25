@@ -516,6 +516,7 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 							instMenuIdx,
 							TRUE,
 							&menuItemInfo);
+
 						if (menuItemInfo.hSubMenu) {
 							/* Aktoren found */
 							HMENU hAktorenMenu = menuItemInfo.hSubMenu;
@@ -531,49 +532,29 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 
 								/* Entrypoint for actors found? */
 								if (!lstrcmp(L"_aktor_", buffer)) {
-#if 0
-									wchar_t testStr[] = L"Test";
-									MENUITEMINFOW aktorMiia;
-									memset(&aktorMiia, 0, sizeof(MENUITEMINFO));
-									aktorMiia.cbSize = sizeof(MENUITEMINFO);
-									aktorMiia.fMask = MIIM_STRING | MIIM_ID /* | MIIM_SUBMENU  */;
-									aktorMiia.fType = MFT_STRING;
-									aktorMiia.fState = MFS_ENABLED;
-									aktorMiia.wID = 0;
-									//aktorMiia.wID = 49152;
-									aktorMiia.hSubMenu = NULL;
-									//aktorMiia.hSubMenu = hAktorenMenu;
-									aktorMiia.hbmpChecked = NULL;
-									aktorMiia.hbmpUnchecked = NULL;
-									aktorMiia.dwTypeData = (LPWSTR) &testStr;
-									aktorMiia.cch = lstrlenW(testStr);
+									UINT aktorID = ID_AKTOR_ITEM0_;
+									/* Iterate over the instrument list */
+									am_InstList_t::iterator it = g_am_InstList.begin();
+									
+									/* Iterate over all instruments and check which one responds */
+									while (it != g_am_InstList.end()) {
+										if (it->listFunction == INST_FUNC_ROTOR) {
+											/* Convert char[] to wchar_t[] */
+											wchar_t	wName[MAX_PATH];
+											size_t converted = 0;
+											mbstowcs_s(&converted, wName, it->listEntryName.c_str(), MAX_PATH);
 
-									if (InsertMenuItem(
-										hAktorenMenu,
-										#if 0
-										(UINT) ID_AKTOR_,
-										FALSE,
-										#else
-										(UINT) 0,
-										TRUE,
-										#endif
-										&menuItemInfo)) {
-										__nop();
-										break;
+											it->winID = aktorID;
+											AppendMenu(
+												hAktorenMenu,
+												MF_STRING | (it->actSelected ?  MF_CHECKED : 0) | (it->actLink ?  0 : MF_DISABLED),
+												(UINT) aktorID,
+												wName);
+										}
+
+										/* Advance to next entry */
+										it++;
 									}
-#else
-									AppendMenu(
-										hAktorenMenu,
-										MF_STRING | MF_CHECKED,
-										(UINT) ID_AKTOR_ITEM0_,
-										L"Test 1");
-
-									AppendMenu(
-										hAktorenMenu,
-										MF_STRING,
-										(UINT) (ID_AKTOR_ITEM0_ + 1),
-										L"Test 2");
-#endif
 
 									/* Remove anchor */
 									RemoveMenu(
@@ -587,13 +568,118 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 					}
 
 					else if (!lstrcmp(L"HF-Generatoren", buffer)) {
+						GetMenuItemInfo(
+							hInstrPopupMenu,
+							instMenuIdx,
+							TRUE,
+							&menuItemInfo);
 
+						if (menuItemInfo.hSubMenu) {
+							/* HF-Generatoren found */
+							HMENU hRfGenMenu = menuItemInfo.hSubMenu;
+							int rfGenMenuCnt = GetMenuItemCount(hRfGenMenu);
+
+							for (int rfGenMenuIdx = 0; rfGenMenuIdx < rfGenMenuCnt; rfGenMenuIdx++) {
+								GetMenuString(
+									hRfGenMenu,
+									rfGenMenuIdx,
+									buffer,
+									MAX_PATH,
+									MF_BYPOSITION);
+
+								/* Entrypoint for actors found? */
+								if (!lstrcmp(L"_hf_generator_", buffer)) {
+									UINT rfGenID = ID_GENERATOR_ITEM0_;
+									/* Iterate over the instrument list */
+									am_InstList_t::iterator it = g_am_InstList.begin();
+
+									/* Iterate over all instruments and check which one responds */
+									while (it != g_am_InstList.end()) {
+										if (it->listFunction == INST_FUNC_GEN) {
+											/* Convert char[] to wchar_t[] */
+											wchar_t	wName[MAX_PATH];
+											size_t converted = 0;
+											mbstowcs_s(&converted, wName, it->listEntryName.c_str(), MAX_PATH);
+
+											it->winID = rfGenID;
+											AppendMenu(
+												hRfGenMenu,
+												MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
+												(UINT)rfGenID,
+												wName);
+										}
+
+										/* Advance to next entry */
+										it++;
+									}
+
+									/* Remove anchor */
+									RemoveMenu(
+										hRfGenMenu,
+										(UINT)ID_GENERATOR_,
+										MF_BYCOMMAND);
+									break;
+								}
+							}
+						}
 					}
 
 					else if (!lstrcmp(L"Spektrumanalysatoren", buffer)) {
+						GetMenuItemInfo(
+							hInstrPopupMenu,
+							instMenuIdx,
+							TRUE,
+							&menuItemInfo);
 
+						if (menuItemInfo.hSubMenu) {
+							/* Spektrumanalysatoren found */
+							HMENU hSpekMenu = menuItemInfo.hSubMenu;
+							int spekMenuCnt = GetMenuItemCount(hSpekMenu);
+
+							for (int spekMenuIdx = 0; spekMenuIdx < spekMenuCnt; spekMenuIdx++) {
+								GetMenuString(
+									hSpekMenu,
+									spekMenuIdx,
+									buffer,
+									MAX_PATH,
+									MF_BYPOSITION);
+
+								/* Entrypoint for actors found? */
+								if (!lstrcmp(L"_spek_", buffer)) {
+									UINT spekID = ID_SPEK_ITEM0_;
+									/* Iterate over the instrument list */
+									am_InstList_t::iterator it = g_am_InstList.begin();
+
+									/* Iterate over all instruments and check which one responds */
+									while (it != g_am_InstList.end()) {
+										if (it->listFunction == INST_FUNC_SPEC) {
+											/* Convert char[] to wchar_t[] */
+											wchar_t	wName[MAX_PATH];
+											size_t converted = 0;
+											mbstowcs_s(&converted, wName, it->listEntryName.c_str(), MAX_PATH);
+
+											it->winID = spekID;
+											AppendMenu(
+												hSpekMenu,
+												MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
+												(UINT)spekID,
+												wName);
+										}
+
+										/* Advance to next entry */
+										it++;
+									}
+
+									/* Remove anchor */
+									RemoveMenu(
+										hSpekMenu,
+										(UINT)ID_SPEK_,
+										MF_BYCOMMAND);
+									break;
+								}
+							}
+						}
 					}
-
 				}
 			}
 		}

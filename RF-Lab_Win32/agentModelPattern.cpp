@@ -253,6 +253,8 @@ void agentModelPattern::run(void)
 				_winSrv->guiUpdateConnectedInstruments();
 
 				_runState = C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI;
+				if (!_noWinMsg)
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Please select instruments from the menu...", L"NOW");
 			}
 			break;
 
@@ -263,6 +265,7 @@ void agentModelPattern::run(void)
 					_runState = C_MODELPATTERN_RUNSTATES_COM_REGISTRATION;
 				}
 			}
+			break;
 
 			/* Find COM / IEC instruments for registration */
 			case C_MODELPATTERN_RUNSTATES_COM_REGISTRATION:
@@ -910,7 +913,6 @@ void agentModelPattern::run(void)
 			/* Closing COM / IEC instrument connection */
 			case C_MODELPATTERN_RUNSTATES_COM_CLOSE:
 			{
-#ifdef OLD_CODE
 				agentUsbReq usbReqData;
 				agentComReq comReqData;
 				usbReqData.cmd = C_USBREQ_END;
@@ -941,7 +943,6 @@ void agentModelPattern::run(void)
 				catch (const Concurrency::operation_timed_out& e) {
 					(void)e;
 				}
-#endif
 			}
 			break;
 
@@ -1064,6 +1065,9 @@ void agentModelPattern::checkInstruments(void)
 {
 	am_InstList_t::iterator it = g_am_InstList.begin();
 
+	if (!_noWinMsg)
+		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Checking list of instruments...", L"RUNNING");
+
 	/* Iterate over all instruments and check which one responds */
 	while (it != g_am_InstList.end()) {
 		const LinkType_BM_t linkType = it->linkType;
@@ -1086,6 +1090,9 @@ void agentModelPattern::checkInstruments(void)
 		/* Move to next instrument */
 		it++;
 	}
+
+	if (!_noWinMsg)
+		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Checking list of instruments...", L"DONE");
 }
 
 

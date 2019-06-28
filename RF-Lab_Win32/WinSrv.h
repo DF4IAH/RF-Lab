@@ -76,7 +76,7 @@ public:
 
 	void			reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo);
 
-	int				instMenuGetItem(InstMenuItemAry_t imiAry[], UINT winID, const wchar_t* caption);
+	BOOL			instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenuAnst, wchar_t* caption);
 	void			instUpdateConnectedInstruments(void);
 	void			instActivateMenuItem(UINT winID, BOOL uEnable);
 

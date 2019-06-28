@@ -458,16 +458,11 @@ void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelI
 }
 
 
-int WinSrv::instMenuGetItem(InstMenuItemAry_t imiAry[], UINT winID, const wchar_t* caption)
+BOOL WinSrv::instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenu, wchar_t* caption)
 {
-	int cnt = 0;
-
 	/* Sanity checks */
-	if (!imiAry) {
-		return 0;
-	}
-	if (!winID && !caption) {
-		return 0;
+	if (!hMenuSub || !menuIdx || !hMenu  || !caption) {
+		return FALSE;
 	}
 
 	/* Prepare request attributes of the items */
@@ -476,19 +471,19 @@ int WinSrv::instMenuGetItem(InstMenuItemAry_t imiAry[], UINT winID, const wchar_
 	menuItemInfo.cbSize = sizeof(MENUITEMINFO);
 	menuItemInfo.fMask = MIIM_TYPE | MIIM_STATE | MIIM_ID | MIIM_SUBMENU;
 
-
-	/* Main node */
-	HMENU hmenu = GetMenu(hWnd);
-	imiAry[cnt].hMenu = hmenu;
-	imiAry[cnt].idx = -1;
-	int menuItemCnt = GetMenuItemCount(imiAry[cnt].hMenu);
-	cnt++;
+	int menuItemCnt = GetMenuItemCount(hMenu);
 
 	for (int menuItemIdx = 0; menuItemIdx < menuItemCnt; menuItemIdx++) {
 		TCHAR buffer[MAX_PATH];
 
+		GetMenuItemInfo(
+			hMenu,
+			menuItemIdx,
+			TRUE,
+			&menuItemInfo);
+
 		GetMenuString(
-			hmenu,
+			hMenu,
 			menuItemIdx,
 			buffer,
 			MAX_PATH,
@@ -496,21 +491,27 @@ int WinSrv::instMenuGetItem(InstMenuItemAry_t imiAry[], UINT winID, const wchar_
 
 		if (!lstrcmp(caption, buffer)) {
 			/* Found! */
-			imiAry[cnt].hMenu = hmenu;
-			imiAry[cnt].idx = menuItemIdx;
-			return ++cnt;
+			*hMenuSub = hMenu;
+			*menuIdx = menuItemIdx;
+			return TRUE;
 		}
 
-		GetMenuItemInfo(
-			hmenu,
-			menuItemIdx,
-			TRUE,
-			&menuItemInfo);
+		if (menuItemInfo.hSubMenu) {
+			HMENU recMenu = menuItemInfo.hSubMenu;
+			int recMenuIdx = -1;
+			HMENU recMenuSub;
 
-		//if (menuItemInfo.hSubMenu) {
-		//}
+			if (TRUE == instMenuGetItem(&recMenuSub, &recMenuIdx, recMenu, caption)) {
+				/* Found in subree */
+				*hMenuSub = recMenu;
+				*menuIdx = recMenuIdx;
+				return TRUE;
+			}
+		}
 	}
-	return cnt;
+
+	/* Caption not found */
+	return FALSE;
 }
 
 void WinSrv::instUpdateConnectedInstruments(void)
@@ -536,7 +537,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 #endif
 
 	/* Get menu class */
-	HMENU hmenu = GetMenu(hWnd);
+	HMENU hmenu = GetMenu(this->hWnd);
 
 	/* Prepare request attributes of the items */
 	MENUITEMINFO menuItemInfo;
@@ -765,18 +766,34 @@ void WinSrv::instUpdateConnectedInstruments(void)
 void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 {
 	/* Get menu structure */
-	InstMenuItemAry imiAry[8] = { 0 };
-	int imiCnt = 0;
+	HMENU hMenuBar = GetMenu(this->hWnd);
+
+	int   menuAnstIdx = 0;
+	HMENU hMenuAnst = NULL;
+
+	int   menuAnstAktorIdx = 0;
+	HMENU hMenuAnstAktor = NULL;
+
 
 	if (uEnable) {
 		/* Enable items */
 		switch (winID) {
 		case ID_AKTOR_ITEM0_:
 		{
-			imiCnt = instMenuGetItem(imiAry, -1, L"Ansteuerung");
-			if (imiCnt == 2) {
-				EnableMenuItem(imiAry[imiCnt - 2].hMenu, imiAry[imiCnt - 1].idx, MF_BYPOSITION);
-			}
+			/* Enable menu bar item */
+			instMenuGetItem(&hMenuAnst, &menuAnstIdx, hMenuBar, L"Ansteuerung");
+			EnableMenuItem(hMenuBar, menuAnstIdx, MF_BYPOSITION);
+
+			instMenuGetItem(&hMenuAnstAktor, &menuAnstAktorIdx, hMenuAnst, L"Aktor");
+			EnableMenuItem(hMenuAnst, menuAnstAktorIdx, MF_BYPOSITION);
+xxx  // TODO: why not enabled ?
+			/* Enabling each AKTOR items */
+			EnableMenuItem(hMenuBar, ID_ROTOR_STOP, MF_BYCOMMAND);
+			EnableMenuItem(hMenuBar, ID_ROTOR_GOTO_0, MF_BYCOMMAND);
+			EnableMenuItem(hMenuBar, ID_ROTOR_GOTO_X, MF_BYCOMMAND);
+			EnableMenuItem(hMenuBar, ID_ROTOR_EINSTELLUNGEN, MF_BYCOMMAND);
+
+
 		}
 		break;
 
@@ -792,4 +809,6 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 		/* Disable items */
 
 	}
+
+	DrawMenuBar(this->hWnd);
 }

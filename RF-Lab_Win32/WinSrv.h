@@ -16,6 +16,11 @@ public:
 
 	const int							 StatusBarParts = 3;
 
+	typedef struct InstMenuItemAry {
+		HMENU							hMenu;
+		int								idx;
+	} InstMenuItemAry_t;
+
 
 private:
 	HWND								 hWnd;
@@ -71,6 +76,8 @@ public:
 
 	void			reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo);
 
-	void			guiUpdateConnectedInstruments(void);
+	int				instMenuGetItem(InstMenuItemAry_t imiAry[], UINT winID, const wchar_t* caption);
+	void			instUpdateConnectedInstruments(void);
+	void			instActivateMenuItem(UINT winID, BOOL uEnable);
 
 };

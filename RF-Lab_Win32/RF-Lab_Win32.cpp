@@ -170,42 +170,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
 			int wmId = LOWORD(wParam);
 
-			// Menüauswahl bearbeiten:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-
-			case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-
-			case ID_ROTOR_GOTO_0:
+			if (wmId >= ID_AKTOR_ITEM0_ && wmId < (ID_SPEK_ITEM0_ + 255)) {
 				WinSrv::srvWmCmd(hWnd, wmId);
-				break;
+			}
 
-			case ID_ROTOR_GOTO_X:
-				argInt = AskRotorPosX(g_hInst, hWnd);
-				if (argInt != MAXINT16) {  // Position nur verändern, wenn gültiger Wert vorliegt
-					WinSrv::srvWmCmd(hWnd, wmId, &argInt);
+			else {
+				// Menüauswahl bearbeiten:
+				switch (wmId)
+				{
+				case ID_ROTOR_GOTO_X:
+					argInt = AskRotorPosX(g_hInst, hWnd);
+					if (argInt != MAXINT16) {  // Position nur verändern, wenn gültiger Wert vorliegt
+						WinSrv::srvWmCmd(hWnd, wmId, &argInt);
+					}
+					break;
+
+				case ID_TX_SETTINGS:
+					AskTxSettings(g_hInst, hWnd);
+					break;
+
+				case ID_ROTOR_GOTO_0:
+				case ID_CTRL_ALL_RESET:
+				case ID_MODEL_PATTERN_STOP:
+				case ID_MODEL_PATTERN_180_START:
+				case ID_MODEL_PATTERN_360_START:
+					WinSrv::srvWmCmd(hWnd, wmId);
+					break;
+
+				case IDM_ABOUT:
+					DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+					break;
+
+				case IDM_EXIT:
+					DestroyWindow(hWnd);
+					break;
+
+				default:
+					return DefWindowProc(hWnd, message, wParam, lParam);
 				}
-				break;
-
-			case ID_TX_SETTINGS:
-				AskTxSettings(g_hInst, hWnd);
-				break;
-
-			case ID_CTRL_ALL_RESET:
-			case ID_MODEL_PATTERN_STOP:
-			case ID_MODEL_PATTERN_180_START:
-			case ID_MODEL_PATTERN_360_START:
-				WinSrv::srvWmCmd(hWnd, wmId);
-				break;
-
-			default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+			}
         }
         break;
 

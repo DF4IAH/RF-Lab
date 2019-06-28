@@ -457,7 +457,63 @@ void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelI
 	}
 }
 
-void WinSrv::guiUpdateConnectedInstruments(void)
+
+int WinSrv::instMenuGetItem(InstMenuItemAry_t imiAry[], UINT winID, const wchar_t* caption)
+{
+	int cnt = 0;
+
+	/* Sanity checks */
+	if (!imiAry) {
+		return 0;
+	}
+	if (!winID && !caption) {
+		return 0;
+	}
+
+	/* Prepare request attributes of the items */
+	MENUITEMINFO menuItemInfo;
+	memset(&menuItemInfo, 0, sizeof(MENUITEMINFO));
+	menuItemInfo.cbSize = sizeof(MENUITEMINFO);
+	menuItemInfo.fMask = MIIM_TYPE | MIIM_STATE | MIIM_ID | MIIM_SUBMENU;
+
+
+	/* Main node */
+	HMENU hmenu = GetMenu(hWnd);
+	imiAry[cnt].hMenu = hmenu;
+	imiAry[cnt].idx = -1;
+	int menuItemCnt = GetMenuItemCount(imiAry[cnt].hMenu);
+	cnt++;
+
+	for (int menuItemIdx = 0; menuItemIdx < menuItemCnt; menuItemIdx++) {
+		TCHAR buffer[MAX_PATH];
+
+		GetMenuString(
+			hmenu,
+			menuItemIdx,
+			buffer,
+			MAX_PATH,
+			MF_BYPOSITION);
+
+		if (!lstrcmp(caption, buffer)) {
+			/* Found! */
+			imiAry[cnt].hMenu = hmenu;
+			imiAry[cnt].idx = menuItemIdx;
+			return ++cnt;
+		}
+
+		GetMenuItemInfo(
+			hmenu,
+			menuItemIdx,
+			TRUE,
+			&menuItemInfo);
+
+		//if (menuItemInfo.hSubMenu) {
+		//}
+	}
+	return cnt;
+}
+
+void WinSrv::instUpdateConnectedInstruments(void)
 {
 	/* Update UI with the latest connected instruments */
 
@@ -559,7 +615,9 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 											it->winID = aktorID;
 											AppendMenu(
 												hAktorenMenu,
-												MF_STRING | (it->actSelected ?  MF_CHECKED : 0) | (it->linkType ?  0 : MF_DISABLED),
+												// TODO: re-enable me!
+												//MF_STRING | (it->actSelected ?  MF_CHECKED : 0) | (it->linkType ?  0 : MF_DISABLED),
+												MF_STRING | MF_CHECKED,
 												(UINT) aktorID,
 												wName);
 										}
@@ -616,7 +674,9 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 											it->winID = rfGenID;
 											AppendMenu(
 												hRfGenMenu,
-												MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
+												// TODO: re-enable me!
+												//MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
+												MF_STRING | MF_CHECKED,
 												(UINT)rfGenID,
 												wName);
 										}
@@ -673,7 +733,9 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 											it->winID = spekID;
 											AppendMenu(
 												hSpekMenu,
-												MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
+												// TODO: re-enable me!
+												//MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
+												MF_STRING | MF_CHECKED,
 												(UINT)spekID,
 												wName);
 										}
@@ -698,4 +760,36 @@ void WinSrv::guiUpdateConnectedInstruments(void)
 	}
 
 	DrawMenuBar(this->hWnd);
+}
+
+void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
+{
+	/* Get menu structure */
+	InstMenuItemAry imiAry[8] = { 0 };
+	int imiCnt = 0;
+
+	if (uEnable) {
+		/* Enable items */
+		switch (winID) {
+		case ID_AKTOR_ITEM0_:
+		{
+			imiCnt = instMenuGetItem(imiAry, -1, L"Ansteuerung");
+			if (imiCnt == 2) {
+				EnableMenuItem(imiAry[imiCnt - 2].hMenu, imiAry[imiCnt - 1].idx, MF_BYPOSITION);
+			}
+		}
+		break;
+
+		case ID_GENERATOR_ITEM0_:
+			break;
+
+		case ID_SPEK_ITEM0_:
+			break;
+		}
+	}
+
+	else {
+		/* Disable items */
+
+	}
 }

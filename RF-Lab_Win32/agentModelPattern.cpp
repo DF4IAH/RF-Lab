@@ -250,7 +250,7 @@ void agentModelPattern::run(void)
 				checkInstruments();
 
 				/* Update GUI with active/absent instruments */
-				_winSrv->guiUpdateConnectedInstruments();
+				_winSrv->instUpdateConnectedInstruments();
 
 				_runState = C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI;
 				if (!_noWinMsg)
@@ -1161,9 +1161,15 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 			}
 		}
 
+		pAgtMod->getWinSrv()->instActivateMenuItem(ID_AKTOR_ITEM0_, true);	// TODO: remove me!
+		Sleep(10000);														// TODO: remove me!
+		
 		if (isConnected) {
 			/* This rotor is selected by default */
 			it->actSelected = true;
+
+			/* Activate Rotor menu items */
+			pAgtMod->getWinSrv()->instActivateMenuItem(ID_AKTOR_ITEM0_, it->actSelected);
 
 			if (!_noWinMsg)
 				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor found", L"");

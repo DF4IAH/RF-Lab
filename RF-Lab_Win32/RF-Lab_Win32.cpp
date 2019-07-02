@@ -203,9 +203,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				/* HF-Generator features */
 
 				case ID_HFAUSGABE_EIN:
+				{
+					CheckMenuItem(GetMenu(hWnd), ID_HFAUSGABE_EIN, MF_BYCOMMAND | MF_CHECKED);
+					CheckMenuItem(GetMenu(hWnd), ID_HFAUSGABE_AUS, MF_BYCOMMAND | MF_UNCHECKED);
+					agentModel::setTxOnState(true);
+				}
+				break;
+
 				case ID_HFAUSGABE_AUS:
-					WinSrv::srvWmCmd(hWnd, wmId);
-					break;
+				{
+					CheckMenuItem(GetMenu(hWnd), ID_HFAUSGABE_EIN, MF_BYCOMMAND | MF_UNCHECKED);
+					CheckMenuItem(GetMenu(hWnd), ID_HFAUSGABE_AUS, MF_BYCOMMAND | MF_CHECKED);
+					agentModel::setTxOnState(false);
+				}
+				break;
 
 				case ID_TX_SETTINGS:
 					AskTxSettings(g_hInst, hWnd);

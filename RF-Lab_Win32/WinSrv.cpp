@@ -816,6 +816,17 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 			instMenuGetItem(&hMenuAnstGenOut, &menuAnstGenOutIdx, hMenuAnstGen, L"HF Ausgabe");
 			EnableMenuItem(hMenuAnstGen, menuAnstGenOutIdx, MF_BYPOSITION);
 
+			if (agentModel::getTxOnState()) {
+				/* TX enabled */
+				CheckMenuItem(hMenuBar, ID_HFAUSGABE_EIN, MF_BYCOMMAND | MF_CHECKED);
+				CheckMenuItem(hMenuBar, ID_HFAUSGABE_AUS, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+			else {
+				/* TX disabled */
+				CheckMenuItem(hMenuBar, ID_HFAUSGABE_EIN, MF_BYCOMMAND | MF_UNCHECKED);
+				CheckMenuItem(hMenuBar, ID_HFAUSGABE_AUS, MF_BYCOMMAND | MF_CHECKED);
+			}
+
 			/* Enabling each HF-Generator item */
 			EnableMenuItem(hMenuBar, ID_TX_SETTINGS, MF_BYCOMMAND);
 		}

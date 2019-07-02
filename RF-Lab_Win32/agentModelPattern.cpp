@@ -1364,6 +1364,9 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		initDevices();
 		break;
 
+
+	/* Rotor commands */
+
 	case ID_ROTOR_GOTO_0:
 		if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
 			pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor turns to  0°  position", L"RUNNING");
@@ -1395,7 +1398,6 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		}
 		break;
 
-
 	case ID_ROTOR_STOP:
 	case ID_MODEL_PATTERN_STOP:
 		runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
@@ -1416,6 +1418,16 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		// Start recording of pattern
 		runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG, 0);
 		break;
+
+
+	/* HF-Generator settings */
+
+	// nothing yet
+
+
+	/* HF-Generator settings */
+
+	// nothing yet
 
 	}  // switch (message) {
 }

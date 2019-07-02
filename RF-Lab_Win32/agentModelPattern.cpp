@@ -1162,7 +1162,6 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 		}
 
 		pAgtMod->getWinSrv()->instActivateMenuItem(ID_AKTOR_ITEM0_, true);	// TODO: remove me!
-		Sleep(10000);														// TODO: remove me!
 		
 		if (isConnected) {
 			/* This rotor is selected by default */
@@ -1222,6 +1221,9 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 					isConnected = true;
 				}
 			}
+
+			pAgtMod->getWinSrv()->instActivateMenuItem(ID_GENERATOR_ITEM0_, true);	// TODO: remove me!
+			pAgtMod->getWinSrv()->instActivateMenuItem(ID_SPEK_ITEM0_, true);		// TODO: remove me!
 
 			if (isConnected) {
 				if (!_noWinMsg)
@@ -1394,6 +1396,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		break;
 
 
+	case ID_ROTOR_STOP:
 	case ID_MODEL_PATTERN_STOP:
 		runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
 		break;

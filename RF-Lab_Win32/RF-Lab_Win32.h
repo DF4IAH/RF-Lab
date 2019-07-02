@@ -16,3 +16,8 @@ BOOL CALLBACK AskTxSettings_CB(HWND   hWnd,
 	UINT   message,
 	WPARAM wParam,
 	LPARAM lParam);
+
+BOOL CALLBACK AskRxSettings_CB(HWND   hWnd,
+	UINT   message,
+	WPARAM wParam,
+	LPARAM lParam);

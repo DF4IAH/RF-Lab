@@ -44,6 +44,7 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 static int			AskRotorPosX(HINSTANCE g_hInst, HWND hWnd);
 static int			AskTxSettings(HINSTANCE g_hInst, HWND hWnd);
+static int			AskRxSettings(HINSTANCE g_hInst, HWND hWnd);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -170,14 +171,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
 			int wmId = LOWORD(wParam);
 
+			/* Instrument settings for AKTOR, HF-GENERATOR and SPEK */
 			if (wmId >= ID_AKTOR_ITEM0_ && wmId < (ID_SPEK_ITEM0_ + 255)) {
 				WinSrv::srvWmCmd(hWnd, wmId);
 			}
 
 			else {
-				// Menüauswahl bearbeiten:
+				/* Work on menu commands */
+
 				switch (wmId)
 				{
+				/* Rotor features */
+
 				case ID_ROTOR_GOTO_X:
 					argInt = AskRotorPosX(g_hInst, hWnd);
 					if (argInt != MAXINT16) {  // Position nur verändern, wenn gültiger Wert vorliegt
@@ -185,17 +190,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 					break;
 
-				case ID_TX_SETTINGS:
-					AskTxSettings(g_hInst, hWnd);
-					break;
-
 				case ID_ROTOR_GOTO_0:
 				case ID_CTRL_ALL_RESET:
+				case ID_ROTOR_STOP:
 				case ID_MODEL_PATTERN_STOP:
 				case ID_MODEL_PATTERN_180_START:
 				case ID_MODEL_PATTERN_360_START:
 					WinSrv::srvWmCmd(hWnd, wmId);
 					break;
+
+
+				/* HF-Generator features */
+
+				case ID_HFAUSGABE_EIN:
+				case ID_HFAUSGABE_AUS:
+					WinSrv::srvWmCmd(hWnd, wmId);
+					break;
+
+				case ID_TX_SETTINGS:
+					AskTxSettings(g_hInst, hWnd);
+					break;
+
+
+				/* Spek features */
+
+				case ID_RX_SETTINGS:
+					AskRxSettings(g_hInst, hWnd);  // TODO: coding needed here
+					break;
+
+
+				/* Win */
 
 				case IDM_ABOUT:
 					DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
@@ -216,18 +240,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Windows-Kommunikationsserver Zeichen-Code, der hdc verwendet
 		WinSrv::srvPaint();
         break;
+
 	case WM_SIZE:
 		WinSrv::srvResize();
 		break;
 
 	case WM_CREATE:
 		return WinSrv::srvSetWindow(hWnd);
+
 	case WM_DESTROY:
 		// Windows - Kommunikationsserver abmelden
 		WinSrv::srvStop();
 
         PostQuitMessage(0);
         break;
+
 
 	default:
         return DefWindowProc(hWnd, message, wParam, lParam);
@@ -356,8 +383,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 }
 
 
-// Dialog für TX Einstellungen
-// am HF Generator
+/* Dialog for TX settings */
 static int AskTxSettings(HINSTANCE g_hInst, HWND hWnd)
 {
 	if (IDOK == DialogBox(g_hInst,
@@ -409,6 +435,65 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 				swscanf_s(szIdcTxSettingsPower, L"%lf", &lfIdcTxSettingsPower);
 				agentModel::setTxPwrValue(lfIdcTxSettingsPower);
 				agentModel::setRxLevelMaxValue(lfIdcTxSettingsPower);
+			}
+			// Fall-through.
+		case IDCANCEL:
+			EndDialog(hWnd, wParam);
+			return TRUE;
+			break;
+		}
+		break;
+	}
+	return FALSE;
+}
+
+
+/* Dialog for RX settings */
+static int AskRxSettings(HINSTANCE g_hInst, HWND hWnd)
+{
+	if (IDOK == DialogBox(g_hInst,
+		MAKEINTRESOURCE(IDD_RX_SETTINGS),
+		hWnd,
+		(DLGPROC)AskRxSettings_CB)) {
+
+	}
+	return (int)g_iCbValue;
+}
+
+BOOL CALLBACK AskRxSettings_CB(HWND hWnd,
+	UINT   message,
+	WPARAM wParam,
+	LPARAM lParam)
+{
+	double lfIdcRxSettingsFrequency = 0.;
+	double lfIdcRxSettingsSpan = 0.;
+	wchar_t szIdcRxSettingsFrequency[C_BUFSIZE] = { 0 };
+	wchar_t szIdcRxSettingsSpan[C_BUFSIZE] = { 0 };
+
+	switch (message) {
+	case WM_INITDIALOG:
+		swprintf_s(szIdcRxSettingsFrequency, L"%.3f", agentModel::getRxFrequencyValue());
+		SetDlgItemText(hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency);
+
+		swprintf_s(szIdcRxSettingsSpan, L"%.1f", agentModel::getRxSpanValue());
+		SetDlgItemText(hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan);
+
+		return (INT_PTR)TRUE;
+		break;
+
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDOK:
+			if (GetDlgItemText(hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency, sizeof(szIdcRxSettingsFrequency) - 1)) {
+				// Process input
+				swscanf_s(szIdcRxSettingsFrequency, L"%lf", &lfIdcRxSettingsFrequency);
+				agentModel::setRxFrequencyValue(lfIdcRxSettingsFrequency);
+			}
+
+			if (GetDlgItemText(hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan, sizeof(szIdcRxSettingsSpan) - 1)) {
+				// Process input
+				swscanf_s(szIdcRxSettingsSpan, L"%lf", &lfIdcRxSettingsSpan);
+				agentModel::setRxSpanValue(lfIdcRxSettingsSpan);
 			}
 			// Fall-through.
 		case IDCANCEL:

@@ -491,7 +491,7 @@ BOOL WinSrv::instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenu, wchar_t
 
 		if (!lstrcmp(caption, buffer)) {
 			/* Found! */
-			*hMenuSub = hMenu;
+			*hMenuSub = menuItemInfo.hSubMenu ? menuItemInfo.hSubMenu : hMenu;
 			*menuIdx = menuItemIdx;
 			return TRUE;
 		}
@@ -774,6 +774,15 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 	int   menuAnstAktorIdx = 0;
 	HMENU hMenuAnstAktor = NULL;
 
+	int   menuAnstGenIdx = 0;
+	HMENU hMenuAnstGen = NULL;
+
+	int   menuAnstGenOutIdx = 0;
+	HMENU hMenuAnstGenOut = NULL;
+
+	int   menuAnstSpekIdx = 0;
+	HMENU hMenuAnstSpek = NULL;
+
 
 	if (uEnable) {
 		/* Enable items */
@@ -786,28 +795,51 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 
 			instMenuGetItem(&hMenuAnstAktor, &menuAnstAktorIdx, hMenuAnst, L"Aktor");
 			EnableMenuItem(hMenuAnst, menuAnstAktorIdx, MF_BYPOSITION);
-xxx  // TODO: why not enabled ?
-			/* Enabling each AKTOR items */
+
+			/* Enabling each AKTOR item */
 			EnableMenuItem(hMenuBar, ID_ROTOR_STOP, MF_BYCOMMAND);
 			EnableMenuItem(hMenuBar, ID_ROTOR_GOTO_0, MF_BYCOMMAND);
 			EnableMenuItem(hMenuBar, ID_ROTOR_GOTO_X, MF_BYCOMMAND);
-			EnableMenuItem(hMenuBar, ID_ROTOR_EINSTELLUNGEN, MF_BYCOMMAND);
-
-
+			//EnableMenuItem(hMenuBar, ID_ROTOR_EINSTELLUNGEN, MF_BYCOMMAND);  // TODO: not yet used
 		}
 		break;
 
 		case ID_GENERATOR_ITEM0_:
+		{
+			/* Enable menu bar item */
+			instMenuGetItem(&hMenuAnst, &menuAnstIdx, hMenuBar, L"Ansteuerung");
+			EnableMenuItem(hMenuBar, menuAnstIdx, MF_BYPOSITION);
+
+			instMenuGetItem(&hMenuAnstGen, &menuAnstGenIdx, hMenuAnst, L"HF-Generator");
+			EnableMenuItem(hMenuAnst, menuAnstGenIdx, MF_BYPOSITION);
+
+			instMenuGetItem(&hMenuAnstGenOut, &menuAnstGenOutIdx, hMenuAnstGen, L"HF Ausgabe");
+			EnableMenuItem(hMenuAnstGen, menuAnstGenOutIdx, MF_BYPOSITION);
+
+			/* Enabling each HF-Generator item */
+			EnableMenuItem(hMenuBar, ID_TX_SETTINGS, MF_BYCOMMAND);
+		}
 			break;
 
 		case ID_SPEK_ITEM0_:
-			break;
+		{
+			/* Enable menu bar item */
+			instMenuGetItem(&hMenuAnst, &menuAnstIdx, hMenuBar, L"Ansteuerung");
+			EnableMenuItem(hMenuBar, menuAnstIdx, MF_BYPOSITION);
+
+			instMenuGetItem(&hMenuAnstSpek, &menuAnstSpekIdx, hMenuAnst, L"Spektrum-Analysator");
+			EnableMenuItem(hMenuAnst, menuAnstSpekIdx, MF_BYPOSITION);
+
+			/* Enabling each Spek item */
+			EnableMenuItem(hMenuBar, ID_RX_SETTINGS, MF_BYCOMMAND);
 		}
+			break;
+		}  // switch (winID)
 	}
 
 	else {
 		/* Disable items */
-
+		// TODO: add code here
 	}
 
 	DrawMenuBar(this->hWnd);

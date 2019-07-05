@@ -21,6 +21,12 @@ public:
 		int								idx;
 	} InstMenuItemAry_t;
 
+	typedef struct MenuInfo {
+		BOOL							rotorEnabled;
+		BOOL							rfGenEnabled;
+		BOOL							specEnabled;
+	} MenuInfo_t;
+
 
 private:
 	HWND								 hWnd;
@@ -32,6 +38,8 @@ private:
 	D2D1_SIZE_F							 _size;
 
 	PresentationData_t					 _PD;
+
+	MenuInfo_t							 _menuInfo;
 
 	unbounded_buffer<agentModelReq>		 _ub_agtModel_req;
 	unbounded_buffer<agentModelRsp>		 _ob_agtModel_rsp;
@@ -62,6 +70,7 @@ private:
 	HWND			DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst, int cParts);
 	void			OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size);
 	bool			ready();
+	bool			checkForModelPattern(HMENU hMenuAnst);
 
 
 public:

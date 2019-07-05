@@ -67,6 +67,7 @@ WinSrv::WinSrv() : hWnd(nullptr)
 				 , pBrush(nullptr)
 				 , _size(D2D1_SIZE_F())
 				 , _PD({ 0 })
+				 , _menuInfo({ FALSE, FALSE, FALSE })
 				 , pAgtModel(nullptr)
 				 , _winExitReceived(FALSE)
 				 , _ready(FALSE)
@@ -800,7 +801,14 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 			EnableMenuItem(hMenuBar, ID_ROTOR_STOP, MF_BYCOMMAND);
 			EnableMenuItem(hMenuBar, ID_ROTOR_GOTO_0, MF_BYCOMMAND);
 			EnableMenuItem(hMenuBar, ID_ROTOR_GOTO_X, MF_BYCOMMAND);
-			//EnableMenuItem(hMenuBar, ID_ROTOR_EINSTELLUNGEN, MF_BYCOMMAND);  // TODO: not yet used
+
+			//EnableMenuItem(GetMenu(this->hWnd), ID_ROTOR_EINSTELLUNGEN, MF_BYCOMMAND);  // TODO: to be defined
+
+			/* Update menu state for fast access */
+			_menuInfo.rotorEnabled = TRUE;
+
+			/* Enable ModelPattern when all items are activated */
+			checkForModelPattern(hMenuAnst);
 		}
 		break;
 
@@ -829,6 +837,12 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 
 			/* Enabling each HF-Generator item */
 			EnableMenuItem(hMenuBar, ID_TX_SETTINGS, MF_BYCOMMAND);
+
+			/* Update menu state for fast access */
+			_menuInfo.rfGenEnabled = TRUE;
+
+			/* Enable ModelPattern when all items are activated */
+			checkForModelPattern(hMenuAnst);
 		}
 			break;
 
@@ -843,6 +857,12 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 
 			/* Enabling each Spek item */
 			EnableMenuItem(hMenuBar, ID_RX_SETTINGS, MF_BYCOMMAND);
+
+			/* Update menu state for fast access */
+			_menuInfo.specEnabled = TRUE;
+
+			/* Enable ModelPattern when all items are activated */
+			checkForModelPattern(hMenuAnst);
 		}
 			break;
 		}  // switch (winID)
@@ -854,4 +874,28 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 	}
 
 	DrawMenuBar(this->hWnd);
+}
+
+bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
+{
+	HMENU hMenu = GetMenu(this->hWnd);
+
+	if (_menuInfo.rotorEnabled && _menuInfo.rfGenEnabled && _menuInfo.specEnabled) {
+		EnableMenuItem(hMenu, ID_CTRL_ALL_RESET, MF_BYCOMMAND);
+
+		/* Append ModelPattern specific items to the menu */
+		InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_STOP,			L"Richtdiagramm: anhalten und beenden");
+		InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_180_START,	L"Richtdiagramm über 180° ausmessen");
+		InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_360_START,	L"Richtdiagramm über 360° ausmessen");
+
+		/* Remove place holder */
+		RemoveMenu(hMenu, ID_ANSTEUERUNG_, MF_BYCOMMAND);
+
+		/* Init the connections */
+		if (pAgtModel) {
+			pAgtModel->runProcess(C_MODELPATTERN_PROCESS_CONNECT_DEVICES, 0);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }

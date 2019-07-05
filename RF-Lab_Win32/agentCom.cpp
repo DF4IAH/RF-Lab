@@ -22,6 +22,7 @@ agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
 				 , _done(FALSE)
 				 , _src(src)
 				 , _tgt(tgt)
+				 , _pInstrument(NULL)
 				 , _isIec(FALSE)
 				 , _iecAddr(0)
 {
@@ -84,6 +85,18 @@ string agentCom::trim(string haystack)
 		}
 	}
 	return needle;
+}
+
+
+/* Link to the instrument info */
+void agentCom::setInstrument(am_InstList_t::iterator* instrument)
+{
+	this->_pInstrument = instrument;
+}
+
+am_InstList_t::iterator* agentCom::getInstrument(void)
+{
+	return this->_pInstrument;
 }
 
 

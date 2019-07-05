@@ -119,6 +119,8 @@ private:
 
 	HANDLE								 _hCom;
 
+	am_InstList_t::iterator*			 _pInstrument;
+
 	bool								 _isIec;
 	int									 _iecAddr;
 
@@ -132,11 +134,16 @@ public:
 
 	string trim(string haystack);
 
+	void   setInstrument(am_InstList_t::iterator* instrument);
+	am_InstList_t::iterator* getInstrument(void);
+
 	bool   isIec(void);
 	void   setIecAddr(int iecAddr);
 	int    getIecAddr(void);
+
 	string doComRequestResponse(const string in);
 	string getZolixIdn(void);
+
 	void   iecPrepare(int iecAddr);
 	string getIdnResponse(void);
 

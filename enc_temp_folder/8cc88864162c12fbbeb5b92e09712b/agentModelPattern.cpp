@@ -348,7 +348,7 @@ void agentModelPattern::run(void)
 
 					am_InstList_t::iterator it = g_am_InstList.begin();
 					while (it != g_am_InstList.end()) {
-						xxx  // TODO: continue to code
+
 						it++;
 					}
 

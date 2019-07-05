@@ -145,9 +145,10 @@ enum C_MODELPATTERN_RUNSTATES_ENUM {
 };
 
 enum C_MODELPATTERN_PROCESSES_ENUM {
-	C_MODELPATTERN_PROCESS_END = 0,
+	C_MODELPATTERN_PROCESS_NOOP = 0,
+	C_MODELPATTERN_PROCESS_CONNECT_DEVICES,
+	C_MODELPATTERN_PROCESS_END,
 	C_MODELPATTERN_PROCESS_STOP,
-	C_MODELPATTERN_PROCESS_NOOP,
 	C_MODELPATTERN_PROCESS_GOTO_X,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG,
@@ -218,10 +219,12 @@ private:
 	bool					instTryUsb(am_InstList_t::iterator it);
 	bool					instTryCom(am_InstList_t::iterator it);
 
+#ifdef OLD
 	instrument_t*			addSerInstrument(INSTRUMENT_ENUM_t type,
 								agentCom* pAgtCom, uint8_t comPort, uint32_t comBaud, uint8_t comBits, uint8_t comParity, uint8_t comStopbits, 
 								bool isIec, uint8_t iecAddr,
 								string idn);
+#endif
 
 	void					sendPos(long tickPos);
 

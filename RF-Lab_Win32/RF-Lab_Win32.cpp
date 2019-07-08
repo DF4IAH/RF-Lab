@@ -191,7 +191,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 
 				case ID_ROTOR_GOTO_0:
-				case ID_CTRL_ALL_RESET:
+				case ID_INSTRUMENTEN_CONNECT:
+				case ID_INSTRUMENTEN_DISCONNECT:
 				case ID_ROTOR_STOP:
 				case ID_MODEL_PATTERN_STOP:
 				case ID_MODEL_PATTERN_180_START:

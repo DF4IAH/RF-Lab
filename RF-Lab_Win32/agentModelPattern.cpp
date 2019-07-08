@@ -54,6 +54,7 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , simuMode(mode)
 
 				 , initState(0)
+				 , guiPressedConnect(FALSE)
 
 				 , lastTickPos(0)
 
@@ -188,6 +189,8 @@ void agentModelPattern::threadsStop(void)
 void agentModelPattern::run(void)
 {
 	agentComReq comReqData = { 0 };
+	BOOL isTxConDone = FALSE;
+	BOOL isRxConDone = FALSE;
 
 	/* Delay until window is up and ready */
 	while (!(WinSrv::srvReady())) {
@@ -242,7 +245,6 @@ void agentModelPattern::run(void)
 			}
 			break;
 
-
 			/* Request list of instruments with their connection settings */
 			case C_MODELPATTERN_RUNSTATES_CHECK_CONNECTIONS:
 			{
@@ -261,8 +263,11 @@ void agentModelPattern::run(void)
 			case C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI:
 			{
 				/* Wait for User decission at the GUI */
-				if (false) {
+				if (guiPressedConnect) {
 					_runState = C_MODELPATTERN_RUNSTATES_COM_REGISTRATION;
+				}
+				else {
+					Sleep(25);
 				}
 			}
 			break;
@@ -308,7 +313,7 @@ void agentModelPattern::run(void)
 						}
 
 						/* Rotor found */
-						{
+						if (it->actSelected && it->actLink) {
 							int len = _snprintf_s(buf, C_BUF_SIZE,
 								C_OPENPARAMS_STR,
 								it->linkSerPort, it->linkSerBaud, it->linkSerBits, it->linkSerParity, it->linkSerStopbits,
@@ -341,148 +346,95 @@ void agentModelPattern::run(void)
 					}
 				}
 
-				/* Open TX */
-				if (pAgtCom[C_COMINST_TX]) {
+				/* Open TX & RX */
+				if (pAgtCom[C_COMINST_TX] && pAgtCom[C_COMINST_RX]) {
 					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs ...", L"RF generator");
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs ...", L"RF-Gen & Spec");
 
+					/* Iterate over all instruments */
 					am_InstList_t::iterator it = g_am_InstList.begin();
 					while (it != g_am_InstList.end()) {
-						xxx  // TODO: continue to code
+						/* COM request template */
+						int len = _snprintf_s(buf, C_BUF_SIZE,
+							C_OPENPARAMS_STR,
+							it->linkSerPort, it->linkSerBaud, it->linkSerBits, it->linkSerParity, it->linkSerStopbits,
+							it->linkSerIecAddr);
+						buf[len] = 0;
+
+						/* Open RF-Generator */
+						if (it->listFunction == INST_FUNC_GEN &&
+							it->actSelected && it->actLink &&
+							!isTxConDone) 
+						{
+							/* Open port */
+							comReqData.cmd = C_COMREQ_OPEN_IDN;
+							comReqData.parm = string(buf);
+							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+
+							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_TX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+							if (comRspData.stat == C_COMRSP_DATA) {
+								string rspIdnStr = string(comRspData.data);
+								if (rspIdnStr.empty()) {
+									/* Close connection */
+									comReqData.cmd = C_COMREQ_CLOSE;
+									send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+									receive(*(pAgtComRsp[C_COMINST_TX]));
+
+								}
+								else {
+									/* Set instrument which is linked to this agentCom thread */
+									pAgtCom[C_COMINST_TX]->setInstrument(&it);
+									isTxConDone = TRUE;
+								}
+							}
+						}
+
+						/* Open Spectrum Analysator */
+						if (it->listFunction == INST_FUNC_SPEC &&
+							it->actSelected && it->actLink &&
+							!isRxConDone)
+						{
+							/* Open port */
+							comReqData.cmd = C_COMREQ_OPEN_IDN;
+							comReqData.parm = string(buf);
+							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+
+							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_RX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+							if (comRspData.stat == C_COMRSP_DATA) {
+								string rspIdnStr = string(comRspData.data);
+								if (rspIdnStr.empty()) {
+									/* Close connection */
+									comReqData.cmd = C_COMREQ_CLOSE;
+									send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+									receive(*(pAgtComRsp[C_COMINST_RX]));
+
+								}
+								else {
+									/* Set instrument which is linked to this agentCom thread */
+									pAgtCom[C_COMINST_RX]->setInstrument(&it);
+									isRxConDone = TRUE;
+								}
+							}
+						}
+
+						/* Short-cut when both are opened */
+						if (isTxConDone && isRxConDone) {
+							break;
+						}
+
+						/* Iterate over all instruments */
 						it++;
 					}
 
-#ifdef OLD_CODE
-					comReqData.cmd = C_COMREQ_OPEN_IDN;
-					if (C_TX_COM_IS_IEC) {
-						pAgtCom[C_COMINST_TX]->setIecAddr(C_TX_COM_IEC_ADDR);
-						_snprintf_s(buf, C_BUF_SIZE, C_OPENPARAMS_STR,
-							C_TX_COM_IEC_PORT, C_TX_COM_IEC_BAUD, C_TX_COM_IEC_BITS, C_TX_COM_IEC_PARITY, C_TX_COM_IEC_STOPBITS,
-							C_TX_COM_IEC_ADDR);
-						comReqData.parm = string(buf);
-						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-						agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_TX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
-						if (comRspData.stat == C_COMRSP_DATA) {
-							string rspIdnStr = string(comRspData.data);
-							if (rspIdnStr.empty()) {
-								comReqData.cmd = C_COMREQ_CLOSE;
-								send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-								receive(*(pAgtComRsp[C_COMINST_TX]));
-
-							}
-							else {
-								INSTRUMENT_ENUM_t type = findSerInstrumentByIdn(rspIdnStr, INSTRUMENT_VARIANT_TX | INSTRUMENT_CONNECT_SER);
-								addSerInstrument(type,
-									pAgtCom[C_COMINST_TX], C_TX_COM_IEC_PORT, C_TX_COM_IEC_BAUD, C_TX_COM_IEC_BITS, C_TX_COM_IEC_PARITY, C_TX_COM_IEC_STOPBITS,
-									true, C_TX_COM_IEC_ADDR,
-									rspIdnStr);
-
-								initState = 0x03;
-								if (!_noWinMsg)
-									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX IEC port opened", L"");
-							}
-						}
-
+					if (isTxConDone && isRxConDone) {
+						/* Jump to next state */
+						_runState = C_MODELPATTERN_RUNSTATES_USB_REGISTRATION;
 					}
 					else {
-						pAgtCom[C_COMINST_TX]->setIecAddr(C_SET_IEC_ADDR_INVALID);
-						_snprintf_s(buf, C_BUF_SIZE, C_OPENPARAMS_STR,
-							C_TX_COM_PORT, C_TX_COM_BAUD, C_TX_COM_BITS, C_TX_COM_PARITY, C_TX_COM_STOPBITS,
-							C_SET_IEC_ADDR_INVALID);
-						comReqData.parm = string(buf);
-						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-						agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_TX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
-						if (comRspData.stat == C_COMRSP_DATA) {
-							string rspIdnStr = string(comRspData.data);
-							if (rspIdnStr.empty()) {
-								comReqData.cmd = C_COMREQ_CLOSE;
-								send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-								receive(*(pAgtComRsp[C_COMINST_TX]));
-
-							}
-							else {
-								INSTRUMENT_ENUM_t type = findSerInstrumentByIdn(rspIdnStr, INSTRUMENT_VARIANT_TX | INSTRUMENT_CONNECT_SER);
-								addSerInstrument(type,
-									pAgtCom[C_COMINST_TX], C_TX_COM_PORT, C_TX_COM_BAUD, C_TX_COM_BITS, C_TX_COM_PARITY, C_TX_COM_STOPBITS,
-									false, 0,
-									rspIdnStr);
-
-								initState = 0x03;
-								if (!_noWinMsg)
-									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX port opened", L"");
-							}
-						}
+						/* Something went wrong! Do restart */
+						//_runState = C_MODELPATTERN_RUNSTATES_COM_CLOSE;
+						_runState = C_MODELPATTERN_RUNSTATES_NOOP;  // TODO: remove me!
 					}
-#endif
-				}
-
-				/* Open RX */
-				if (pAgtCom[C_COMINST_RX]) {
-#ifdef OLD_CODE
-					comReqData.cmd = C_COMREQ_OPEN_IDN;
-					if (C_RX_COM_IS_IEC) {
-						pAgtCom[C_COMINST_RX]->setIecAddr(C_RX_COM_IEC_ADDR);
-						_snprintf_s(buf, C_BUF_SIZE, C_OPENPARAMS_STR,
-							C_RX_COM_IEC_PORT, C_RX_COM_IEC_BAUD, C_RX_COM_IEC_BITS, C_RX_COM_IEC_PARITY, C_RX_COM_IEC_STOPBITS,
-							C_RX_COM_IEC_ADDR);
-						comReqData.parm = string(buf);
-						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-						agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_RX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT*/);
-						if (comRspData.stat == C_COMRSP_DATA) {
-							string rspIdnStr = string(comRspData.data);
-							if (rspIdnStr.empty()) {
-								comReqData.cmd = C_COMREQ_CLOSE;
-								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-								receive(*(pAgtComRsp[C_COMINST_RX]));
-
-							}
-							else {
-								INSTRUMENT_ENUM_t type = findSerInstrumentByIdn(rspIdnStr, INSTRUMENT_VARIANT_RX | INSTRUMENT_CONNECT_SER);
-								addSerInstrument(type,
-									pAgtCom[C_COMINST_RX], C_RX_COM_IEC_PORT, C_RX_COM_IEC_BAUD, C_RX_COM_IEC_BITS, C_RX_COM_IEC_PARITY, C_RX_COM_IEC_STOPBITS,
-									true, C_RX_COM_IEC_ADDR,
-									rspIdnStr);
-
-								initState = 0x04;
-								if (!_noWinMsg)
-									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX IEC port opened", L"");
-							}
-						}
-
-					}
-					else {
-						pAgtCom[C_COMINST_RX]->setIecAddr(C_SET_IEC_ADDR_INVALID);
-						_snprintf_s(buf, C_BUF_SIZE, C_OPENPARAMS_STR,
-							C_RX_COM_PORT, C_RX_COM_BAUD, C_RX_COM_BITS, C_RX_COM_PARITY, C_RX_COM_STOPBITS,
-							C_SET_IEC_ADDR_INVALID);
-						comReqData.parm = string(buf);
-						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-						agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_RX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
-						if (comRspData.stat == C_COMRSP_DATA) {
-							string rspIdnStr = string(comRspData.data);
-							if (rspIdnStr.empty()) {
-								comReqData.cmd = C_COMREQ_CLOSE;
-								send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-								receive(*(pAgtComRsp[C_COMINST_RX]));
-
-							}
-							else {
-								INSTRUMENT_ENUM_t type = findSerInstrumentByIdn(rspIdnStr, INSTRUMENT_VARIANT_RX | INSTRUMENT_CONNECT_SER);
-								addSerInstrument(type,
-									pAgtCom[C_COMINST_RX], C_RX_COM_PORT, C_RX_COM_BAUD, C_RX_COM_BITS, C_RX_COM_PARITY, C_RX_COM_STOPBITS,
-									false, 0,
-									string());
-
-								initState = 0x04;
-								if (!_noWinMsg)
-									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX port opened", L"");
-							}
-						}
-					}
-				}
-
-				_runState = C_MODELPATTERN_RUNSTATES_USB_REGISTRATION;
-#endif
 				}
 			break;
 
@@ -490,6 +442,7 @@ void agentModelPattern::run(void)
 			/* Find USB instruments for registration */
 			case C_MODELPATTERN_RUNSTATES_USB_REGISTRATION:
 			{
+				// TODO: continue to code
 #ifdef OLD_CODE
 				agentUsbReq usbReqData;
 
@@ -515,23 +468,8 @@ void agentModelPattern::run(void)
 					}
 				}
 
-				_runState = C_MODELPATTERN_RUNSTATES_INST_SELECTION;
 #endif
-			}
-			break;
-
-
-			/* WinSrv user interaction: selection of instruments */
-			case C_MODELPATTERN_RUNSTATES_INST_SELECTION:
-			{
-#ifdef OLD_CODE
-				/* Wait until the instruments are selected */
-				{
-					// TODO: code
-				}
-
 				_runState = C_MODELPATTERN_RUNSTATES_INST_COM_INIT;
-#endif
 			}
 			break;
 
@@ -858,6 +796,7 @@ void agentModelPattern::run(void)
 					}
 				}
 #endif
+				_runState = C_MODELPATTERN_RUNSTATES_INST_USB_INIT;
 			}
 			break;
 
@@ -894,7 +833,6 @@ void agentModelPattern::run(void)
 			/* Initilization of selected USB instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_USB_INIT:
 			{
-#ifdef OLD_CODE
 				// TODO: coding
 
 				if (!_noWinMsg)
@@ -902,7 +840,6 @@ void agentModelPattern::run(void)
 
 				/* success, all devices are ready */
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
-#endif
 			}
 			break;
 
@@ -1102,11 +1039,13 @@ void agentModelPattern::checkInstruments(void)
 		/* Try Ethernet connection */
 		if (linkType & LINKTYPE_ETH) {
 			instTryEth(it);
+			it->actLink = true;				// TODO: remove me!
 		}
 
 		/* Try USB connection */
 		if (linkType & LINKTYPE_USB) {
 			instTryUsb(it);
+			it->actLink = true;				// TODO: remove me!
 		}
 
 		/* Try COM connection, even when IEC is interfaced to a COM port */
@@ -1157,6 +1096,9 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 	/* Open COM connection */
 	char buf[C_BUF_SIZE];
 	agentComReq comReqData;
+	BOOL isRotorSelected = FALSE;
+	BOOL isGenSelected = FALSE;
+	BOOL isSpecSelected = FALSE;
 
 	/* Different handling of the serial stream */
 	switch (it->listFunction) {
@@ -1188,18 +1130,22 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 			}
 		}
 
-		pAgtMod->getWinSrv()->instActivateMenuItem(ID_AKTOR_ITEM0_, true);	// TODO: remove me!
+		//isConnected = true;													// TODO: remove me!
 		
 		if (isConnected) {
-			/* This rotor is selected by default */
-			it->actSelected = true;
+			/* Device found */
+			it->actLink = true;
 
-			/* Activate Rotor menu items */
-			pAgtMod->getWinSrv()->instActivateMenuItem(ID_AKTOR_ITEM0_, it->actSelected);
+			/* Select first device found as preset */
+			if (!isRotorSelected) {
+				isRotorSelected = TRUE;
+				it->actSelected = true;
+			}
 
 			if (!_noWinMsg)
 				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor found", L"");
 		}
+
 		else {
 			/* Remove COM link bit(s) */
 			it->linkType &= ~(LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
@@ -1249,13 +1195,30 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 				}
 			}
 
-			pAgtMod->getWinSrv()->instActivateMenuItem(ID_GENERATOR_ITEM0_, true);	// TODO: remove me!
-			pAgtMod->getWinSrv()->instActivateMenuItem(ID_SPEK_ITEM0_, true);		// TODO: remove me!
+			isConnected = true;														// TODO: remove me!
 
 			if (isConnected) {
+				/* Device found */
+				it->actLink = true;
+
+				/* Select first device found as preset */
+				if (it->listFunction == INST_FUNC_GEN) {
+					if (!isGenSelected) {
+						isGenSelected = TRUE;
+						it->actSelected = true;
+					}
+				}
+				else if (it->listFunction == INST_FUNC_SPEC) {
+					if (!isSpecSelected) {
+						isSpecSelected = TRUE;
+						it->actSelected = true;
+					}
+				}
+
 				if (!_noWinMsg)
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: device found", L"");
 			}
+
 			else {
 				/* Remove COM link bit(s) */
 				it->linkType &= ~(LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
@@ -1387,7 +1350,32 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 {
 	switch (wmId)
 	{
-	case ID_CTRL_ALL_RESET:
+	/* Select Rotor */
+	if (wmId >= ID_AKTOR_ITEM0_ && wmId < (ID_SPEK_ITEM0_ + 255)) {
+		/* Select device and deselect all other devices in Menu and instrument list */
+		// TODO: code here
+		xxx;
+	}
+
+	/* Select RF Generator */
+	if (wmId >= ID_GENERATOR_ITEM0_ && wmId < (ID_GENERATOR_ITEM0_ + 255)) {
+		/* Select device and deselect all other devices in Menu and instrument list */
+		// TODO: code here
+	}
+
+	/* Select Spectrum analyzer */
+	if (wmId >= ID_SPEK_ITEM0_ && wmId < (ID_SPEK_ITEM0_ + 255)) {
+		/* Select device and deselect all other devices in Menu and instrument list */
+		// TODO: code here
+	}
+
+		
+	/* Connect and Disconnet */
+	case ID_INSTRUMENTEN_CONNECT:
+		connectDevices();
+		break;
+
+	case ID_INSTRUMENTEN_DISCONNECT:
 		initDevices();
 		break;
 
@@ -1540,7 +1528,8 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				while (m->o->_runState < C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI) {
 					Sleep(25);
 				}
-				m->o->_runState = C_MODELPATTERN_RUNSTATES_COM_REGISTRATION;
+				m->o->guiPressedConnect = TRUE;
+				m->o->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 			}
 		}
 		break;
@@ -1568,6 +1557,20 @@ void agentModelPattern::setSimuMode(int mode)
 int agentModelPattern::getSimuMode(void)
 {
 	return simuMode;
+}
+
+
+void agentModelPattern::connectDevices(void)
+{
+	if (_running && (_runState == C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI)) {
+		/* Enable the menu items */
+		pAgtMod->getWinSrv()->instActivateMenuItem(ID_AKTOR_ITEM0_, true);
+		pAgtMod->getWinSrv()->instActivateMenuItem(ID_GENERATOR_ITEM0_, true);
+		pAgtMod->getWinSrv()->instActivateMenuItem(ID_SPEK_ITEM0_, true);
+
+		/* Init the connections */
+		runProcess(C_MODELPATTERN_PROCESS_CONNECT_DEVICES, 0);
+	}
 }
 
 void agentModelPattern::initDevices(void)

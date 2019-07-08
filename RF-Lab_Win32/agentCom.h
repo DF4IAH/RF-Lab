@@ -6,6 +6,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "agentModel_InstList.h"
+
 
 using namespace concurrency;
 using namespace std;

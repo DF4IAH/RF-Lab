@@ -538,7 +538,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 #endif
 
 	/* Get menu class */
-	HMENU hmenu = GetMenu(this->hWnd);
+	HMENU hMenu = GetMenu(this->hWnd);
 
 	/* Prepare request attributes of the items */
 	MENUITEMINFO menuItemInfo;
@@ -547,10 +547,10 @@ void WinSrv::instUpdateConnectedInstruments(void)
 	menuItemInfo.fMask = MIIM_TYPE | MIIM_STATE | MIIM_ID | MIIM_SUBMENU;
 
 	/* Iterate over all menu entries */
-	int menuItemCnt = GetMenuItemCount(hmenu);
+	int menuItemCnt = GetMenuItemCount(hMenu);
 	for (int menuItemIdx = 0; menuItemIdx < menuItemCnt; menuItemIdx++) {
 		GetMenuItemInfo(
-			hmenu,
+			hMenu,
 			menuItemIdx,
 			TRUE,
 			&menuItemInfo);
@@ -560,7 +560,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 			TCHAR buffer[MAX_PATH];
 
 			GetMenuString(
-				hmenu,
+				hMenu,
 				menuItemIdx,
 				buffer,
 				MAX_PATH,
@@ -617,9 +617,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 											it->winID = aktorID;
 											AppendMenu(
 												hAktorenMenu,
-												// TODO: re-enable me!
-												//MF_STRING | (it->actSelected ?  MF_CHECKED : 0) | (it->linkType ?  0 : MF_DISABLED),
-												MF_STRING | MF_CHECKED,
+												MF_STRING | (it->actSelected ?  MF_CHECKED : 0) | (it->actLink ?  0 : MF_DISABLED),
 												(UINT) aktorID,
 												wName);
 										}
@@ -650,6 +648,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 							/* HF-Generatoren found */
 							HMENU hRfGenMenu = menuItemInfo.hSubMenu;
 							int rfGenMenuCnt = GetMenuItemCount(hRfGenMenu);
+							UINT rfGenID = ID_GENERATOR_ITEM0_;
 
 							for (int rfGenMenuIdx = 0; rfGenMenuIdx < rfGenMenuCnt; rfGenMenuIdx++) {
 								GetMenuString(
@@ -661,7 +660,6 @@ void WinSrv::instUpdateConnectedInstruments(void)
 
 								/* Entrypoint for actors found? */
 								if (!lstrcmp(L"_hf_generator_", buffer)) {
-									UINT rfGenID = ID_GENERATOR_ITEM0_;
 									/* Iterate over the instrument list */
 									am_InstList_t::iterator it = g_am_InstList.begin();
 
@@ -676,10 +674,8 @@ void WinSrv::instUpdateConnectedInstruments(void)
 											it->winID = rfGenID;
 											AppendMenu(
 												hRfGenMenu,
-												// TODO: re-enable me!
-												//MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
-												MF_STRING | MF_CHECKED,
-												(UINT)rfGenID,
+												MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
+												(UINT)rfGenID++,
 												wName);
 										}
 
@@ -709,6 +705,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 							/* Spektrumanalysatoren found */
 							HMENU hSpekMenu = menuItemInfo.hSubMenu;
 							int spekMenuCnt = GetMenuItemCount(hSpekMenu);
+							UINT spekID = ID_SPEK_ITEM0_;
 
 							for (int spekMenuIdx = 0; spekMenuIdx < spekMenuCnt; spekMenuIdx++) {
 								GetMenuString(
@@ -720,7 +717,6 @@ void WinSrv::instUpdateConnectedInstruments(void)
 
 								/* Entrypoint for actors found? */
 								if (!lstrcmp(L"_spek_", buffer)) {
-									UINT spekID = ID_SPEK_ITEM0_;
 									/* Iterate over the instrument list */
 									am_InstList_t::iterator it = g_am_InstList.begin();
 
@@ -735,10 +731,8 @@ void WinSrv::instUpdateConnectedInstruments(void)
 											it->winID = spekID;
 											AppendMenu(
 												hSpekMenu,
-												// TODO: re-enable me!
-												//MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
-												MF_STRING | MF_CHECKED,
-												(UINT)spekID,
+												MF_STRING | (it->actSelected ? MF_CHECKED : 0) | (it->actLink ? 0 : MF_DISABLED),
+												(UINT)spekID++,
 												wName);
 										}
 
@@ -760,6 +754,10 @@ void WinSrv::instUpdateConnectedInstruments(void)
 			}
 		}
 	}
+
+	/* After selection is done the instruments can be connected / disconnected */
+	EnableMenuItem(hMenu, ID_INSTRUMENTEN_CONNECT, MF_BYCOMMAND);
+	EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
 
 	DrawMenuBar(this->hWnd);
 }
@@ -881,6 +879,7 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 	HMENU hMenu = GetMenu(this->hWnd);
 
 	if (_menuInfo.rotorEnabled && _menuInfo.rfGenEnabled && _menuInfo.specEnabled) {
+		EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
 		EnableMenuItem(hMenu, ID_CTRL_ALL_RESET, MF_BYCOMMAND);
 
 		/* Append ModelPattern specific items to the menu */
@@ -890,12 +889,6 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 
 		/* Remove place holder */
 		RemoveMenu(hMenu, ID_ANSTEUERUNG_, MF_BYCOMMAND);
-
-		/* Init the connections */
-		if (pAgtModel) {
-			pAgtModel->runProcess(C_MODELPATTERN_PROCESS_CONNECT_DEVICES, 0);
-			return TRUE;
-		}
 	}
 	return FALSE;
 }

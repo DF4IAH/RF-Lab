@@ -133,7 +133,6 @@ enum C_MODELPATTERN_RUNSTATES_ENUM {
 	C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI,
 	C_MODELPATTERN_RUNSTATES_COM_REGISTRATION,
 	C_MODELPATTERN_RUNSTATES_USB_REGISTRATION,
-	C_MODELPATTERN_RUNSTATES_INST_SELECTION,
 	C_MODELPATTERN_RUNSTATES_INST_COM_INIT,
 	C_MODELPATTERN_RUNSTATES_INST_USB_INIT,
 	C_MODELPATTERN_RUNSTATES_RUNNING,
@@ -189,6 +188,7 @@ private:
 	int									 simuMode;
 
 	int									 initState;
+	BOOL								 guiPressedConnect;
 
 	long								 lastTickPos;
 
@@ -241,6 +241,7 @@ public:
 	void					setSimuMode(int simuMode);
 	int						getSimuMode(void);
 	void					runProcess(int processID, int arg);
+	void					connectDevices(void);
 	void					initDevices(void);
 	void					setStatusPosition(double pos);
 

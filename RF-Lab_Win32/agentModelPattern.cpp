@@ -145,7 +145,8 @@ void agentModelPattern::agentsShutdown(void)
 	/* Release serial connection objects */
 	for (int i = 0; i < C_COMINST__COUNT; i++) {
 		if (pAgtCom[i]) {
-			agent::wait(pAgtCom[i], AGENT_PATTERN_RECEIVE_TIMEOUT);
+			agent::wait(pAgtCom[i], AGENT_PATTERN_RECEIVE_TIMEOUT);  // TODO: shutdown hangs on TX
+			xxx;
 		}
 		SafeReleaseDelete(&(pAgtCom[i]));
 		SafeDelete(&(pAgtComReq[i]));
@@ -433,7 +434,7 @@ void agentModelPattern::run(void)
 					}
 					else {
 						/* Something went wrong! Do restart */
-						//_runState = C_MODELPATTERN_RUNSTATES_COM_CLOSE;
+						//_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE;
 						_runState = C_MODELPATTERN_RUNSTATES_NOOP;  // TODO: remove me!
 					}
 				}
@@ -869,22 +870,33 @@ void agentModelPattern::run(void)
 			break;
 
 
-			/* Closing USB instrument connection */
-			case C_MODELPATTERN_RUNSTATES_USB_CLOSE:
-			{
-				// TODO: coding
-
-				_runState = C_MODELPATTERN_RUNSTATES_COM_CLOSE;
-			}
-			break;
-
-
-			/* Closing COM / IEC instrument connection */
-			case C_MODELPATTERN_RUNSTATES_COM_CLOSE:
+			/* Send instrument close connections */
+			case C_MODELPATTERN_RUNSTATES_USB_CLOSE_SEND:
 			{
 				agentUsbReq usbReqData;
-				agentComReq comReqData;
 				usbReqData.cmd = C_USBREQ_END;
+				comReqData.parm = string();
+
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB: close", L"SHUTTING DOWN ...");
+					Sleep(500L);
+				}
+
+				try {
+					/* Send shutdown request to the USB_TMC module */
+					send(*pAgtUsbTmcReq, usbReqData);
+				}
+				catch (const Concurrency::operation_timed_out& e) {
+					(void)e;
+				}
+
+				_runState = C_MODELPATTERN_RUNSTATES_COM_CLOSE_SEND;
+			}
+			break;
+			
+			case C_MODELPATTERN_RUNSTATES_COM_CLOSE_SEND:
+			{
+				agentComReq comReqData;
 				comReqData.cmd = C_COMREQ_END;
 				comReqData.parm = string();
 
@@ -894,32 +906,24 @@ void agentModelPattern::run(void)
 				}
 
 				try {
-					/* Send shutdown request to the USB_TMC module */
-					send(*pAgtUsbTmcReq, usbReqData);
-
 					/* Send shutdown request for each active agent */
 					for (int i = 0; i < C_COMINST__COUNT; i++) {
 						if (pAgtComReq[i]) {
 							send(*(pAgtComReq[i]), comReqData);
 						}
 					}
-
-					if (_loopShut) {
-						_running = false;
-					}
-					else {
-						_runState = _runReinit ? C_MODELPATTERN_RUNSTATES_BEGIN : C_MODELPATTERN_RUNSTATES_NOOP;
-					}
 				}
 				catch (const Concurrency::operation_timed_out& e) {
 					(void)e;
 				}
+
+				_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE_WAIT;
 			}
 			break;
 
 
-#if 0
-			case C_MODELPATTERN_RUNSTATES_COM_CLOSE_2:
+			/* Wait until closing is done */
+			case C_MODELPATTERN_RUNSTATES_USB_CLOSE_WAIT:
 			{
 				/* Wait for the USB_TMC module to get finished */
 				try {
@@ -932,6 +936,15 @@ void agentModelPattern::run(void)
 					(void)e;
 				}
 
+				/* Stop the ProcessID thread */
+				threadsStop();
+
+				_runState = C_MODELPATTERN_RUNSTATES_COM_CLOSE_WAIT;
+			}
+			break;
+
+			case C_MODELPATTERN_RUNSTATES_COM_CLOSE_WAIT:
+			{
 				/* wait for each reply message */
 				for (int i = 0; i < C_COMINST__COUNT; i++) {
 					if (pAgtCom[i]) {
@@ -949,27 +962,35 @@ void agentModelPattern::run(void)
 					}
 				}
 
-				/* Stop the ProcessID thread */
-				threadsStop();
-
-				/* Shutdown the agents */
+				/* Shutdown the COM and USB agents */
 				agentsShutdown();
 
-				if (_runReinit) {
-					_runState = C_MODELPATTERN_RUNSTATES_BEGIN;
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"REINIT");
+				if (_loopShut) {
+					_runState = C_MODELPATTERN_RUNSTATES_NOOP;
+					_running = false;
 
+					if (!_noWinMsg) {
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: shut down", L"... CLOSED");
+					}
+				}
+				else if (_runReinit) {
+					_runState = C_MODELPATTERN_RUNSTATES_BEGIN;
+
+					if (!_noWinMsg) {
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: shut down", L"REINIT ...");
+						Sleep(500L);
+					}
 				}
 				else {
 					_runState = C_MODELPATTERN_RUNSTATES_NOOP;
 					_running = false;
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: closed", L"CLOSED");
+
+					if (!_noWinMsg) {
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: shut down", L"... CLOSED");
+					}
 				}
 			}
 			break;
-#endif
 
 
 			/* WinSrv SHUTDOWN request */
@@ -977,7 +998,7 @@ void agentModelPattern::run(void)
 			{
 				_runReinit = false;
 				_loopShut = true;
-				_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE;
+				_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE_SEND;
 			}
 			break;
 
@@ -987,7 +1008,8 @@ void agentModelPattern::run(void)
 			{
 				/* Close any devices and restart init process */
 				_runReinit = true;
-				_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE;
+				_loopShut = false;
+				_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE_SEND;
 			}
 			break;
 
@@ -1008,10 +1030,10 @@ void agentModelPattern::run(void)
 			strcpy_s(msgBuf, e.what());
 			WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), msgBuf, (DWORD)strlen(msgBuf), &dwChars, NULL);
 
-			if (_runState < C_MODELPATTERN_RUNSTATES_USB_CLOSE) {
-				_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE;
+			if (_runState < C_MODELPATTERN_RUNSTATES_USB_CLOSE_SEND) {
+				_runState = C_MODELPATTERN_RUNSTATES_USB_CLOSE_SEND;
 
-			} else if (_runState <= C_MODELPATTERN_RUNSTATES_COM_CLOSE) {
+			} else if (_runState <= C_MODELPATTERN_RUNSTATES_COM_CLOSE_SEND) {
 				if (_runReinit) {
 					_runState = C_MODELPATTERN_RUNSTATES_BEGIN;
 					if (!_noWinMsg) {

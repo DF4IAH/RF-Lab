@@ -28,6 +28,7 @@
 
 // Globale Variablen:
 HINSTANCE			g_hInst							= nullptr;	// Aktuelle Instanz
+HWND				g_hWnd							= nullptr;
 WCHAR				g_szTitle[MAX_LOADSTRING]		= { 0 };	// Titelleistentext
 WCHAR				g_szWindowClass[MAX_LOADSTRING] = { 0 };	// Klassenname des Hauptfensters
 LRESULT				g_iCbValue						= 0ULL;
@@ -134,10 +135,13 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   g_hInst = hInstance; // Instanzenhandle in der globalen Variablen speichern
 
    HWND hWnd = CreateWindowW(g_szWindowClass, g_szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+
+   /* Instanzenhandle und Windowhandle in globalen Variablen speichern */
+   g_hInst = hInstance;
+   g_hWnd  = hWnd;
 
    if (!hWnd)
    {

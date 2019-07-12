@@ -11,6 +11,10 @@
 #include "agentModelPattern.h"
 
 
+/* External global vars */
+extern HWND	g_hWnd;
+
+
 template <class T>  void SafeReleaseDelete(T **ppT)
 {
 	if (*ppT)
@@ -1348,103 +1352,134 @@ instrument_t* agentModelPattern::addSerInstrument(	INSTRUMENT_ENUM_t type,
 
 void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 {
-	switch (wmId)
-	{
-	/* Select Rotor */
+	HMENU hMenu = GetMenu(g_hWnd);
+
+	/* Select device and deselect all other devices in Menu and instrument list */
 	if (wmId >= ID_AKTOR_ITEM0_ && wmId < (ID_SPEK_ITEM0_ + 255)) {
-		/* Select device and deselect all other devices in Menu and instrument list */
-		// TODO: code here
-		xxx;
-	}
+		Inst_Function_t instFunc = INST_FUNC_UNKNOWN;
 
-	/* Select RF Generator */
-	if (wmId >= ID_GENERATOR_ITEM0_ && wmId < (ID_GENERATOR_ITEM0_ + 255)) {
-		/* Select device and deselect all other devices in Menu and instrument list */
-		// TODO: code here
-	}
+		/* Iterate over the instrument list */
+		am_InstList_t::iterator it = g_am_InstList.begin();
 
-	/* Select Spectrum analyzer */
-	if (wmId >= ID_SPEK_ITEM0_ && wmId < (ID_SPEK_ITEM0_ + 255)) {
-		/* Select device and deselect all other devices in Menu and instrument list */
-		// TODO: code here
-	}
+		/* Iterate over all instruments and check which one responds */
+		while (it != g_am_InstList.end()) {
+			/* Selected menu item found ? */
+			if (it->winID == wmId) {
+				/* Hold new state */
+				it->actSelected = true;
 
-		
-	/* Connect and Disconnet */
-	case ID_INSTRUMENTEN_CONNECT:
-		connectDevices();
-		break;
+				/* Activate menu-item */
+				CheckMenuItem(hMenu, it->winID, MF_BYCOMMAND | MF_CHECKED);
 
-	case ID_INSTRUMENTEN_DISCONNECT:
-		initDevices();
-		break;
+				/* Function group the selection is modified for */
+				instFunc = it->listFunction;
 
-
-	/* Rotor commands */
-
-	case ID_ROTOR_GOTO_0:
-		if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
-			pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor turns to  0°  position", L"RUNNING");
-			runProcess(C_MODELPATTERN_PROCESS_GOTO_X, 0);
-		}
-		break;
-
-	case ID_ROTOR_GOTO_X:
-		if (arg) {
-			if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
-				int* pi = (int*)arg;
-
-				/* Inform about the current state */
-				{
-					const int l_status_size = 256;
-					HLOCAL l_status2_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
-					PWCHAR l_status2 = (PWCHAR)LocalLock(l_status2_alloc);
-
-					swprintf_s(l_status2, l_status_size, L"COM: 1 ~ rotor turns to  %+03d°  position", (*pi) / 1000);
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", l_status2, L"RUNNING");
-
-					LocalUnlock(l_status2_alloc);
-					LocalFree(l_status2_alloc);
-				}
-
-				/* Start rotor */
-				runProcess(C_MODELPATTERN_PROCESS_GOTO_X, *pi);
+				break;
 			}
+			/* Iterate to next instrument */
+			it++;
 		}
-		break;
 
-	case ID_ROTOR_STOP:
-	case ID_MODEL_PATTERN_STOP:
-		runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
-		break;
+		/* Turn off all selections of other instruments of the same function */
+		it = g_am_InstList.begin();
 
-	case ID_MODEL_PATTERN_180_START:
-		// Init display part
-		// xxx();
+		/* Iterate over all instruments and check which one responds */
+		while (it != g_am_InstList.end()) {
+			/* Any other menu item of the same function found ? */
+			if (it->winID != wmId &&
+				it->listFunction == instFunc)
+			{
+				/* Set new state */
+				it->actSelected = false;
 
-		// Start recording of pattern
-		runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG, 0);
-		break;
+				/* Deactivate menu-item */
+				CheckMenuItem(hMenu, it->winID, MF_BYCOMMAND | MF_UNCHECKED);
+			}
+			/* Iterate to next instrument */
+			it++;
+		}
+	}
 
-	case ID_MODEL_PATTERN_360_START:
-		// Init display part
-		// xxx();
+	else {
+		switch (wmId)
+		{
+			/* Connect and Disconnet */
 
-		// Start recording of pattern
-		runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG, 0);
-		break;
+		case ID_INSTRUMENTEN_CONNECT:
+			connectDevices();
+			break;
+
+		case ID_INSTRUMENTEN_DISCONNECT:
+			initDevices();
+			break;
 
 
-	/* HF-Generator settings */
+			/* Rotor commands */
 
-	// nothing yet
+		case ID_ROTOR_GOTO_0:
+			if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
+				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor turns to  0°  position", L"RUNNING");
+				runProcess(C_MODELPATTERN_PROCESS_GOTO_X, 0);
+			}
+			break;
+
+		case ID_ROTOR_GOTO_X:
+			if (arg) {
+				if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
+					int* pi = (int*)arg;
+
+					/* Inform about the current state */
+					{
+						const int l_status_size = 256;
+						HLOCAL l_status2_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
+						PWCHAR l_status2 = (PWCHAR)LocalLock(l_status2_alloc);
+
+						swprintf_s(l_status2, l_status_size, L"COM: 1 ~ rotor turns to  %+03d°  position", (*pi) / 1000);
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", l_status2, L"RUNNING");
+
+						LocalUnlock(l_status2_alloc);
+						LocalFree(l_status2_alloc);
+					}
+
+					/* Start rotor */
+					runProcess(C_MODELPATTERN_PROCESS_GOTO_X, *pi);
+				}
+			}
+			break;
+
+		case ID_ROTOR_STOP:
+		case ID_MODEL_PATTERN_STOP:
+			runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
+			break;
+
+		case ID_MODEL_PATTERN_180_START:
+			// Init display part
+			// xxx();
+
+			// Start recording of pattern
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG, 0);
+			break;
+
+		case ID_MODEL_PATTERN_360_START:
+			// Init display part
+			// xxx();
+
+			// Start recording of pattern
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG, 0);
+			break;
 
 
-	/* HF-Generator settings */
+			/* HF-Generator settings */
 
-	// nothing yet
+			// nothing yet
 
-	}  // switch (message) {
+
+			/* HF-Generator settings */
+
+			// nothing yet
+
+		}  // switch (message)
+	}
 }
 
 void agentModelPattern::procThreadProcessID(void* pContext)

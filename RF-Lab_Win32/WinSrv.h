@@ -17,15 +17,17 @@ public:
 	const int							 StatusBarParts = 3;
 
 	typedef struct InstMenuItemAry {
-		HMENU							hMenu;
-		int								idx;
+		HMENU							 hMenu;
+		int								 idx;
 	} InstMenuItemAry_t;
 
 	typedef struct MenuInfo {
-		BOOL							rotorEnabled;
-		BOOL							rfGenEnabled;
-		BOOL							specEnabled;
+		bool							 rotorEnabled;
+		bool							 rfGenEnabled;
+		bool							 specEnabled;
 	} MenuInfo_t;
+
+	MenuInfo_t							 _menuInfo;
 
 
 private:
@@ -38,8 +40,6 @@ private:
 	D2D1_SIZE_F							 _size;
 
 	PresentationData_t					 _PD;
-
-	MenuInfo_t							 _menuInfo;
 
 	unbounded_buffer<agentModelReq>		 _ub_agtModel_req;
 	unbounded_buffer<agentModelRsp>		 _ob_agtModel_rsp;
@@ -85,8 +85,8 @@ public:
 
 	void			reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo);
 
-	BOOL			instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenuAnst, wchar_t* caption);
+	bool			instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenuAnst, wchar_t* caption);
 	void			instUpdateConnectedInstruments(void);
-	void			instActivateMenuItem(UINT winID, BOOL uEnable);
+	void			instActivateMenuItem(UINT winID, bool uEnable);
 
 };

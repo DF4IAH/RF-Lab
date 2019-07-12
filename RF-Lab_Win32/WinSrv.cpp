@@ -459,7 +459,7 @@ void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelI
 }
 
 
-BOOL WinSrv::instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenu, wchar_t* caption)
+bool WinSrv::instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenu, wchar_t* caption)
 {
 	/* Sanity checks */
 	if (!hMenuSub || !menuIdx || !hMenu  || !caption) {
@@ -494,7 +494,7 @@ BOOL WinSrv::instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenu, wchar_t
 			/* Found! */
 			*hMenuSub = menuItemInfo.hSubMenu ? menuItemInfo.hSubMenu : hMenu;
 			*menuIdx = menuItemIdx;
-			return TRUE;
+			return true;
 		}
 
 		if (menuItemInfo.hSubMenu) {
@@ -506,13 +506,13 @@ BOOL WinSrv::instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenu, wchar_t
 				/* Found in subree */
 				*hMenuSub = recMenu;
 				*menuIdx = recMenuIdx;
-				return TRUE;
+				return true;
 			}
 		}
 	}
 
 	/* Caption not found */
-	return FALSE;
+	return false;
 }
 
 void WinSrv::instUpdateConnectedInstruments(void)
@@ -755,14 +755,10 @@ void WinSrv::instUpdateConnectedInstruments(void)
 		}
 	}
 
-	/* After selection is done the instruments can be connected / disconnected */
-	EnableMenuItem(hMenu, ID_INSTRUMENTEN_CONNECT, MF_BYCOMMAND);
-	EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
-
 	DrawMenuBar(this->hWnd);
 }
 
-void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
+void WinSrv::instActivateMenuItem(UINT winID, bool uEnable)
 {
 	/* Get menu structure */
 	HMENU hMenuBar = GetMenu(this->hWnd);
@@ -803,7 +799,7 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 			//EnableMenuItem(GetMenu(this->hWnd), ID_ROTOR_EINSTELLUNGEN, MF_BYCOMMAND);  // TODO: to be defined
 
 			/* Update menu state for fast access */
-			_menuInfo.rotorEnabled = TRUE;
+			_menuInfo.rotorEnabled = true;
 
 			/* Enable ModelPattern when all items are activated */
 			checkForModelPattern(hMenuAnst);
@@ -837,7 +833,7 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 			EnableMenuItem(hMenuBar, ID_TX_SETTINGS, MF_BYCOMMAND);
 
 			/* Update menu state for fast access */
-			_menuInfo.rfGenEnabled = TRUE;
+			_menuInfo.rfGenEnabled = true;
 
 			/* Enable ModelPattern when all items are activated */
 			checkForModelPattern(hMenuAnst);
@@ -857,7 +853,7 @@ void WinSrv::instActivateMenuItem(UINT winID, BOOL uEnable)
 			EnableMenuItem(hMenuBar, ID_RX_SETTINGS, MF_BYCOMMAND);
 
 			/* Update menu state for fast access */
-			_menuInfo.specEnabled = TRUE;
+			_menuInfo.specEnabled = true;
 
 			/* Enable ModelPattern when all items are activated */
 			checkForModelPattern(hMenuAnst);

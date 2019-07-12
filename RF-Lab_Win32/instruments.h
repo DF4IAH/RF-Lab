@@ -107,20 +107,6 @@ typedef struct instrument {
 } instrument_t;
 
 
-#ifdef OLD
-typedef struct ArrayOfInstruments {
-	int					inst_rot_cnt;
-	instrument_t		inst_rot[8];
-
-	int					inst_tx_cnt;
-	instrument_t		inst_tx[8];
-
-	int					inst_rx_cnt;
-	instrument_t		inst_rx[8];
-} ArrayOfInstruments_t;
-#endif
-
-
 /* Functions */
 
 INSTRUMENT_ENUM_t findSerInstrumentByIdn(const string rspIdnStr, int instVariant);

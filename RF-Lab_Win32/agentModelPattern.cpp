@@ -48,10 +48,6 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , hThreadAgtUsbTmc(nullptr)
 				 , sThreadDataAgentModelPattern( { 0 } )
 
-#ifdef OLD
-				 , ai( { 0 } )
-#endif
-
 				 , pAgtUsbTmc(nullptr)
 
 				 , processing_ID(0)
@@ -70,18 +66,8 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , rxSpan(0.0)
 				 , rxLevelMax(0.0)
 {
-#ifdef OLD
-	/* Clear instrument structure */
-	memset(&ai, 0, sizeof(ArrayOfInstruments_t));
-#endif
+	/* Nothing to init */
 }
-
-#ifdef OLD
-ArrayOfInstruments_t* agentModelPattern::getAIPtr(void)
-{
-	return &ai;
-}
-#endif
 
 inline bool agentModelPattern::isRunning(void)
 {
@@ -193,8 +179,8 @@ void agentModelPattern::threadsStop(void)
 void agentModelPattern::run(void)
 {
 	agentComReq comReqData = { 0 };
-	BOOL isTxConDone = FALSE;
-	BOOL isRxConDone = FALSE;
+	bool isTxConDone = false;
+	bool isRxConDone = false;
 
 	/* Delay until window is up and ready */
 	while (!(WinSrv::srvReady())) {
@@ -1100,9 +1086,6 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 	/* Open COM connection */
 	char buf[C_BUF_SIZE];
 	agentComReq comReqData;
-	BOOL isRotorSelected = FALSE;
-	BOOL isGenSelected = FALSE;
-	BOOL isSpecSelected = FALSE;
 
 	/* Different handling of the serial stream */
 	switch (it->listFunction) {
@@ -1141,8 +1124,8 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 			it->actLink = true;
 
 			/* Select first device found as preset */
-			if (!isRotorSelected) {
-				isRotorSelected = TRUE;
+			if (!_winSrv->_menuInfo.rotorEnabled) {
+				_winSrv->_menuInfo.rotorEnabled = true;
 				it->actSelected = true;
 			}
 
@@ -1207,14 +1190,14 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 
 				/* Select first device found as preset */
 				if (it->listFunction == INST_FUNC_GEN) {
-					if (!isGenSelected) {
-						isGenSelected = TRUE;
+					if (!_winSrv->_menuInfo.rfGenEnabled) {
+						_winSrv->_menuInfo.rfGenEnabled = true;
 						it->actSelected = true;
 					}
 				}
 				else if (it->listFunction == INST_FUNC_SPEC) {
-					if (!isSpecSelected) {
-						isSpecSelected = TRUE;
+					if (!_winSrv->_menuInfo.specEnabled) {
+						_winSrv->_menuInfo.specEnabled = true;
 						it->actSelected = true;
 					}
 				}
@@ -1374,6 +1357,20 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 				/* Function group the selection is modified for */
 				instFunc = it->listFunction;
 
+				switch (instFunc) {
+				case INST_FUNC_ROTOR:
+					_winSrv->_menuInfo.rotorEnabled = true;
+					break;
+
+				case INST_FUNC_GEN:
+					_winSrv->_menuInfo.rfGenEnabled = true;
+					break;
+
+				case INST_FUNC_SPEC:
+					_winSrv->_menuInfo.specEnabled = true;
+					break;
+				}
+
 				break;
 			}
 			/* Iterate to next instrument */
@@ -1397,6 +1394,13 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			}
 			/* Iterate to next instrument */
 			it++;
+		}
+
+		/* All functions (Rotor, RfGen and Spec) selected */
+		if (_winSrv->_menuInfo.rotorEnabled && _winSrv->_menuInfo.rfGenEnabled && _winSrv->_menuInfo.specEnabled) {
+			/* Enable connected / disconnected menu items */
+			EnableMenuItem(hMenu, ID_INSTRUMENTEN_CONNECT, MF_BYCOMMAND);
+			EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
 		}
 	}
 

@@ -171,9 +171,6 @@ private:
 	class agentModel					*pAgtMod;
 	threadDataAgentModelPattern_t		 sThreadDataAgentModelPattern;
 
-	/* All Instruments detected */  // --> use   g_am_InstList  (RF-Lab_Win32.cpp)  instead
-	//ArrayOfInstruments_t				 ai;
-
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
 	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
@@ -188,7 +185,7 @@ private:
 	int									 simuMode;
 
 	int									 initState;
-	BOOL								 guiPressedConnect;
+	bool								 guiPressedConnect;
 
 	long								 lastTickPos;
 

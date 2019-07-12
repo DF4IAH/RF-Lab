@@ -755,6 +755,9 @@ void WinSrv::instUpdateConnectedInstruments(void)
 		}
 	}
 
+	/* Enable disconnect and search again menu item */
+	EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
+
 	DrawMenuBar(this->hWnd);
 }
 

@@ -202,8 +202,10 @@ void agentModelPattern::run(void)
 				/* In case of a REINIT, clear this flag */
 				_runReinit = false;
 
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads ...", L"");
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads", L"STARTING ...");
+					Sleep(500L);
+				}
 
 				/* Start the communication agents */
 				agentsInit();
@@ -211,8 +213,10 @@ void agentModelPattern::run(void)
 				/* Start thread for process IDs to operate */
 				threadsStart();
 
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM threads created", L"");
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads", L"... DONE");
+					Sleep(500L);
+				}
 
 
 				/* Request libusb to init */
@@ -226,8 +230,10 @@ void agentModelPattern::run(void)
 					if (usbRspData.stat == C_USBRSP_REGISTRATION_DONE) {
 						/* USB ready */
 
-						if (!_noWinMsg)
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB bus registration done", L"");
+						if (!_noWinMsg) {
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB bus registration", L"... DONE");
+							Sleep(500L);
+						}
 					}
 				}
 
@@ -245,8 +251,9 @@ void agentModelPattern::run(void)
 				_winSrv->instUpdateConnectedInstruments();
 
 				_runState = C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI;
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Please select instruments from the menu...", L"NOW");
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Please select instruments from the menu", L"--- SELECT NOW ---");
+				}
 			}
 			break;
 
@@ -289,8 +296,10 @@ void agentModelPattern::run(void)
 
 				/* Open Rotor */
 				if (pAgtCom[C_COMINST_ROT]) {
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs ...", L"ROTOR");
+					if (!_noWinMsg) {
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs", L"ROTOR ...");
+						Sleep(500L);
+					}
 
 					/* Search rotor */
 					am_InstList_t::iterator it = g_am_InstList.begin();
@@ -338,8 +347,10 @@ void agentModelPattern::run(void)
 
 				/* Open TX & RX */
 				if (pAgtCom[C_COMINST_TX] && pAgtCom[C_COMINST_RX]) {
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs ...", L"RF-Gen & Spec");
+					if (!_noWinMsg) {
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Opening COMs", L"RF-Gen & Spec ...");
+						Sleep(500L);
+					}
 
 					/* Iterate over all instruments */
 					am_InstList_t::iterator it = g_am_InstList.begin();
@@ -825,8 +836,10 @@ void agentModelPattern::run(void)
 			{
 				// TODO: coding
 
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB bus init", L"... DONE");
+					Sleep(500L);
+				}
 
 				/* success, all devices are ready */
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
@@ -846,8 +859,10 @@ void agentModelPattern::run(void)
 				/* Init Error occured, show requester */
 				int lastGood = initState;
 
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"INIT ERROR: please connect missing device(s)", L"STANDBY");
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"INIT ERROR: please connect missing device(s)", L"--- MISSING ---");
+					Sleep(1000L);
+				}
 
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 			}
@@ -873,8 +888,10 @@ void agentModelPattern::run(void)
 				comReqData.cmd = C_COMREQ_END;
 				comReqData.parm = string();
 
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: shutting down ...", L"");
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: close", L"SHUTTING DOWN ...");
+					Sleep(500L);
+				}
 
 				try {
 					/* Send shutdown request to the USB_TMC module */
@@ -997,14 +1014,18 @@ void agentModelPattern::run(void)
 			} else if (_runState <= C_MODELPATTERN_RUNSTATES_COM_CLOSE) {
 				if (_runReinit) {
 					_runState = C_MODELPATTERN_RUNSTATES_BEGIN;
-					if (!_noWinMsg)
+					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: broken", L"REINIT");
+						Sleep(500L);
+					}
 
 				} else {
 					_runState = C_MODELPATTERN_RUNSTATES_NOOP;
 					_running = false;
-					if (!_noWinMsg)
+					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: broken", L"CLOSED");
+						Sleep(500L);
+					}
 				}
 			}
 		}
@@ -1019,8 +1040,9 @@ void agentModelPattern::checkInstruments(void)
 {
 	am_InstList_t::iterator it = g_am_InstList.begin();
 
-	if (!_noWinMsg)
-		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Checking list of instruments...", L"RUNNING");
+	if (!_noWinMsg) {
+		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Checking list of instruments", L"CONNECTING ...");
+	}
 
 	/* Iterate over all instruments and check which one responds */
 	while (it != g_am_InstList.end()) {
@@ -1029,13 +1051,13 @@ void agentModelPattern::checkInstruments(void)
 		/* Try Ethernet connection */
 		if (linkType & LINKTYPE_ETH) {
 			instTryEth(it);
-			it->actLink = true;				// TODO: remove me!
+			//it->actLink = true;				// TODO: remove me!
 		}
 
 		/* Try USB connection */
 		if (linkType & LINKTYPE_USB) {
 			instTryUsb(it);
-			it->actLink = true;				// TODO: remove me!
+			//it->actLink = true;				// TODO: remove me!
 		}
 
 		/* Try COM connection, even when IEC is interfaced to a COM port */
@@ -1047,8 +1069,10 @@ void agentModelPattern::checkInstruments(void)
 		it++;
 	}
 
-	if (!_noWinMsg)
-		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Checking list of instruments...", L"DONE");
+	if (!_noWinMsg) {
+		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Checking list of instruments...", L"... DONE");
+		Sleep(500L);
+	}
 }
 
 
@@ -1084,8 +1108,8 @@ bool agentModelPattern::instTryUsb(am_InstList_t::iterator it)
 bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 {
 	/* Open COM connection */
-	char buf[C_BUF_SIZE];
 	agentComReq comReqData;
+	char buf[C_BUF_SIZE];
 
 	/* Different handling of the serial stream */
 	switch (it->listFunction) {
@@ -1117,10 +1141,8 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 			}
 		}
 
-		//isConnected = true;													// TODO: remove me!
-		
 		if (isConnected) {
-			/* Device found */
+			/* Device linked */
 			it->actLink = true;
 
 			/* Select first device found as preset */
@@ -1129,13 +1151,17 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 				it->actSelected = true;
 			}
 
-			if (!_noWinMsg)
-				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor found", L"");
+			if (!_noWinMsg) {
+				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor", L"... FOUND");
+				Sleep(500L);
+			}
 		}
 
 		else {
-			/* Remove COM link bit(s) */
-			it->linkType &= ~(LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
+			/* Remove COM link bit(s), is linked and selection bits */
+			it->linkType	&= ~(LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
+			it->actLink		 = false;
+			it->actSelected	 = false;
 		}
 
 		/* Close connection again */
@@ -1143,11 +1169,7 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
 		comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]));
-		if (comRspData.stat == C_COMRSP_OK) {
-			/* Connection closed */
-			if (!_noWinMsg)
-				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor port closed again", L"");
-		}
+		(void)comRspData;
 	}
 	break;
 
@@ -1159,7 +1181,7 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 		if (pAgtCom[agtComIdx]) {
 			bool isConnected = false;
 
-			/* Start COM server for the TX */
+			/* Start COM servers for TX and RX */
 			pAgtCom[agtComIdx]->start();
 			Sleep(25);
 
@@ -1182,33 +1204,43 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 				}
 			}
 
-			isConnected = true;														// TODO: remove me!
-
 			if (isConnected) {
-				/* Device found */
+				/* Device linked */
 				it->actLink = true;
 
-				/* Select first device found as preset */
+				/* Check for the device function */
 				if (it->listFunction == INST_FUNC_GEN) {
+					/* Select first device found as preset */
 					if (!_winSrv->_menuInfo.rfGenEnabled) {
 						_winSrv->_menuInfo.rfGenEnabled = true;
 						it->actSelected = true;
 					}
+
+					if (!_noWinMsg) {
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RF generator", L"... FOUND");
+						Sleep(500L);
+					}
 				}
+
 				else if (it->listFunction == INST_FUNC_SPEC) {
+					/* Select first device found as preset */
 					if (!_winSrv->_menuInfo.specEnabled) {
 						_winSrv->_menuInfo.specEnabled = true;
 						it->actSelected = true;
 					}
-				}
 
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: device found", L"");
+					if (!_noWinMsg) {
+						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: Spectrum analyzer", L"... FOUND");
+						Sleep(500L);
+					}
+				}
 			}
 
 			else {
-				/* Remove COM link bit(s) */
+				/* Remove COM link bit(s), is linked and selection bits */
 				it->linkType &= ~(LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
+				it->actLink = false;
+				it->actSelected = false;
 			}
 
 			/* Close connection again */
@@ -1216,11 +1248,7 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 			send(*(pAgtComReq[agtComIdx]), comReqData);
 
 			comRspData = receive(*(pAgtComRsp[agtComIdx]));
-			if (comRspData.stat == C_COMRSP_OK) {
-				/* Connection closed */
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: device port closed again", L"");
-			}
+			(void)comRspData;
 		}
 	}
 	break;
@@ -1396,11 +1424,10 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			it++;
 		}
 
-		/* All functions (Rotor, RfGen and Spec) selected */
+		/* All functions (Rotor, RfGen and Spec) are selected */
 		if (_winSrv->_menuInfo.rotorEnabled && _winSrv->_menuInfo.rfGenEnabled && _winSrv->_menuInfo.specEnabled) {
 			/* Enable connected / disconnected menu items */
 			EnableMenuItem(hMenu, ID_INSTRUMENTEN_CONNECT, MF_BYCOMMAND);
-			EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
 		}
 	}
 
@@ -1422,7 +1449,9 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 
 		case ID_ROTOR_GOTO_0:
 			if (_runState == C_MODELPATTERN_RUNSTATES_RUNNING) {
-				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor turns to  0°  position", L"RUNNING");
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor turns to  0°  position", L"RUNNING ...");
+				}
 				runProcess(C_MODELPATTERN_PROCESS_GOTO_X, 0);
 			}
 			break;
@@ -1438,8 +1467,10 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 						HLOCAL l_status2_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
 						PWCHAR l_status2 = (PWCHAR)LocalLock(l_status2_alloc);
 
-						swprintf_s(l_status2, l_status_size, L"COM: 1 ~ rotor turns to  %+03d°  position", (*pi) / 1000);
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", l_status2, L"RUNNING");
+						if (!_noWinMsg) {
+							swprintf_s(l_status2, l_status_size, L"COM: 1 ~ rotor turns to  %+03d°  position", (*pi) / 1000);
+							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", l_status2, L"RUNNING ...");
+						}
 
 						LocalUnlock(l_status2_alloc);
 						LocalFree(l_status2_alloc);
@@ -1515,8 +1546,8 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG:
 		{  /* Run a 180° antenna pattern from left = -90° to the right = +90° */
-
 			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 180° pattern", L"goto START position");
+
 			int ret = m->o->runningProcessPattern(
 				AGENT_PATTERN_180_POS_DEGREE_START,
 				AGENT_PATTERN_180_POS_DEGREE_END,
@@ -1532,8 +1563,8 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG:
 		{  /* run a 360° antenna pattern from left = -180° to the right = +180° */
-
 			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 360° pattern", L"goto START position");
+
 			int ret = m->o->runningProcessPattern(
 				AGENT_PATTERN_360_POS_DEGREE_START,
 				AGENT_PATTERN_360_POS_DEGREE_END,
@@ -1614,7 +1645,10 @@ void agentModelPattern::connectDevices(void)
 
 void agentModelPattern::initDevices(void)
 {
-	if (_running && (_runState == C_MODELPATTERN_RUNSTATES_RUNNING)) {
+	if (_running && (
+		(_runState == C_MODELPATTERN_RUNSTATES_RUNNING) ||
+		(_runState == C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI))
+	) {
 		_runState = C_MODELPATTERN_RUNSTATES_REINIT;
 	}
 }
@@ -1642,8 +1676,10 @@ void agentModelPattern::setStatusPosition(double pos)
 	HLOCAL l_status3_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
 	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
 
-	swprintf_s(l_status3, l_status_size, L"position: %+03.0lf°", pos);
-	pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
+	if (!_noWinMsg) {
+		swprintf_s(l_status3, l_status_size, L"position: %+03.0lf°", pos);
+		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
+	}
 
 	LocalUnlock(l_status3_alloc);
 	LocalFree(l_status3_alloc);
@@ -2031,7 +2067,9 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 	}
 
 	/* Return ROTOR to center position */
-	pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"goto HOME position");
+	if (!_noWinMsg) {
+		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"goto HOME position");
+	}
 	requestPos();
 	sendPos(0);
 	Sleep(calcDeg2Ms(degEndPos));

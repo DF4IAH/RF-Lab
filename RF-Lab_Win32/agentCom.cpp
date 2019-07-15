@@ -42,6 +42,11 @@ bool agentCom::isRunning(void)
 	return _running;
 }
 
+bool agentCom::isDone(void)
+{
+	return _done;
+}
+
 void agentCom::Release(void)
 {
 	// signaling
@@ -50,7 +55,7 @@ void agentCom::Release(void)
 	}
 
 	// wait until all threads are done
-	while (!_done) {
+	while (_isStarted && !_done) {
 		Sleep(10);
 	}
 
@@ -373,7 +378,9 @@ void agentCom::run(void)
 
 			case C_COMREQ_CLOSE:
 			{
-				CloseHandle(_hCom);
+				if (_hCom != INVALID_HANDLE_VALUE) {
+					CloseHandle(_hCom);
+				}
 				_hCom = INVALID_HANDLE_VALUE;
 				comRsp.stat = C_COMRSP_OK;
 			}
@@ -382,7 +389,9 @@ void agentCom::run(void)
 			case C_COMREQ_END:
 			default:
 			{
-				CloseHandle(_hCom);
+				if (_hCom != INVALID_HANDLE_VALUE) {
+					CloseHandle(_hCom);
+				}
 				_hCom = INVALID_HANDLE_VALUE;
 				comRsp.stat = C_COMRSP_END;
 				_running = FALSE;

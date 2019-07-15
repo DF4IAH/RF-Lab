@@ -180,6 +180,7 @@ void USB_TMC::run(void)
 		}  // try {}
 		catch (const Concurrency::operation_timed_out& e) {
 			(void)e;
+			_running = false;
 		}
 	}
 

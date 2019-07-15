@@ -145,8 +145,9 @@ void agentModelPattern::agentsShutdown(void)
 	/* Release serial connection objects */
 	for (int i = 0; i < C_COMINST__COUNT; i++) {
 		if (pAgtCom[i]) {
-			agent::wait(pAgtCom[i], AGENT_PATTERN_RECEIVE_TIMEOUT);  // TODO: shutdown hangs on TX
-			xxx;
+			if (pAgtCom[i]->isDone()) {
+				agent::wait(pAgtCom[i], AGENT_PATTERN_RECEIVE_TIMEOUT);
+			}
 		}
 		SafeReleaseDelete(&(pAgtCom[i]));
 		SafeDelete(&(pAgtComReq[i]));
@@ -227,7 +228,7 @@ void agentModelPattern::run(void)
 					usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
 					send(*pAgtUsbTmcReq, usbReqData);
 
-					agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
+					agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
 					if (usbRspData.stat == C_USBRSP_REGISTRATION_DONE) {
 						/* USB ready */
 
@@ -451,7 +452,7 @@ void agentModelPattern::run(void)
 				usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
 				send(*pAgtUsbTmcReq, usbReqData);
 
-				agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
+				agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
 				if (usbRspData.stat == C_USBRSP_REGISTRATION_LIST) {
 					/* Fill in into registration list all USB and SER/IEC devices */
 					ArrayOfInstruments_t* usbInsts = (ArrayOfInstruments_t*)usbRspData.data;
@@ -1116,7 +1117,7 @@ bool agentModelPattern::instTryUsb(am_InstList_t::iterator it)
 	usbReqData.data = (void*) &usbDev;
 	send(*pAgtUsbTmcReq, usbReqData);
 
-	agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
+	agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
 	if (usbRspData.stat == C_USBRSP_IS_DEV_CONNECTED) {
 		isConnected = *((bool*) usbRspData.data);
 		if (!isConnected) {

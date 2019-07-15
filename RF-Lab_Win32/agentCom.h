@@ -131,6 +131,7 @@ public:
 	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
 	void   start(void);
 	bool   isRunning(void);
+	bool   isDone(void);
 	void   Release(void);
 	bool   shutdown(void);
 

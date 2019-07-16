@@ -209,6 +209,9 @@ void agentModelPattern::run(void)
 					Sleep(500L);
 				}
 
+				/* Set up list of instruments */
+				pAgtMod->setupInstrumentList();
+
 				/* Start the communication agents */
 				agentsInit();
 
@@ -1088,6 +1091,11 @@ void agentModelPattern::checkInstruments(void)
 			instTryCom(it);
 		}
 
+		if (!linkType) {
+			//it->actLink = false;
+			it->actSelected = false;
+		}
+
 		/* Move to next instrument */
 		it++;
 	}
@@ -1218,7 +1226,7 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 			comReqData.parm = string(buf);
 			send(*(pAgtComReq[agtComIdx]), comReqData);
 
-			agentComRsp comRspData = receive(*(pAgtComRsp[agtComIdx]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+			agentComRsp comRspData = receive(*(pAgtComRsp[agtComIdx]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 			if (comRspData.stat == C_COMRSP_DATA) {
 				string rspIdnStr = string(comRspData.data);
 				/* IDN string */

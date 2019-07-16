@@ -537,8 +537,14 @@ void WinSrv::instUpdateConnectedInstruments(void)
 	HWND hw = GetDlgItem(this->hWnd, 105);
 #endif
 
+#if 1
+	/* Reload from ressource file */
+	HMENU hMenu = LoadMenu(g_hInst, MAKEINTRESOURCEW(IDC_RFLAB_WIN32));
+	SetMenu(hWnd, hMenu);
+#else
 	/* Get menu class */
 	HMENU hMenu = GetMenu(this->hWnd);
+#endif
 
 	/* Prepare request attributes of the items */
 	MENUITEMINFO menuItemInfo;

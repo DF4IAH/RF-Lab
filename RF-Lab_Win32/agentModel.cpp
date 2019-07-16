@@ -57,22 +57,6 @@ agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *
 {
 	g_am = this;
 
-	errno_t err = strncpy_s(_fs_instrument_settings_filename, sizeof(_fs_instrument_settings_filename) - 1, C_FS_INSTRUMENTS_FILENAME_DEFAULT, strlen(C_FS_INSTRUMENTS_FILENAME_DEFAULT));
-
-	/* Set up list of instruments */
-	{
-		g_am_InstList_locked = true;
-		
-	#ifndef USE_PRELOAD_INSTRUMENTS
-		fsLoadInstruments(_fs_instrument_settings_filename);
-		//scanInstruments();  --> move to agentModelPattern::checkInstruments() ...
-	#else
-		preloadInstruments();
-	#endif
-		
-		g_am_InstList_locked = false;
-	}
-
 	switch (am_variant) {
 	case AGENT_MODEL_PATTERN:
 		_curModel = new agentModelPattern(src, tgt, _winSrv, this, mode);
@@ -512,6 +496,9 @@ void agentModel::fsLoadInstruments(const char* filename)
 	uint32_t						lineCtr					= 0UL;
 	map<string, confAttributes_t>	cM;
 	confAttributes_t				cA;
+
+	/* Purge any previous list */
+	g_am_InstList.clear();
 
 	/* Load config file */
 	{
@@ -1274,4 +1261,16 @@ void agentModel::pushInstrumentDataset(map<string, confAttributes_t>* mC, string
 		/* Make map entry visible */
 		(*mC)[name] = attrTo;
 	}
+}
+
+void agentModel::setupInstrumentList(void)
+{
+	/* Set up list of instruments */
+	errno_t err = strncpy_s(_fs_instrument_settings_filename, sizeof(_fs_instrument_settings_filename) - 1, C_FS_INSTRUMENTS_FILENAME_DEFAULT, strlen(C_FS_INSTRUMENTS_FILENAME_DEFAULT));
+
+	g_am_InstList_locked = true;
+
+	fsLoadInstruments(_fs_instrument_settings_filename);
+
+	g_am_InstList_locked = false;
 }

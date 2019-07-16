@@ -56,14 +56,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-#if 0
-	// init global values
-	g_hInst					= nullptr;
-	*g_szTitle				= nullptr;
-	*g_szWindowClass		= nullptr;
-	g_iCbValue				= 0;
-#endif
-
 	// Windows-Kommunikationsserver anstarten
 	WinSrv::srvStart();
 
@@ -115,7 +107,11 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_RFLAB_WIN32));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-	wcex.lpszMenuName	= MAKEINTRESOURCEW(IDC_RFLAB_WIN32);
+#if 1
+	wcex.lpszMenuName   = nullptr;
+#else
+	wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_RFLAB_WIN32);
+#endif
     wcex.lpszClassName  = g_szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 

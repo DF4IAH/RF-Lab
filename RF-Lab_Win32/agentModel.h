@@ -180,6 +180,7 @@ public:
 
 
 	/* agentModelPattern - GENERAL */
+	       void		setupInstrumentList(void);
 	static void		setSimuMode(int simuMode);
 	static int		getSimuMode(void);
 	static void		sendModelStatus(LPVOID status1, LPVOID status2);

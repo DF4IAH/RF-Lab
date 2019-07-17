@@ -135,7 +135,7 @@ string agentCom::doComRequestResponse(const string in)
 		DWORD dNoOFBytestoWrite;         // No of bytes to write into the port
 		DWORD dNoOfBytesWritten = 0;     // No of bytes written to the port
 
-		dNoOFBytestoWrite = snprintf(lpBuffer, C_BUF_SIZE, "%s", in.c_str());
+		dNoOFBytestoWrite = _snprintf_s(lpBuffer, C_BUF_SIZE, "%s", in.c_str());
 
 		int status = WriteFile(_hCom,	// Handle to the Serial port
 			lpBuffer,					// Data to be written to the port

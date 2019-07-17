@@ -170,6 +170,7 @@ public:
 
 	class agentModelVariant* getCurModCtx(void);
 	class WinSrv*	getWinSrv(void);
+	HWND            getWnd(void);
 
 
 	/* Tools */

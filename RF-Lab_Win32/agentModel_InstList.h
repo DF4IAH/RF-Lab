@@ -5,6 +5,10 @@
 #include <string>
 #include <list>
 
+/* LibUSB */
+#include "libusb.h"
+#include "libusbi.h"
+
 
 using namespace std;
 
@@ -57,6 +61,7 @@ typedef struct {
 
 	WORD								linkUsbIdVendor;
 	WORD								linkUsbIdProduct;
+	libusb_device_handle			   *pLinkUsbHandle;
 
 	//string							linkIdnSearch;
 

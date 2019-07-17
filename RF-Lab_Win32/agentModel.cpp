@@ -133,6 +133,12 @@ class WinSrv* agentModel::getWinSrv(void)
 	return _winSrv;
 }
 
+HWND agentModel::getWnd(void)
+{
+	return _hWnd;
+}
+
+
 
 /* Tools */
 

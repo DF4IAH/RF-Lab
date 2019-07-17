@@ -122,6 +122,8 @@ void USB_TMC::run(void)
 			case C_USBREQ_IS_DEV_CONNECTED:
 			{
 				agentUsbRsp usbRspData;
+				usbRspData.stat = C_USBRSP_ERR;
+				usbRspData.data = nullptr;
 
 				if (_isOpen) {
 					const bool							absent		= false;
@@ -149,12 +151,66 @@ void USB_TMC::run(void)
 						thisDev++;
 					}
 				}
-				else {
-					usbRspData.stat = C_USBRSP_ERR;
+
+				send(pAgtUsbTmcRsp, usbRspData);
+				_runState = C_USB_TMC_RUNSTATES_RUN;
+			}
+			break;
+
+			case C_USBREQ_CONNECT:
+			{
+				agentUsbRsp usbRspData;
+				usbRspData.stat = C_USBRSP_ERR;
+				usbRspData.data = nullptr;
+
+				if (_isOpen) {
+					libusb_device**					thisDev = devs;
+					struct libusb_device_descriptor	desc;
+					agentComReqUsbDev_t*			rd = (agentComReqUsbDev_t*)usbReqData.data;
+
+					while (*thisDev) {
+						int r = libusb_get_device_descriptor(*thisDev, &desc);
+						if (r < 0) {
+							break;
+						}
+
+						/* Check if USB_VENDOR and USB_PRODUCT does match */
+						if ((rd->usbIdVendor == desc.idVendor) && (rd->usbIdProduct == desc.idProduct)) {
+							libusb_device_handle *handle = nullptr;
+							int err = libusb_open(*thisDev, &handle);
+							if (!err)
+							{
+								/* Return handle */
+								usbRspData.stat = C_USBRSP_DEV_CONNECT_HANDLE;
+								usbRspData.data = (void*)handle;
+							}
+							else if (err == -12) {
+								/* LibUSB not assigned to device - use Zadig to do that */
+								usbRspData.stat = C_USBRSP_ERR__LIBUSB_ASSIGNMENT_MISSING;
+							}
+#if 0
+							else {
+								/* Unknown error */
+								const char* errStr = libusb_error_name(err);
+								(void)errStr;
+								__nop();
+							}
+#endif
+							break;
+						}
+
+						/* Move to next entry */
+						thisDev++;
+					}
 				}
 
 				send(pAgtUsbTmcRsp, usbRspData);
 				_runState = C_USB_TMC_RUNSTATES_RUN;
+			}
+			break;
+
+			case C_USBREQ_DISCONNECT:
+			{
 			}
 			break;
 

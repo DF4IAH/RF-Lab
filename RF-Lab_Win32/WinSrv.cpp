@@ -270,6 +270,13 @@ void WinSrv::discardGraphicsResources()
 
 void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
 {
+	/* Clear hints about selected device types */
+	if (wmId == ID_INSTRUMENTEN_DISCONNECT) {
+		_menuInfo.rotorEnabled = false;
+		_menuInfo.rfGenEnabled = false;
+		_menuInfo.specEnabled = false;
+	}
+
 	if (pAgtModel) {
 		pAgtModel->wmCmd(wmId, arg);
 	}
@@ -620,6 +627,12 @@ void WinSrv::instUpdateConnectedInstruments(void)
 											size_t converted = 0;
 											mbstowcs_s(&converted, wName, it->listEntryName.c_str(), MAX_PATH);
 
+											/* Automatic select the first available device */
+											if (it->actLink && !_menuInfo.rotorEnabled) {
+												_menuInfo.rotorEnabled = true;
+												it->actSelected = true;
+											}
+
 											it->winID = aktorID;
 											AppendMenu(
 												hAktorenMenu,
@@ -676,6 +689,12 @@ void WinSrv::instUpdateConnectedInstruments(void)
 											wchar_t	wName[MAX_PATH];
 											size_t converted = 0;
 											mbstowcs_s(&converted, wName, it->listEntryName.c_str(), MAX_PATH);
+
+											/* Automatic select the first available device */
+											if (it->actLink && !_menuInfo.rfGenEnabled) {
+												_menuInfo.rfGenEnabled = true;
+												it->actSelected = true;
+											}
 
 											it->winID = rfGenID;
 											AppendMenu(
@@ -734,6 +753,12 @@ void WinSrv::instUpdateConnectedInstruments(void)
 											size_t converted = 0;
 											mbstowcs_s(&converted, wName, it->listEntryName.c_str(), MAX_PATH);
 
+											/* Automatic select the first available device */
+											if (it->actLink && !_menuInfo.specEnabled) {
+												_menuInfo.specEnabled = true;
+												it->actSelected = true;
+											}
+
 											it->winID = spekID;
 											AppendMenu(
 												hSpekMenu,
@@ -763,6 +788,11 @@ void WinSrv::instUpdateConnectedInstruments(void)
 
 	/* Enable disconnect and search again menu item */
 	EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
+
+	/* Enable connect menu item if all device types are available */
+	if (_menuInfo.rotorEnabled && _menuInfo.rfGenEnabled && _menuInfo.specEnabled) {
+		EnableMenuItem(hMenu, ID_INSTRUMENTEN_CONNECT, MF_BYCOMMAND);
+	}
 
 	DrawMenuBar(this->hWnd);
 }

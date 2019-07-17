@@ -1083,7 +1083,6 @@ void agentModelPattern::checkInstruments(void)
 		/* Try USB connection */
 		if (linkType & LINKTYPE_USB) {
 			instTryUsb(it);
-			//it->actLink = true;				// TODO: remove me!
 		}
 
 		/* Try COM connection, even when IEC is interfaced to a COM port */
@@ -1132,6 +1131,9 @@ bool agentModelPattern::instTryUsb(am_InstList_t::iterator it)
 			/* Remove USB link bit */
 			it->linkType &= ~(LINKTYPE_USB);
 		}
+		else {
+			it->actLink = true;
+		}
 	}
 	return isConnected;
 }
@@ -1175,12 +1177,6 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 		if (isConnected) {
 			/* Device linked */
 			it->actLink = true;
-
-			/* Select first device found as preset */
-			if (!_winSrv->_menuInfo.rotorEnabled) {
-				_winSrv->_menuInfo.rotorEnabled = true;
-				it->actSelected = true;
-			}
 
 			if (!_noWinMsg) {
 				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor", L"... FOUND");
@@ -1241,12 +1237,6 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 
 				/* Check for the device function */
 				if (it->listFunction == INST_FUNC_GEN) {
-					/* Select first device found as preset */
-					if (!_winSrv->_menuInfo.rfGenEnabled) {
-						_winSrv->_menuInfo.rfGenEnabled = true;
-						it->actSelected = true;
-					}
-
 					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RF generator", L"... FOUND");
 						Sleep(500L);
@@ -1254,12 +1244,6 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 				}
 
 				else if (it->listFunction == INST_FUNC_SPEC) {
-					/* Select first device found as preset */
-					if (!_winSrv->_menuInfo.specEnabled) {
-						_winSrv->_menuInfo.specEnabled = true;
-						it->actSelected = true;
-					}
-
 					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: Spectrum analyzer", L"... FOUND");
 						Sleep(500L);

@@ -1,14 +1,64 @@
 #pragma once
 
+
+#include "stdafx.h"
+
+#include <string>
+#include <list>
+
 /* Agents Library */
 #include <agents.h>
-#include "agentCom.h"
+//#include "agentCom.h"
 
 /* LibUSB */
 #include "libusb.h"
 #include "libusbi.h"
 
 #include "USB_TMC_types.h"
+
+
+using namespace std;
+
+
+
+/* Instrument functions */
+
+typedef enum {
+
+	INST_FUNC_UNKNOWN = 0,
+	INST_FUNC_ROTOR,
+	INST_FUNC_GEN,
+	INST_FUNC_SPEC,
+	INST_FUNC_VNA,
+
+} Inst_Function_t;
+
+
+/* LinkType Bitmasks */
+
+typedef uint16_t						LinkType_BM_t;
+
+#define LINKTYPE_UNKNOWN				0x0000U
+#define LINKTYPE_COM					0x0001U
+#define LINKTYPE_IEC_VIA_SER			0x0002U
+#define LINKTYPE_IEC					0x0010U
+#define LINKTYPE_USB					0x0100U
+#define LINKTYPE_ETH					0x1000U
+#define LINKTYPE_ETH_SCPI				0x2000U
+#define LINKTYPE_ETH_LXI				0x4000U
+
+
+/* Activated Interface Type */
+
+typedef enum {
+
+	ACT_IFC_NONE = 0,
+	ACT_IFC_COM,
+	ACT_IFC_USB,
+	ACT_IFC_ETH,
+
+} Inst_ActIfcType_t;
+
 
 
 /* Instruments */
@@ -59,10 +109,10 @@ typedef enum INSTRUMENT_ENUM {
 #define INSTRUMENT_DEVICE_GENERIC				  0x0091
 
 
+#ifdef OLD
 typedef struct instrument {
+
 	INSTRUMENT_ENUM_t		 type;
-	int						 devs_idx;
-	char					 idn[256];
 
 	/* Serial entries */
 	agentCom				*pAgtCom;
@@ -74,37 +124,140 @@ typedef struct instrument {
 	bool					 isIec;
 	uint8_t					 iecAddr;
 
-	/* USB entries */
-	libusb_device			*dev;
-	libusb_device_handle	*dev_handle;
-	uint8_t					 dev_config;
-	uint8_t					 dev_interface;
-	uint16_t				 dev_usb_idVendor;
-	uint16_t				 dev_usb_idProduct;
-	uint8_t					 dev_bulk_out_ep;
-	uint8_t					 dev_bulk_in_ep;
-	uint8_t					 dev_interrupt_ep;
-	uint8_t					 dev_usbtmc_int_cap;
-	uint8_t					 dev_usbtmc_dev_cap;
-	uint8_t					 dev_usb488_dev_cap1;
-	uint8_t					 dev_usb488_dev_cap2;
-	uint8_t					 dev_bTag;
-	uint8_t					 dev_bulkin_attributes;
-	bool					 dev_usb_up;
-	bool					 dev_tmc_up;
 
-	int						 response_length;
-	int						 response_bytes_read;
-	int						 remaining_length;
-	uint8_t					 buffer[USB_MAX_TRANSFER_LENGTH];
-
-	struct sr_context		*ctx;						// SCPI USB-TMC code
-	struct sr_usb_dev_inst	*usb;						// SCPI USB-TMC code
-	int						 detached_kernel_driver;	// SCPI USB-TMC code
-
-	/* Ethernet entries */
 
 } instrument_t;
+#endif
+
+
+typedef struct {
+
+	/* List information */
+	size_t								listId;
+	string								listEntryName;
+	Inst_Function_t						listFunction;
+
+
+	/* Instrument activation */
+	bool								actSelected;
+	bool								actLink;
+	Inst_ActIfcType_t					actIfcType;
+	UINT								winID;
+
+
+	/* Link settings */
+	LinkType_BM_t						linkType;
+
+
+	/* Link: Ethernet */
+	string								linkEthHostname;
+	string								linkEthMAC;
+	WORD								linkEthPort;
+	//int								linkEthScpiXXX;
+	//int								linkEthLxiXXX;
+
+
+	/* Link: USB */
+	libusb_device					   *pLinkUsb_dev;
+	int									linkUsb_devs_idx;
+	libusb_device_handle			   *pLinkUsb_dev_handle;
+	uint8_t								linkUsb_dev_config;
+	uint8_t								linkUsb_dev_interface;
+	uint16_t							linkUsb_dev_usb_idVendor;
+	uint16_t							linkUsb_dev_usb_idProduct;
+	uint8_t								linkUsb_dev_bulk_out_ep;
+	uint8_t								linkUsb_dev_bulk_in_ep;
+	uint8_t								linkUsb_dev_interrupt_ep;
+	uint8_t								linkUsb_dev_usbtmc_int_cap;
+	uint8_t								linkUsb_dev_usbtmc_dev_cap;
+	uint8_t								linkUsb_dev_usb488_dev_cap1;
+	uint8_t								linkUsb_dev_usb488_dev_cap2;
+	uint8_t								linkUsb_dev_bTag;
+	uint8_t								linkUsb_dev_bulkin_attributes;
+	bool								linkUsb_dev_usb_up;
+	bool								linkUsb_dev_tmc_up;
+
+	int									linkUsb_response_length;
+	int									linkUsb_response_bytes_read;
+	int									linkUsb_remaining_length;
+
+	struct sr_context				   *pLinkUsb_sr_ctx;					// SCPI USB-TMC code
+	struct sr_usb_dev_inst			   *pLinkUsb_sr_devInst;				// SCPI USB-TMC code
+	int									linkUsb_is_detached_kernel_driver;	// SCPI USB-TMC code
+
+	char								linkUsb_idn[256];
+	uint8_t								linkUsb_buffer[USB_MAX_TRANSFER_LENGTH];
+
+
+	/* Link: COM & IEC */
+	BYTE								linkSerIecAddr;
+	BYTE								linkSerPort;
+	DWORD								linkSerBaud;
+	BYTE								linkSerBits;
+	BYTE								linkSerParity;
+	BYTE								linkSerStopbits;
+
+
+	/* Rotor settings */
+	int									rotInitTicksPer360deg;
+	int									rotInitTopSpeed;
+	int									rotInitAcclSpeed;
+	int									rotInitStartSpeed;
+
+	int									rotMinPosition;
+	int									rotMaxPosition;
+	int									rotInitPosition;
+	int									rotCurPosition;
+
+
+	/* TX settings */
+	bool								txInitRfOn;
+	bool								txCurRfOn;
+
+	double								txMinRfQrg;
+	double								txMaxRfQrg;
+	double								txInitRfQrg;
+	double								txCurRfQrg;
+
+	double								txMinRfPwr;
+	double								txMaxRfPwr;
+	double								txInitRfPwr;
+	double								txCurRfPwr;
+
+
+	/* RX settings */
+	double								rxMinRfQrg;
+	double								rxMaxRfQrg;
+	double								rxInitRfQrg;
+	double								rxCurRfQrg;
+
+	double								rxMinRfSpan;
+	double								rxMaxRfSpan;
+	double								rxInitRfSpan;
+	double								rxCurRfSpan;
+
+	double								rxMinRfPwrLo;
+	double								rxMaxRfPwrLo;
+	double								rxInitRfPwrLo;
+	double								rxCurRfPwrLo;
+
+	double								rxMinRfPwrHi;
+	double								rxMaxRfPwrHi;
+	double								rxInitRfPwrHi;
+	double								rxCurRfPwrHi;
+
+
+	/* VNA extras */
+	double								vnaMinNbPoints;
+	double								vnaMaxNbPoints;
+	double								vnaInitNbPoints;
+	double								vnaCurNbPoints;
+
+} Instrument_t;
+
+
+typedef list<Instrument_t>				InstList_t;
+
 
 
 /* Functions */

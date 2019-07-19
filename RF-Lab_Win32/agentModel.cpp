@@ -4,7 +4,7 @@
 #include "CommCtrl.h"
 #include "WinSrv.h"
 
-#include "agentModel_InstList.h"
+#include "instruments.h"
 #include "agentModelPattern.h"
 
 #include "externals.h"
@@ -504,7 +504,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 	confAttributes_t				cA;
 
 	/* Purge any previous list */
-	g_am_InstList.clear();
+	g_InstList.clear();
 
 	/* Load config file */
 	{
@@ -965,10 +965,10 @@ void agentModel::fsLoadInstruments(const char* filename)
 			/* Copy attributes of each instrument to global instrument list */
 			while (it != cM.end()) {
 				confAttributes_t attr = it->second;
-				am_InstListEntry_t le = { 0 };
+				Instrument_t le = { 0 };
 
 				/* General settings */
-				le.listId			= g_am_InstList.size();
+				le.listId			= g_InstList.size();
 				le.listEntryName	= attr.attrName;
 
 				if (!_strnicmp(attr.attrType.c_str(), "Rot", 3)) {
@@ -1073,8 +1073,8 @@ void agentModel::fsLoadInstruments(const char* filename)
 
 				/* USB */
 				if (le.linkType & LINKTYPE_USB) {
-					le.linkUsbIdVendor = attr.attrUsbVendorID;
-					le.linkUsbIdProduct = attr.attrUsbProductID;
+					le.linkUsb_dev_usb_idVendor  = attr.attrUsbVendorID;
+					le.linkUsb_dev_usb_idProduct = attr.attrUsbProductID;
 				}
 
 				/* COM */
@@ -1096,7 +1096,7 @@ void agentModel::fsLoadInstruments(const char* filename)
 				
 
 				/* Create list */
-				g_am_InstList.push_back(le);
+				g_InstList.push_back(le);
 
 				/* Continue with next entry */
 				it++;
@@ -1274,9 +1274,9 @@ void agentModel::setupInstrumentList(void)
 	/* Set up list of instruments */
 	errno_t err = strncpy_s(_fs_instrument_settings_filename, sizeof(_fs_instrument_settings_filename) - 1, C_FS_INSTRUMENTS_FILENAME_DEFAULT, strlen(C_FS_INSTRUMENTS_FILENAME_DEFAULT));
 
-	g_am_InstList_locked = true;
+	g_InstList_locked = true;
 
 	fsLoadInstruments(_fs_instrument_settings_filename);
 
-	g_am_InstList_locked = false;
+	g_InstList_locked = false;
 }

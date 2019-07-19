@@ -16,7 +16,7 @@ template <class T>  void SafeReleaseDelete(T **ppT)
 
 
 
-agentCom::agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt)
+agentCom::agentCom(ISource<AgentComReq_t>& src, ITarget<AgentComRsp_t>& tgt)
 				 : _isStarted(FALSE)
 				 , _running(FALSE)
 				 , _done(FALSE)
@@ -94,12 +94,12 @@ string agentCom::trim(string haystack)
 
 
 /* Link to the instrument info */
-void agentCom::setInstrument(am_InstList_t::iterator* instrument)
+void agentCom::setInstrument(InstList_t::iterator* instrument)
 {
 	this->_pInstrument = instrument;
 }
 
-am_InstList_t::iterator* agentCom::getInstrument(void)
+InstList_t::iterator* agentCom::getInstrument(void)
 {
 	return this->_pInstrument;
 }
@@ -215,33 +215,33 @@ void agentCom::iecPrepare(int iecAddr)
 /* Do an *IDN? request and return the response */
 string agentCom::getIdnResponse(void)
 {
-	string idn;
+	string linkUsb_idn;
 
 	for (int cnt = 5; cnt; cnt--) {
-		idn = doComRequestResponse((const string)string(C_IDN_REQ_STR));
-		if (idn.length() > 2) {
+		linkUsb_idn = doComRequestResponse((const string)string(C_IDN_REQ_STR));
+		if (linkUsb_idn.length() > 2) {
 			break;
 		}
 		Sleep(100L);
 	}
-	return trim(idn);
+	return trim(linkUsb_idn);
 }
 
 
 // @see: http://xanthium.in/Serial-Port-Programming-using-Win32-API
 void agentCom::run(void)
 {
-	agentComRsp comRsp;
+	AgentComRsp_t comRsp;
 
 	_running = TRUE;
 	while (_running) {
 		// clear result buffers
 		comRsp.stat = C_COMRSP_FAIL;
-		comRsp.data = string();
+		comRsp.data1 = string();
 
 		try {
 			// receive the request
-			agentComReq comReq = Concurrency::receive(_src);
+			AgentComReq_t comReq = Concurrency::receive(_src);
 
 			// command decoder
 			switch (comReq.cmd) {
@@ -349,12 +349,12 @@ void agentCom::run(void)
 
 							switch (comReq.cmd) {
 							case C_COMREQ_OPEN_ZOLIX:
-								comRsp.data = string(getZolixIdn());
+								comRsp.data1 = string(getZolixIdn());
 								comRsp.stat = C_COMRSP_DATA;
 								break;
 
 							case C_COMREQ_OPEN_IDN:
-								comRsp.data = string(getIdnResponse());
+								comRsp.data1 = string(getIdnResponse());
 								comRsp.stat = C_COMRSP_DATA;
 								break;
 							}
@@ -370,7 +370,7 @@ void agentCom::run(void)
 				string response = doComRequestResponse(comReq.parm);
 
 				if (response.length()) {
-					comRsp.data = response;
+					comRsp.data1 = response;
 					comRsp.stat = C_COMRSP_DATA;
 				}
 			}

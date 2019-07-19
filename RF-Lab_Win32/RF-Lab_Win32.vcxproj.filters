@@ -60,9 +60,6 @@
     <ClInclude Include="USB_TMC_types.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="agentModel_InstList.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="externals.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>

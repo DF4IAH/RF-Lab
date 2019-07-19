@@ -67,9 +67,9 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 				 , rxLevelMax(0.0)
 {
 	/* Fast access to connected instruments */
-	pConInstruments[C_COMINST_ROT] = g_am_InstList.end();
-	pConInstruments[C_COMINST_TX] = g_am_InstList.end();
-	pConInstruments[C_COMINST_RX] = g_am_InstList.end();
+	pConInstruments[C_COMINST_ROT] = g_InstList.end();
+	pConInstruments[C_COMINST_TX] = g_InstList.end();
+	pConInstruments[C_COMINST_RX] = g_InstList.end();
 }
 
 inline bool agentModelPattern::isRunning(void)
@@ -99,12 +99,12 @@ void agentModelPattern::Release(void)
 void agentModelPattern::agentsInit(void)
 {
 	/* Init the USB_TMC communication */
-	pAgtUsbTmcReq = new unbounded_buffer<agentUsbReq>;
-	pAgtUsbTmcRsp = new unbounded_buffer<agentUsbRsp>;
+	pAgtUsbTmcReq = new unbounded_buffer<AgentUsbReq_t>;
+	pAgtUsbTmcRsp = new unbounded_buffer<AgentUsbRsp_t>;
 
 	for (int i = 0; i < C_COMINST__COUNT; ++i) {
-		pAgtComReq[i] = new unbounded_buffer<agentComReq>;
-		pAgtComRsp[i] = new unbounded_buffer<agentComRsp>;
+		pAgtComReq[i] = new unbounded_buffer<AgentComReq_t>;
+		pAgtComRsp[i] = new unbounded_buffer<AgentComRsp_t>;
 		pAgtCom[i] = nullptr;
 
 		if (pAgtComReq[i] && pAgtComRsp[i]) {
@@ -185,7 +185,7 @@ void agentModelPattern::threadsStop(void)
 
 void agentModelPattern::run(void)
 {
-	agentComReq comReqData = { 0 };
+	AgentComReq_t comReqData = { 0 };
 	bool isComTxConDone = false;
 	bool isComRxConDone = false;
 
@@ -229,12 +229,12 @@ void agentModelPattern::run(void)
 
 				/* Request libusb to init */
 				{
-					agentUsbReq usbReqData;
+					AgentUsbReq_t usbReqData;
 
 					usbReqData.cmd = C_USBREQ_DO_REGISTRATION;
 					send(*pAgtUsbTmcReq, usbReqData);
 
-					agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
+					AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
 					if (usbRspData.stat == C_USBRSP_REGISTRATION_DONE) {
 						/* USB ready */
 
@@ -309,8 +309,8 @@ void agentModelPattern::run(void)
 					}
 
 					/* Search rotor */
-					am_InstList_t::iterator it = g_am_InstList.begin();
-					while (it != g_am_InstList.end()) {
+					InstList_t::iterator it = g_InstList.begin();
+					while (it != g_InstList.end()) {
 						/* Check for rotor */
 						if (it->listFunction != INST_FUNC_ROTOR) {
 							/* Try next */
@@ -331,9 +331,9 @@ void agentModelPattern::run(void)
 							comReqData.parm = string(buf);
 							send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+							AgentComRsp_t comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 							if (comRspData.stat == C_COMRSP_DATA) {
-								string rspIdnStr = string(comRspData.data);
+								string rspIdnStr = string(comRspData.data1);
 								if (rspIdnStr.empty()) {
 									/* Stop and drop COM-Server for the rotor */
 									comReqData.cmd = C_COMREQ_END;
@@ -368,8 +368,8 @@ void agentModelPattern::run(void)
 					}
 
 					/* Iterate over all instruments */
-					am_InstList_t::iterator it = g_am_InstList.begin();
-					while (it != g_am_InstList.end()) {
+					InstList_t::iterator it = g_InstList.begin();
+					while (it != g_InstList.end()) {
 						if (!it->actSelected || !it->actLink || !(it->linkType & LINKTYPE_COM) || 
 							((it->listFunction != INST_FUNC_GEN) && (it->listFunction != INST_FUNC_SPEC))) {
 							/* Try next */
@@ -392,9 +392,9 @@ void agentModelPattern::run(void)
 							comReqData.parm = string(buf);
 							send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 
-							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_TX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+							AgentComRsp_t comRspData = receive(*(pAgtComRsp[C_COMINST_TX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 							if (comRspData.stat == C_COMRSP_DATA) {
-								string rspIdnStr = string(comRspData.data);
+								string rspIdnStr = string(comRspData.data1);
 								if (rspIdnStr.empty()) {
 									/* Close connection */
 									comReqData.cmd = C_COMREQ_CLOSE;
@@ -422,9 +422,9 @@ void agentModelPattern::run(void)
 							comReqData.parm = string(buf);
 							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 
-							agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_RX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+							AgentComRsp_t comRspData = receive(*(pAgtComRsp[C_COMINST_RX]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 							if (comRspData.stat == C_COMRSP_DATA) {
-								string rspIdnStr = string(comRspData.data);
+								string rspIdnStr = string(comRspData.data1);
 								if (rspIdnStr.empty()) {
 									/* Close connection */
 									comReqData.cmd = C_COMREQ_CLOSE;
@@ -493,8 +493,8 @@ void agentModelPattern::run(void)
 				_runState = C_MODELPATTERN_RUNSTATES_INST_COM_INIT;
 
 				/* Iterate over all instruments */
-				am_InstList_t::iterator it = g_am_InstList.begin();
-				while (it != g_am_InstList.end()) {
+				InstList_t::iterator it = g_InstList.begin();
+				while (it != g_InstList.end()) {
 					if (!it->actSelected || !it->actLink || !(it->linkType & LINKTYPE_USB) ||
 						((it->listFunction != INST_FUNC_GEN) && (it->listFunction != INST_FUNC_SPEC))) {
 						/* Try next */
@@ -504,22 +504,21 @@ void agentModelPattern::run(void)
 
 					/* Open USB device */
 					{
-						agentComReqUsbDev_t usbDev;
-						usbDev.usbIdVendor  = it->linkUsbIdVendor;
-						usbDev.usbIdProduct = it->linkUsbIdProduct;
+						AgentComReqUsbDev_t usbDev;
+						usbDev.usbIdVendor  = it->linkUsb_dev_usb_idVendor;
+						usbDev.usbIdProduct = it->linkUsb_dev_usb_idProduct;
 
 						/* Request to open */
-						agentUsbReq usbReqData;
+						AgentUsbReq_t usbReqData;
 						usbReqData.cmd = C_USBREQ_CONNECT;
-						usbReqData.data = &usbDev;
+						usbReqData.data1 = &it;
+						usbReqData.data2 = &usbDev;
 						send(*pAgtUsbTmcReq, usbReqData);
 
 						/* Get USB handle */
-						agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/ );
-						if (usbRspData.stat == C_USBRSP_DEV_CONNECT_HANDLE) {
+						AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/ );
+						if (usbRspData.stat == C_USBRSP_OK) {
 							/* Success connection USB device */
-							it->pLinkUsbHandle = (libusb_device_handle*)usbRspData.data;
-
 							switch (it->listFunction) {
 							case INST_FUNC_GEN:
 								/* Fast access table */
@@ -560,8 +559,8 @@ void agentModelPattern::run(void)
 			/* Initilization of selected COM / IEC instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_COM_INIT:
 			{
-				agentComReq comReqData;
-				agentComRsp comRspData;
+				AgentComReq_t comReqData;
+				AgentComRsp_t comRspData;
 
 				initState = 0x40;
 				_runState = C_MODELPATTERN_RUNSTATES_INST_USB_INIT;				// next runstate default setting
@@ -643,7 +642,7 @@ void agentModelPattern::run(void)
 									_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 									break;
 								}
-							} while (_strnicmp(&(comRspData.data[0]), "ROHDE", 5));
+							} while (_strnicmp(&(comRspData.data1[0]), "ROHDE", 5));
 							initState = 0x54;
 
 							if (_runState != C_MODELPATTERN_RUNSTATES_INIT_ERROR) {
@@ -811,7 +810,7 @@ void agentModelPattern::run(void)
 									_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 									break;
 								}
-							} while (_strnicmp(&(comRspData.data[0]), "ROHDE", 5));
+							} while (_strnicmp(&(comRspData.data1[0]), "ROHDE", 5));
 							initState = 0xA4;
 
 							comReqData.parm = string("*RST; *CLS; *WAI\r\n");
@@ -896,10 +895,42 @@ void agentModelPattern::run(void)
 			/* Initilization of selected USB instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_USB_INIT:
 			{
-				// TODO: coding
+				AgentUsbReq_t usbReqData;
+				AgentUsbRsp_t usbRspData;
 
+				/* Iterate over all instruments */
+				InstList_t::iterator it = g_InstList.begin();
+				while (it != g_InstList.end()) {
+					if (!it->actSelected || !it->actLink || !(it->linkType & LINKTYPE_USB) ||
+						((it->listFunction != INST_FUNC_GEN) && (it->listFunction != INST_FUNC_SPEC))) {
+						/* Try next */
+						it++;
+						continue;
+					}
 
+					switch (it->listFunction) {
+					case INST_FUNC_GEN:
+					{
+						/* Send RESET */
+						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
+						usbReqData.data1 = &it;
+						usbReqData.data2 = (void*) string("*RST\r\n").c_str();
 
+						send(*pAgtUsbTmcReq, usbReqData);
+						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+					}
+					break;
+
+					case INST_FUNC_SPEC:
+					{
+					}
+					break;
+
+					}  // switch()
+
+					/* Next instrument to check */
+					it++;
+				}
 
 				if (!_noWinMsg) {
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Ready to run meassurements", L"--- SELECT NOW ---");
@@ -936,7 +967,7 @@ void agentModelPattern::run(void)
 			/* Send instrument close connections */
 			case C_MODELPATTERN_RUNSTATES_USB_CLOSE_SEND:
 			{
-				agentUsbReq usbReqData;
+				AgentUsbReq_t usbReqData;
 				usbReqData.cmd = C_USBREQ_END;
 				comReqData.parm = string();
 
@@ -959,7 +990,7 @@ void agentModelPattern::run(void)
 			
 			case C_MODELPATTERN_RUNSTATES_COM_CLOSE_SEND:
 			{
-				agentComReq comReqData;
+				AgentComReq_t comReqData;
 				comReqData.cmd = C_COMREQ_END;
 				comReqData.parm = string();
 
@@ -990,7 +1021,7 @@ void agentModelPattern::run(void)
 			{
 				/* Wait for the USB_TMC module to get finished */
 				try {
-					agentUsbRsp usbRsp;
+					AgentUsbRsp_t usbRsp;
 					do {
 						usbRsp = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
 					} while (usbRsp.stat != C_USBRSP_END);
@@ -1011,7 +1042,7 @@ void agentModelPattern::run(void)
 				/* wait for each reply message */
 				for (int i = 0; i < C_COMINST__COUNT; i++) {
 					if (pAgtCom[i]) {
-						agentComRsp comRsp;
+						AgentComRsp_t comRsp;
 
 						/* consume until END response is received */
 						try {
@@ -1131,14 +1162,14 @@ void agentModelPattern::run(void)
 
 void agentModelPattern::checkInstruments(void)
 {
-	am_InstList_t::iterator it = g_am_InstList.begin();
+	InstList_t::iterator it = g_InstList.begin();
 
 	if (!_noWinMsg) {
 		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Checking list of instruments", L"CONNECTING ...");
 	}
 
 	/* Iterate over all instruments and check which one responds */
-	while (it != g_am_InstList.end()) {
+	while (it != g_InstList.end()) {
 		const LinkType_BM_t linkType = it->linkType;
 
 		/* Try Ethernet connection */
@@ -1173,27 +1204,27 @@ void agentModelPattern::checkInstruments(void)
 }
 
 
-bool agentModelPattern::instTryEth(am_InstList_t::iterator it)
+bool agentModelPattern::instTryEth(InstList_t::iterator it)
 {
 
 	return false;
 }
 
-bool agentModelPattern::instTryUsb(am_InstList_t::iterator it)
+bool agentModelPattern::instTryUsb(InstList_t::iterator it)
 {
 	bool isConnected = false;
-	agentComReqUsbDev_t usbDev;
-	usbDev.usbIdVendor = it->linkUsbIdVendor;
-	usbDev.usbIdProduct = it->linkUsbIdProduct;
+	AgentComReqUsbDev_t usbDev;
+	usbDev.usbIdVendor  = it->linkUsb_dev_usb_idVendor;
+	usbDev.usbIdProduct = it->linkUsb_dev_usb_idProduct;
 
-	agentUsbReq usbReqData;
+	AgentUsbReq_t usbReqData;
 	usbReqData.cmd = C_USBREQ_IS_DEV_CONNECTED;
-	usbReqData.data = &usbDev;
+	usbReqData.data1 = &usbDev;
 	send(*pAgtUsbTmcReq, usbReqData);
 
-	agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
+	AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
 	if (usbRspData.stat == C_USBRSP_IS_DEV_CONNECTED) {
-		isConnected = *((bool*) usbRspData.data);
+		isConnected = *((bool*) usbRspData.data1);
 		if (!isConnected) {
 			/* Remove USB link bit */
 			it->linkType &= ~(LINKTYPE_USB);
@@ -1205,10 +1236,10 @@ bool agentModelPattern::instTryUsb(am_InstList_t::iterator it)
 	return isConnected;
 }
 
-bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
+bool agentModelPattern::instTryCom(InstList_t::iterator it)
 {
 	/* Open COM connection */
-	agentComReq comReqData;
+	AgentComReq_t comReqData;
 	char buf[C_BUF_SIZE];
 
 	/* Different handling of the serial stream */
@@ -1232,9 +1263,9 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 		comReqData.parm = string(buf);
 		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-		agentComRsp comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+		AgentComRsp_t comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 		if (comRspData.stat == C_COMRSP_DATA) {
-			string rspIdnStr = string(comRspData.data);
+			string rspIdnStr = string(comRspData.data1);
 			/* Rotor IDN string */
 			if (!rspIdnStr.empty()) {
 				isConnected = true;
@@ -1289,9 +1320,9 @@ bool agentModelPattern::instTryCom(am_InstList_t::iterator it)
 			comReqData.parm = string(buf);
 			send(*(pAgtComReq[agtComIdx]), comReqData);
 
-			agentComRsp comRspData = receive(*(pAgtComRsp[agtComIdx]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			AgentComRsp_t comRspData = receive(*(pAgtComRsp[agtComIdx]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 			if (comRspData.stat == C_COMRSP_DATA) {
-				string rspIdnStr = string(comRspData.data);
+				string rspIdnStr = string(comRspData.data1);
 				/* IDN string */
 				if (!rspIdnStr.empty()) {
 					isConnected = true;
@@ -1452,10 +1483,10 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		Inst_Function_t instFunc = INST_FUNC_UNKNOWN;
 
 		/* Iterate over the instrument list */
-		am_InstList_t::iterator it = g_am_InstList.begin();
+		InstList_t::iterator it = g_InstList.begin();
 
 		/* Iterate over all instruments and check which one responds */
-		while (it != g_am_InstList.end()) {
+		while (it != g_InstList.end()) {
 			/* Selected menu item found ? */
 			if (it->winID == wmId) {
 				/* Hold new state */
@@ -1488,10 +1519,10 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 		}
 
 		/* Turn off all selections of other instruments of the same function */
-		it = g_am_InstList.begin();
+		it = g_InstList.begin();
 
 		/* Iterate over all instruments and check which one responds */
-		while (it != g_am_InstList.end()) {
+		while (it != g_InstList.end()) {
 			/* Any other menu item of the same function found ? */
 			if (it->winID != wmId &&
 				it->listFunction == instFunc)
@@ -1786,8 +1817,8 @@ void agentModelPattern::setStatusPosition(double pos)
 
 long agentModelPattern::requestPos(void)
 {
-	agentComReq comReqData;
-	agentComRsp comRspData;
+	AgentComReq_t comReqData;
+	AgentComRsp_t comRspData;
 	long pos = 0;
 
 	try {
@@ -1797,7 +1828,7 @@ long agentModelPattern::requestPos(void)
 		for (int tries = 10; tries; tries--) {
 			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 			comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);	// drop queue
-			if (!strncmp(comRspData.data.c_str(), "OK", 2)) {
+			if (!strncmp(comRspData.data1.c_str(), "OK", 2)) {
 				break;
 			}
 			Sleep(10L);
@@ -1809,7 +1840,7 @@ long agentModelPattern::requestPos(void)
 			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 			comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 
-			if (!strncmp(comRspData.data.c_str(), "?X", 2)) {
+			if (!strncmp(comRspData.data1.c_str(), "?X", 2)) {
 				break;
 			}
 			Sleep(10L);
@@ -1818,7 +1849,7 @@ long agentModelPattern::requestPos(void)
  		if (comRspData.stat == C_COMRSP_DATA) {
 			int posDiff = 0;
 
-			if (!agentModel::parseStr2Long(&pos, comRspData.data.c_str(), "?X,%ld", '?')) {
+			if (!agentModel::parseStr2Long(&pos, comRspData.data1.c_str(), "?X,%ld", '?')) {
 				agentModel::setLastTickPos(pos);
 			}
 		}
@@ -1831,8 +1862,8 @@ long agentModelPattern::requestPos(void)
 
 void agentModelPattern::sendPos(long ticksPos)
 {
-	agentComReq comReqData;
-	agentComRsp comRspData;
+	AgentComReq_t comReqData;
+	AgentComRsp_t comRspData;
 	long posDiff = ticksPos - getLastTickPos();
 	char cbuf[C_BUF_SIZE];
 
@@ -1871,8 +1902,8 @@ void agentModelPattern::setTxOnState(bool checked)
 	if (txOn != checked) {
 		txOn = checked;
 
-		agentComReq comReqData;
-		agentComRsp comRspData;
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
 
 		try {
 			comReqData.cmd = C_COMREQ_COM_SEND;
@@ -1901,8 +1932,8 @@ void agentModelPattern::setTxFrequencyValue(double value)
 {
 	if ((txFrequency != value) && 
 		((10e6 < value) && (value <= 100e9))) {
-		agentComReq comReqData;
-		agentComRsp comRspData;
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
 
 		txFrequency = value;
 
@@ -1935,8 +1966,8 @@ void agentModelPattern::setTxPwrValue(double value)
 {
 	if ((txPower != value && 
 		(-40 <= value && value <= 20))) {
-		agentComReq comReqData;
-		agentComRsp comRspData;
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
 
 		txPower = value;
 
@@ -1973,8 +2004,8 @@ void agentModelPattern::setRxFrequencyValue(double value)
 	if (pAgtComRsp[C_COMINST_RX] &&
 		(rxFrequency != value) &&
 		((10e6 < value) && (value <= 100e9))) {
-		agentComReq comReqData;
-		agentComRsp comRspData;
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
 
 		rxFrequency = value;
 
@@ -2003,8 +2034,8 @@ void agentModelPattern::setRxSpanValue(double value)
 	if (pAgtComRsp[C_COMINST_RX] &&
 		(rxSpan != value) &&
 		(value <= 100e9)) {
-		agentComReq comReqData;
-		agentComRsp comRspData;
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
 
 		rxSpan = value;
 
@@ -2038,8 +2069,8 @@ void agentModelPattern::setRxLevelMaxValue(double value)
 	if (pAgtComRsp[C_COMINST_RX] &&
 		(rxSpan != value) &&
 		(-40 <= value) && (value <= 30)) {
-		agentComReq comReqData;
-		agentComRsp comRspData;
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
 
 		rxLevelMax = value;
 
@@ -2066,8 +2097,8 @@ double agentModelPattern::getRxLevelMaxValue(void)
 bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 {
 	if (retX && retY && pAgtComReq[C_COMINST_RX]) {
-		agentComReq comReqData;
-		agentComRsp comRspData;
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
 
 		*retX = *retY = 0.;
 
@@ -2089,12 +2120,12 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 			comReqData.parm = string(":CALC:MARKER:X?\r\n");
 			send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 			comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-			sscanf_s(comRspData.data.c_str(), "%lf", retX);
+			sscanf_s(comRspData.data1.c_str(), "%lf", retX);
 
 			comReqData.parm = string(":CALC:MARKER:Y?\r\n");
 			send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 			comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-			sscanf_s(comRspData.data.c_str(), "%lf", retY);
+			sscanf_s(comRspData.data1.c_str(), "%lf", retY);
 
 			return FALSE;
 		}

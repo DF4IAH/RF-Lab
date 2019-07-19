@@ -1,10 +1,12 @@
 #pragma once
 
+#include "instruments.h"
 #include "agentModel.h"
 #include "agentModelVariant.h"
 
 #include "agentCom.h"
 #include "USB_TMC.h"
+
 
 using namespace concurrency;
 using namespace std;
@@ -127,6 +129,7 @@ using namespace std;
 
 
 enum C_MODELPATTERN_RUNSTATES_ENUM {
+
 	C_MODELPATTERN_RUNSTATES_NOOP = 0,
 	C_MODELPATTERN_RUNSTATES_BEGIN,
 	C_MODELPATTERN_RUNSTATES_CHECK_CONNECTIONS,
@@ -143,9 +146,11 @@ enum C_MODELPATTERN_RUNSTATES_ENUM {
 	C_MODELPATTERN_RUNSTATES_INIT_ERROR,
 	C_MODELPATTERN_RUNSTATES_REINIT,
 	C_MODELPATTERN_RUNSTATES_SHUTDOWN,
+
 };
 
 enum C_MODELPATTERN_PROCESSES_ENUM {
+
 	C_MODELPATTERN_PROCESS_NOOP = 0,
 	C_MODELPATTERN_PROCESS_CONNECT_DEVICES,
 	C_MODELPATTERN_PROCESS_END,
@@ -153,19 +158,24 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 	C_MODELPATTERN_PROCESS_GOTO_X,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG,
+
 };
+
 
 
 class agentModelPattern;
 typedef struct threadDataAgentModelPattern_s {
+
 	int									threadNo;
 	agentModelPattern*					o;
+
 } threadDataAgentModelPattern_t;
 
 
 
 class agentModelPattern : public agentModelVariant, public agent
 {
+
 private:
 	LPVOID								 _arg;
 
@@ -173,15 +183,15 @@ private:
 	class agentModel					*pAgtMod;
 	threadDataAgentModelPattern_t		 sThreadDataAgentModelPattern;
 
-	am_InstList_t::iterator				 pConInstruments[C_CONNECTED__COUNT];
+	InstList_t::iterator				 pConInstruments[C_CONNECTED__COUNT];
 
 	agentCom							*pAgtCom[C_COMINST__COUNT];
-	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
-	unbounded_buffer<agentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
+	unbounded_buffer<AgentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
+	unbounded_buffer<AgentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
 
 	USB_TMC								*pAgtUsbTmc;
-	unbounded_buffer<agentUsbReq_t>		*pAgtUsbTmcReq;
-	unbounded_buffer<agentUsbRsp_t>		*pAgtUsbTmcRsp;
+	unbounded_buffer<AgentUsbReq_t>		*pAgtUsbTmcReq;
+	unbounded_buffer<AgentUsbRsp_t>		*pAgtUsbTmcRsp;
 	HANDLE								 hThreadAgtUsbTmc;
 
 	volatile int						 processing_ID;
@@ -216,9 +226,9 @@ private:
 	void					threadsStop(void);
 
 	void					checkInstruments(void);
-	bool					instTryEth(am_InstList_t::iterator it);
-	bool					instTryUsb(am_InstList_t::iterator it);
-	bool					instTryCom(am_InstList_t::iterator it);
+	bool					instTryEth(InstList_t::iterator it);
+	bool					instTryUsb(InstList_t::iterator it);
+	bool					instTryCom(InstList_t::iterator it);
 
 #ifdef OLD
 	instrument_t*			addSerInstrument(INSTRUMENT_ENUM_t type,

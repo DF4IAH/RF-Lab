@@ -253,22 +253,22 @@ static inline void usbi_dbg(const char *format, ...)
 
 #else /* ENABLE_LOGGING */
 
-#define usbi_err(ctx, ...) do { (void)ctx; } while (0)
-#define usbi_warn(ctx, ...) do { (void)ctx; } while (0)
-#define usbi_info(ctx, ...) do { (void)ctx; } while (0)
+#define usbi_err(pLinkUsb_sr_ctx, ...) do { (void)pLinkUsb_sr_ctx; } while (0)
+#define usbi_warn(pLinkUsb_sr_ctx, ...) do { (void)pLinkUsb_sr_ctx; } while (0)
+#define usbi_info(pLinkUsb_sr_ctx, ...) do { (void)pLinkUsb_sr_ctx; } while (0)
 #define usbi_dbg(...) do {} while (0)
 
 #endif /* ENABLE_LOGGING */
 
-#define USBI_GET_CONTEXT(ctx)				\
+#define USBI_GET_CONTEXT(pLinkUsb_sr_ctx)				\
 	do {						\
-		if (!(ctx))				\
-			(ctx) = usbi_default_context;	\
+		if (!(pLinkUsb_sr_ctx))				\
+			(pLinkUsb_sr_ctx) = usbi_default_context;	\
 	} while(0)
 
-#define DEVICE_CTX(dev)		((dev)->ctx)
-#define HANDLE_CTX(handle)	(DEVICE_CTX((handle)->dev))
-#define TRANSFER_CTX(transfer)	(HANDLE_CTX((transfer)->dev_handle))
+#define DEVICE_CTX(pLinkUsb_dev)		((pLinkUsb_dev)->pLinkUsb_sr_ctx)
+#define HANDLE_CTX(handle)	(DEVICE_CTX((handle)->pLinkUsb_dev))
+#define TRANSFER_CTX(transfer)	(HANDLE_CTX((transfer)->pLinkUsb_dev_handle))
 #define ITRANSFER_CTX(transfer) \
 	(TRANSFER_CTX(USBI_TRANSFER_TO_LIBUSB_TRANSFER(transfer)))
 
@@ -386,24 +386,24 @@ enum usbi_event_flags {
 };
 
 /* Macros for managing event handling state */
-#define usbi_handling_events(ctx) \
-	(usbi_tls_key_get((ctx)->event_handling_key) != NULL)
+#define usbi_handling_events(pLinkUsb_sr_ctx) \
+	(usbi_tls_key_get((pLinkUsb_sr_ctx)->event_handling_key) != NULL)
 
-#define usbi_start_event_handling(ctx) \
-	usbi_tls_key_set((ctx)->event_handling_key, ctx)
+#define usbi_start_event_handling(pLinkUsb_sr_ctx) \
+	usbi_tls_key_set((pLinkUsb_sr_ctx)->event_handling_key, pLinkUsb_sr_ctx)
 
-#define usbi_end_event_handling(ctx) \
-	usbi_tls_key_set((ctx)->event_handling_key, NULL)
+#define usbi_end_event_handling(pLinkUsb_sr_ctx) \
+	usbi_tls_key_set((pLinkUsb_sr_ctx)->event_handling_key, NULL)
 
 /* Update the following macro if new event sources are added */
-#define usbi_pending_events(ctx) \
-	((ctx)->event_flags || (ctx)->device_close \
-	 || !list_empty(&(ctx)->hotplug_msgs) || !list_empty(&(ctx)->completed_transfers))
+#define usbi_pending_events(pLinkUsb_sr_ctx) \
+	((pLinkUsb_sr_ctx)->event_flags || (pLinkUsb_sr_ctx)->device_close \
+	 || !list_empty(&(pLinkUsb_sr_ctx)->hotplug_msgs) || !list_empty(&(pLinkUsb_sr_ctx)->completed_transfers))
 
 #ifdef USBI_TIMERFD_AVAILABLE
 #define usbi_using_timerfd(ctx) ((ctx)->timerfd >= 0)
 #else
-#define usbi_using_timerfd(ctx) (0)
+#define usbi_using_timerfd(pLinkUsb_sr_ctx) (0)
 #endif
 
 struct libusb_device {
@@ -412,7 +412,7 @@ struct libusb_device {
 	usbi_mutex_t lock;
 	int refcnt;
 
-	struct libusb_context *ctx;
+	struct libusb_context *pLinkUsb_sr_ctx;
 
 	uint8_t bus_number;
 	uint8_t port_number;
@@ -436,7 +436,7 @@ struct libusb_device_handle {
 	unsigned long claimed_interfaces;
 
 	struct list_head list;
-	struct libusb_device *dev;
+	struct libusb_device *pLinkUsb_dev;
 	int auto_detach_kernel_driver;
 
 	PTR_ALIGNED unsigned char os_priv[ZERO_SIZED_ARRAY];
@@ -529,15 +529,15 @@ struct usb_descriptor_header {
 
 /* shared data and functions */
 
-int usbi_io_init(struct libusb_context *ctx);
-void usbi_io_exit(struct libusb_context *ctx);
+int usbi_io_init(struct libusb_context *pLinkUsb_sr_ctx);
+void usbi_io_exit(struct libusb_context *pLinkUsb_sr_ctx);
 
-struct libusb_device *usbi_alloc_device(struct libusb_context *ctx,
+struct libusb_device *usbi_alloc_device(struct libusb_context *pLinkUsb_sr_ctx,
 	unsigned long session_id);
-struct libusb_device *usbi_get_device_by_session_id(struct libusb_context *ctx,
+struct libusb_device *usbi_get_device_by_session_id(struct libusb_context *pLinkUsb_sr_ctx,
 	unsigned long session_id);
-int usbi_sanitize_device(struct libusb_device *dev);
-void usbi_handle_disconnect(struct libusb_device_handle *dev_handle);
+int usbi_sanitize_device(struct libusb_device *pLinkUsb_dev);
+void usbi_handle_disconnect(struct libusb_device_handle *pLinkUsb_dev_handle);
 
 int usbi_handle_transfer_completion(struct usbi_transfer *itransfer,
 	enum libusb_transfer_status status);
@@ -546,15 +546,15 @@ void usbi_signal_transfer_completion(struct usbi_transfer *transfer);
 
 int usbi_parse_descriptor(const unsigned char *source, const char *descriptor,
 	void *dest, int host_endian);
-int usbi_device_cache_descriptor(libusb_device *dev);
-int usbi_get_config_index_by_value(struct libusb_device *dev,
+int usbi_device_cache_descriptor(libusb_device *pLinkUsb_dev);
+int usbi_get_config_index_by_value(struct libusb_device *pLinkUsb_dev,
 	uint8_t bConfigurationValue, int *idx);
 
-void usbi_connect_device (struct libusb_device *dev);
-void usbi_disconnect_device (struct libusb_device *dev);
+void usbi_connect_device (struct libusb_device *pLinkUsb_dev);
+void usbi_disconnect_device (struct libusb_device *pLinkUsb_dev);
 
-int usbi_signal_event(struct libusb_context *ctx);
-int usbi_clear_event(struct libusb_context *ctx);
+int usbi_signal_event(struct libusb_context *pLinkUsb_sr_ctx);
+int usbi_clear_event(struct libusb_context *pLinkUsb_sr_ctx);
 
 /* Internal abstraction for poll (needs struct usbi_transfer on Windows) */
 #if defined(OS_LINUX) || defined(OS_DARWIN) || defined(OS_OPENBSD) || defined(OS_NETBSD) ||\
@@ -572,8 +572,8 @@ struct usbi_pollfd {
 	struct list_head list;
 };
 
-int usbi_add_pollfd(struct libusb_context *ctx, int fd, short events);
-void usbi_remove_pollfd(struct libusb_context *ctx, int fd);
+int usbi_add_pollfd(struct libusb_context *pLinkUsb_sr_ctx, int fd, short events);
+void usbi_remove_pollfd(struct libusb_context *pLinkUsb_sr_ctx, int fd);
 
 /* device discovery */
 
@@ -589,7 +589,7 @@ struct discovered_devs {
 };
 
 struct discovered_devs *discovered_devs_append(
-	struct discovered_devs *discdevs, struct libusb_device *dev);
+	struct discovered_devs *discdevs, struct libusb_device *pLinkUsb_dev);
 
 /* OS abstraction */
 
@@ -611,14 +611,14 @@ struct usbi_os_backend {
 	 *
 	 * Return 0 on success, or a LIBUSB_ERROR code on failure.
 	 */
-	int (*init)(struct libusb_context *ctx);
+	int (*init)(struct libusb_context *pLinkUsb_sr_ctx);
 
 	/* Deinitialization. Optional. This function should destroy anything
 	 * that was set up by init.
 	 *
 	 * This function is called when the user deinitializes the library.
 	 */
-	void (*exit)(struct libusb_context *ctx);
+	void (*exit)(struct libusb_context *pLinkUsb_sr_ctx);
 
 	/* Set a backend-specific option. Optional.
 	 *
@@ -627,7 +627,7 @@ struct usbi_os_backend {
 	 *
 	 * Return 0 on success, or a LIBUSB_ERROR code on failure.
 	 */
-	int (*set_option)(struct libusb_context *ctx, enum libusb_option option,
+	int (*set_option)(struct libusb_context *pLinkUsb_sr_ctx, enum libusb_option option,
 		va_list args);
 
 	/* Enumerate all the USB devices on the system, returning them in a list
@@ -681,7 +681,7 @@ struct usbi_os_backend {
 	 *
 	 * Return 0 on success, or a LIBUSB_ERROR code on failure.
 	 */
-	int (*get_device_list)(struct libusb_context *ctx,
+	int (*get_device_list)(struct libusb_context *pLinkUsb_sr_ctx,
 		struct discovered_devs **discdevs);
 
 	/* Apps which were written before hotplug support, may listen for
@@ -726,7 +726,7 @@ struct usbi_os_backend {
 	 * Do not worry about freeing the handle on failed open, the upper layers
 	 * do this for you.
 	 */
-	int (*open)(struct libusb_device_handle *dev_handle);
+	int (*open)(struct libusb_device_handle *pLinkUsb_dev_handle);
 
 	/* Close a device such that the handle cannot be used again. Your backend
 	 * should destroy any resources that were allocated in the open path.
@@ -736,7 +736,7 @@ struct usbi_os_backend {
 	 *
 	 * This function is called when the user closes a device handle.
 	 */
-	void (*close)(struct libusb_device_handle *dev_handle);
+	void (*close)(struct libusb_device_handle *pLinkUsb_dev_handle);
 
 	/* Retrieve the device descriptor from a device.
 	 *
@@ -760,7 +760,7 @@ struct usbi_os_backend {
 	 * Return 0 on success or a LIBUSB_ERROR code on failure.
 	 */
 	int (*get_device_descriptor)(struct libusb_device *device,
-		unsigned char *buffer, int *host_endian);
+		unsigned char *linkUsb_buffer, int *host_endian);
 
 	/* Get the ACTIVE configuration descriptor for a device.
 	 *
@@ -783,7 +783,7 @@ struct usbi_os_backend {
 	 * - another LIBUSB_ERROR code on other failure
 	 */
 	int (*get_active_config_descriptor)(struct libusb_device *device,
-		unsigned char *buffer, size_t len, int *host_endian);
+		unsigned char *linkUsb_buffer, size_t len, int *host_endian);
 
 	/* Get a specific configuration descriptor for a device.
 	 *
@@ -807,7 +807,7 @@ struct usbi_os_backend {
 	 * Return the length read on success or a LIBUSB_ERROR code on failure.
 	 */
 	int (*get_config_descriptor)(struct libusb_device *device,
-		uint8_t config_index, unsigned char *buffer, size_t len,
+		uint8_t config_index, unsigned char *linkUsb_buffer, size_t len,
 		int *host_endian);
 
 	/* Like get_config_descriptor but then by bConfigurationValue instead
@@ -823,7 +823,7 @@ struct usbi_os_backend {
 	 * or a LIBUSB_ERROR code on failure.
 	 */
 	int (*get_config_descriptor_by_value)(struct libusb_device *device,
-		uint8_t bConfigurationValue, unsigned char **buffer,
+		uint8_t bConfigurationValue, unsigned char **linkUsb_buffer,
 		int *host_endian);
 
 	/* Get the bConfigurationValue for the active configuration for a device.
@@ -843,7 +843,7 @@ struct usbi_os_backend {
 	 *   blocking
 	 * - another LIBUSB_ERROR code on other failure.
 	 */
-	int (*get_configuration)(struct libusb_device_handle *dev_handle, int *config);
+	int (*get_configuration)(struct libusb_device_handle *pLinkUsb_dev_handle, int *config);
 
 	/* Set the active configuration for a device.
 	 *
@@ -860,7 +860,7 @@ struct usbi_os_backend {
 	 *   was opened
 	 * - another LIBUSB_ERROR code on other failure.
 	 */
-	int (*set_configuration)(struct libusb_device_handle *dev_handle, int config);
+	int (*set_configuration)(struct libusb_device_handle *pLinkUsb_dev_handle, int config);
 
 	/* Claim an interface. When claimed, the application can then perform
 	 * I/O to an interface's endpoints.
@@ -879,7 +879,7 @@ struct usbi_os_backend {
 	 *   was opened
 	 * - another LIBUSB_ERROR code on other failure
 	 */
-	int (*claim_interface)(struct libusb_device_handle *dev_handle, int interface_number);
+	int (*claim_interface)(struct libusb_device_handle *pLinkUsb_dev_handle, int interface_number);
 
 	/* Release a previously claimed interface.
 	 *
@@ -896,7 +896,7 @@ struct usbi_os_backend {
 	 *   was opened
 	 * - another LIBUSB_ERROR code on other failure
 	 */
-	int (*release_interface)(struct libusb_device_handle *dev_handle, int interface_number);
+	int (*release_interface)(struct libusb_device_handle *pLinkUsb_dev_handle, int interface_number);
 
 	/* Set the alternate setting for an interface.
 	 *
@@ -912,7 +912,7 @@ struct usbi_os_backend {
 	 *   was opened
 	 * - another LIBUSB_ERROR code on other failure
 	 */
-	int (*set_interface_altsetting)(struct libusb_device_handle *dev_handle,
+	int (*set_interface_altsetting)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		int interface_number, int altsetting);
 
 	/* Clear a halt/stall condition on an endpoint.
@@ -926,7 +926,7 @@ struct usbi_os_backend {
 	 *   was opened
 	 * - another LIBUSB_ERROR code on other failure
 	 */
-	int (*clear_halt)(struct libusb_device_handle *dev_handle,
+	int (*clear_halt)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		unsigned char endpoint);
 
 	/* Perform a USB port reset to reinitialize a device.
@@ -945,14 +945,14 @@ struct usbi_os_backend {
 	 *   has been disconnected since it was opened
 	 * - another LIBUSB_ERROR code on other failure
 	 */
-	int (*reset_device)(struct libusb_device_handle *dev_handle);
+	int (*reset_device)(struct libusb_device_handle *pLinkUsb_dev_handle);
 
 	/* Alloc num_streams usb3 bulk streams on the passed in endpoints */
-	int (*alloc_streams)(struct libusb_device_handle *dev_handle,
+	int (*alloc_streams)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		uint32_t num_streams, unsigned char *endpoints, int num_endpoints);
 
 	/* Free usb3 bulk streams allocated with alloc_streams */
-	int (*free_streams)(struct libusb_device_handle *dev_handle,
+	int (*free_streams)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		unsigned char *endpoints, int num_endpoints);
 
 	/* Allocate persistent DMA memory for the given device, suitable for
@@ -963,7 +963,7 @@ struct usbi_os_backend {
 
 	/* Free memory allocated by dev_mem_alloc. */
 	int (*dev_mem_free)(struct libusb_device_handle *handle,
-		unsigned char *buffer, size_t len);
+		unsigned char *linkUsb_buffer, size_t len);
 
 	/* Determine if a kernel driver is active on an interface. Optional.
 	 *
@@ -977,7 +977,7 @@ struct usbi_os_backend {
 	 *   was opened
 	 * - another LIBUSB_ERROR code on other failure
 	 */
-	int (*kernel_driver_active)(struct libusb_device_handle *dev_handle,
+	int (*kernel_driver_active)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		int interface_number);
 
 	/* Detach a kernel driver from an interface. Optional.
@@ -993,7 +993,7 @@ struct usbi_os_backend {
 	 *   was opened
 	 * - another LIBUSB_ERROR code on other failure
 	 */
-	int (*detach_kernel_driver)(struct libusb_device_handle *dev_handle,
+	int (*detach_kernel_driver)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		int interface_number);
 
 	/* Attach a kernel driver to an interface. Optional.
@@ -1010,7 +1010,7 @@ struct usbi_os_backend {
 	 *   preventing reattachment
 	 * - another LIBUSB_ERROR code on other failure
 	 */
-	int (*attach_kernel_driver)(struct libusb_device_handle *dev_handle,
+	int (*attach_kernel_driver)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		int interface_number);
 
 	/* Destroy a device. Optional.
@@ -1019,7 +1019,7 @@ struct usbi_os_backend {
 	 * destroyed. It should free any resources allocated in the get_device_list
 	 * path.
 	 */
-	void (*destroy_device)(struct libusb_device *dev);
+	void (*destroy_device)(struct libusb_device *pLinkUsb_dev);
 
 	/* Submit a transfer. Your implementation should take the transfer,
 	 * morph it into whatever form your platform requires, and submit it
@@ -1088,7 +1088,7 @@ struct usbi_os_backend {
 	 *
 	 * Return 0 on success, or a LIBUSB_ERROR code on failure.
 	 */
-	int (*handle_events)(struct libusb_context *ctx,
+	int (*handle_events)(struct libusb_context *pLinkUsb_sr_ctx,
 		struct pollfd *fds, POLL_NFDS_TYPE nfds, int num_ready);
 
 	/* Handle transfer completion. Optional.

@@ -19,7 +19,7 @@
 
 #include "RF-Lab_Win32.h"
 #include "WinSrv.h"
-#include "agentModel_InstList.h"
+#include "instruments.h"
 
 
 
@@ -34,8 +34,8 @@ WCHAR				g_szWindowClass[MAX_LOADSTRING] = { 0 };	// Klassenname des Hauptfenste
 LRESULT				g_iCbValue						= 0ULL;
 agentModel		   *g_am							= nullptr;
 
-bool				g_am_InstList_locked			= false;	// List of Instruments is locked
-am_InstList_t		g_am_InstList;								// List of Instruments (rotors, TX, RX)
+bool				g_InstList_locked			    = false;	// List of Instruments is locked
+InstList_t		    g_InstList;									// List of Instruments (rotors, TX, RX)
 
 
 // Vorwärtsdeklarationen der in diesem Codemodul enthaltenen Funktionen:

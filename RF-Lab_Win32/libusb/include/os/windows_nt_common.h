@@ -48,29 +48,29 @@ extern enum windows_version windows_version;
 extern BOOL (WINAPI *pCancelIoEx)(HANDLE, LPOVERLAPPED);
 
 struct windows_backend {
-	int (*init)(struct libusb_context *ctx);
-	void (*exit)(struct libusb_context *ctx);
-	int (*get_device_list)(struct libusb_context *ctx,
+	int (*init)(struct libusb_context *pLinkUsb_sr_ctx);
+	void (*exit)(struct libusb_context *pLinkUsb_sr_ctx);
+	int (*get_device_list)(struct libusb_context *pLinkUsb_sr_ctx,
 		struct discovered_devs **discdevs);
-	int (*open)(struct libusb_device_handle *dev_handle);
-	void (*close)(struct libusb_device_handle *dev_handle);
-	int (*get_device_descriptor)(struct libusb_device *device, unsigned char *buffer);
+	int (*open)(struct libusb_device_handle *pLinkUsb_dev_handle);
+	void (*close)(struct libusb_device_handle *pLinkUsb_dev_handle);
+	int (*get_device_descriptor)(struct libusb_device *device, unsigned char *linkUsb_buffer);
 	int (*get_active_config_descriptor)(struct libusb_device *device,
-		unsigned char *buffer, size_t len);
+		unsigned char *linkUsb_buffer, size_t len);
 	int (*get_config_descriptor)(struct libusb_device *device,
-		uint8_t config_index, unsigned char *buffer, size_t len);
+		uint8_t config_index, unsigned char *linkUsb_buffer, size_t len);
 	int (*get_config_descriptor_by_value)(struct libusb_device *device,
-		uint8_t bConfigurationValue, unsigned char **buffer);
-	int (*get_configuration)(struct libusb_device_handle *dev_handle, int *config);
-	int (*set_configuration)(struct libusb_device_handle *dev_handle, int config);
-	int (*claim_interface)(struct libusb_device_handle *dev_handle, int interface_number);
-	int (*release_interface)(struct libusb_device_handle *dev_handle, int interface_number);
-	int (*set_interface_altsetting)(struct libusb_device_handle *dev_handle,
+		uint8_t bConfigurationValue, unsigned char **linkUsb_buffer);
+	int (*get_configuration)(struct libusb_device_handle *pLinkUsb_dev_handle, int *config);
+	int (*set_configuration)(struct libusb_device_handle *pLinkUsb_dev_handle, int config);
+	int (*claim_interface)(struct libusb_device_handle *pLinkUsb_dev_handle, int interface_number);
+	int (*release_interface)(struct libusb_device_handle *pLinkUsb_dev_handle, int interface_number);
+	int (*set_interface_altsetting)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		int interface_number, int altsetting);
-	int (*clear_halt)(struct libusb_device_handle *dev_handle,
+	int (*clear_halt)(struct libusb_device_handle *pLinkUsb_dev_handle,
 		unsigned char endpoint);
-	int (*reset_device)(struct libusb_device_handle *dev_handle);
-	void (*destroy_device)(struct libusb_device *dev);
+	int (*reset_device)(struct libusb_device_handle *pLinkUsb_dev_handle);
+	void (*destroy_device)(struct libusb_device *pLinkUsb_dev);
 	int (*submit_transfer)(struct usbi_transfer *itransfer);
 	int (*cancel_transfer)(struct usbi_transfer *itransfer);
 	void (*clear_transfer_priv)(struct usbi_transfer *itransfer);

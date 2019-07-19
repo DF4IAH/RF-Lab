@@ -15,17 +15,21 @@
 
 
 typedef enum C_USB_TMC_RUNSTATES_ENUM {
+
 	C_USB_TMC_RUNSTATES_NOOP = 0,
 	C_USB_TMC_RUNSTATES_INIT,
 	C_USB_TMC_RUNSTATES_RUN,
 	C_USB_TMC_RUNSTATES_STOP,
+
 } C_USB_TMC_RUNSTATES_ENUM_t;
 
 
 typedef enum C_USB_TMC_INSTRUMENT_TYPE {
+
 	C_USB_TMC_INSTRUMENT_NONE = 0,
 	C_USB_TMC_INSTRUMENT_TX,
 	C_USB_TMC_INSTRUMENT_RX,
+
 } C_USB_TMC_INSTRUMENT_TYPE_t;
 
 
@@ -35,6 +39,7 @@ typedef enum C_USB_TMC_INSTRUMENT_TYPE {
 #define USBTMC_USB488					0x01
 
 typedef enum USB_CR_ENUM {
+
 	/* USBTMC control requests */
 	INITIATE_ABORT_BULK_OUT = 1,
 	CHECK_ABORT_BULK_OUT_STATUS = 2,
@@ -50,6 +55,7 @@ typedef enum USB_CR_ENUM {
 	REN_CONTROL = 160,
 	GO_TO_LOCAL = 161,
 	LOCAL_LOCKOUT = 162,
+
 } USB_CR_ENUM_t;
 
 /* USBTMC status codes */
@@ -91,6 +97,7 @@ typedef enum USB_CR_ENUM {
 
 
 typedef enum SCPI_CMD_ENUM {
+
 	SCPI_CMD_SET_TRIGGER_SOURCE = 1,
 	SCPI_CMD_SET_TIMEBASE,
 	SCPI_CMD_SET_VERTICAL_DIV,
@@ -121,40 +128,50 @@ typedef enum SCPI_CMD_ENUM {
 	SCPI_CMD_SET_PROBE_UNIT,
 	SCPI_CMD_GET_ANALOG_CHAN_NAME,
 	SCPI_CMD_GET_DIG_CHAN_NAME,
+
 } SCPI_CMD_t;
 
 
 typedef struct scpi_command {
+
 	int command;
 	const char *string;
+
 } scpi_command_t;
 
 typedef struct scpi_hw_info {
+
 	char *manufacturer;
 	char *model;
 	char *serial_number;
 	char *firmware_version;
+
 } scpi_hw_info_t;
 
 
 typedef struct usbtmc_blacklist {
+
 	uint16_t	vid;
 	uint16_t	pid;
+
 } usbtmc_blacklist_t;
 
 /* Devices that publish RL1 support, but don't support it. */
 #define ALL_ZERO	{ 0x000, 0x000 }
 static struct usbtmc_blacklist blacklist_remote[] = {
+
 	{ 0x1ab1, 0x0588 }, /* Rigol DS1000 series */
 	{ 0x1ab1, 0x04b0 }, /* Rigol DS2000 series */
 	{ 0x1ab1, 0x0960 }, /* Rigol DSA875 series */
 	{ 0x0957, 0x0588 }, /* Agilent DSO1000 series (rebadged Rigol DS1000) */
 	{ 0x0b21, 0xffff }, /* All Yokogawa devices */
 	ALL_ZERO
+
 };
 
 
 typedef struct scpi_dev_inst {
+
 	const char *name;
 	const char *prefix;
 	int priv_size;
@@ -174,4 +191,5 @@ typedef struct scpi_dev_inst {
 	void *priv;
 	/* Only used for quirk workarounds, notably the Rigol DS1000 series. */
 	uint64_t firmware_version;
+
 } scpi_dev_inst_t;

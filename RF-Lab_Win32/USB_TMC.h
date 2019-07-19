@@ -20,15 +20,17 @@
 
 class USB_TMC;
 typedef struct threadDataUsbTmc_s {
+
 	int									threadNo;
 	USB_TMC*							o;
+
 } threadDataUsbTmc_t;
 
 
 class USB_TMC : public agent
 {
 public:
-	USB_TMC(unbounded_buffer<agentUsbReq>* pAgtUsbTmcReq, unbounded_buffer<agentUsbRsp>* pAgtUsbTmcRsp);
+	USB_TMC(unbounded_buffer<AgentUsbReq_t>* pAgtUsbTmcReq, unbounded_buffer<AgentUsbRsp_t>* pAgtUsbTmcRsp);
 	virtual ~USB_TMC();
 
 #if 0
@@ -56,32 +58,32 @@ private:
 	void shutdown_libusb(void);
 	bool check_usbtmc_blacklist_libusb(struct usbtmc_blacklist *blacklist, uint16_t vid, uint16_t pid);
 
-	int findInstruments(void);
-	instrument_t* addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instrument_t *optionalInst);
-	void releaseInstrument_usb_iface(instrument_t inst[], int cnt);
-	bool openUsb(instrument_t *inst);
-	bool closeUsb(instrument_t *inst);
-	bool openTmc(instrument_t *inst);
-	bool tmcInitiate(instrument_t *inst);
-	bool tmcGoRemote(instrument_t *inst);
-	void tmcGoLocal(instrument_t *inst);
+//	int findInstruments(void);
+//	Instrument_t* addInstrument(INSTRUMENT_ENUM_t type, int devs_idx, instrument_t *optionalInst);
+//	void releaseInstrument_usb_iface(Instrument_t inst[], int cnt);
+	bool openUsb(Instrument_t *inst);
+	bool closeUsb(Instrument_t *inst);
+	bool openTmc(Instrument_t *inst);
+	bool tmcInitiate(Instrument_t *inst);
+	bool tmcGoRemote(Instrument_t *inst);
+	void tmcGoLocal(Instrument_t *inst);
 	INSTRUMENT_ENUM_t checkIDTable(uint16_t idVendor, uint16_t idProduct);
-	INSTRUMENT_ENUM_t usbTmcCheck(int devs_idx, struct libusb_device_descriptor *desc, instrument_t *outInst);
-	C_USB_TMC_INSTRUMENT_TYPE_t usbTmcInstType(int devs_idx, instrument_t *outInst);
-	bool usbTmcReadLine(instrument_t *inst, char* outLine, int len);
-	void usbTmcReadFlush(instrument_t *inst);
-	bool usbTmcCmdRST(instrument_t *inst);
-	bool usbTmcCmdCLS(instrument_t *inst);
-	bool usbTmcCmdSRE(instrument_t *inst, uint16_t bitmask);
-	bool usbTmcCmdESE(instrument_t *inst, uint16_t bitmask);
-	int  usbTmcGetSTB(instrument_t *inst);
-	bool usbTmcGetIDN(instrument_t *inst);
+	INSTRUMENT_ENUM_t usbTmcCheck(int linkUsb_devs_idx, struct libusb_device_descriptor *desc, Instrument_t *outInst);
+	C_USB_TMC_INSTRUMENT_TYPE_t usbTmcInstType(int linkUsb_devs_idx, Instrument_t *outInst);
+	bool usbTmcReadLine(Instrument_t *inst, char* outLine, int len);
+	void usbTmcReadFlush(Instrument_t *inst);
+	bool usbTmcCmdRST(Instrument_t *inst);
+	bool usbTmcCmdCLS(Instrument_t *inst);
+	bool usbTmcCmdSRE(Instrument_t *inst, uint16_t bitmask);
+	bool usbTmcCmdESE(Instrument_t *inst, uint16_t bitmask);
+	int  usbTmcGetSTB(Instrument_t *inst);
+	bool usbTmcGetIDN(Instrument_t *inst);
 
 	void usbtmc_bulk_out_header_write(uint8_t header[], uint8_t MsgID, uint8_t bTag, uint32_t TransferSize, uint8_t bmTransferAttributes, char TermChar);
 	int usbtmc_bulk_in_header_read(uint8_t header[], uint8_t MsgID, uint8_t bTag, uint32_t *TransferSize, uint8_t *bmTransferAttributes);
-	int scpi_usbtmc_bulkout(instrument_t *inst, uint8_t msg_id, const void *data, int32_t size, uint8_t transfer_attributes);
-	int scpi_usbtmc_bulkin_start(instrument_t *inst, uint8_t msg_id, uint8_t *data, int32_t size, uint8_t *transfer_attributes);
-	int scpi_usbtmc_bulkin_continue(instrument_t *inst, uint8_t *data, int size);
+	int scpi_usbtmc_bulkout(Instrument_t *inst, uint8_t msg_id, const void *data1, int32_t size, uint8_t transfer_attributes);
+	int scpi_usbtmc_bulkin_start(Instrument_t *inst, uint8_t msg_id, uint8_t *data1, int32_t size, uint8_t *transfer_attributes);
+	int scpi_usbtmc_bulkin_continue(Instrument_t *inst, uint8_t *data1, int size);
 	int scpi_usbtmc_libusb_send(void *priv, const char *command);
 	int scpi_usbtmc_libusb_read_begin(void *priv);
 	int scpi_usbtmc_libusb_read_data(void *priv, char *buf, int maxlen);
@@ -94,11 +96,12 @@ private:
 	threadDataUsbTmc_t					 sThreadDataUsbTmc;
 
 	const struct libusb_version			*version;
+	libusb_context						*pLinkUsb_sr_ctx;
 	libusb_device					   **devs;
 
 	/* Server connection */
-	unbounded_buffer<agentUsbReq>		*pAgtUsbTmcReq;
-	unbounded_buffer<agentUsbRsp>		*pAgtUsbTmcRsp;
+	unbounded_buffer<AgentUsbReq_t>		*pAgtUsbTmcReq;
+	unbounded_buffer<AgentUsbRsp_t>		*pAgtUsbTmcRsp;
 
 	bool								 _isStarted;
 	bool								 _running;

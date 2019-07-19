@@ -8,7 +8,7 @@
 
 #include <map>
 
-#include "agentModel_InstList.h"
+#include "instruments.h"
 
 
 using namespace concurrency;
@@ -40,13 +40,13 @@ typedef enum AGENT_ALL_SIMUMODE {
 typedef struct agentModelReq
 {
 	SHORT								cmd;
-	ULONG32								data;
+	ULONG32								data1;
 } agentModelReq_t;
 
 typedef struct agentModelRsp
 {
 	SHORT								stat;
-	ULONG32								data;
+	ULONG32								data1;
 } agentModelRsp_t;
 
 

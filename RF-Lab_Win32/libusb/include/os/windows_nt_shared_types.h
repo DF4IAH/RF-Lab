@@ -113,7 +113,7 @@ struct usbdk_device_handle_priv {
 struct winusb_device_handle_priv {
 	int active_interface;
 	struct {
-		HANDLE dev_handle; // WinUSB needs an extra handle for the file
+		HANDLE pLinkUsb_dev_handle; // WinUSB needs an extra handle for the file
 		HANDLE api_handle; // used by the API to communicate with the device
 	} interface_handle[USB_MAXINTERFACES];
 	int autoclaim_count[USB_MAXINTERFACES]; // For auto-release

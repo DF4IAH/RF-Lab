@@ -482,7 +482,7 @@ bool WinSrv::instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenu, wchar_t
 	int menuItemCnt = GetMenuItemCount(hMenu);
 
 	for (int menuItemIdx = 0; menuItemIdx < menuItemCnt; menuItemIdx++) {
-		TCHAR buffer[MAX_PATH];
+		TCHAR linkUsb_buffer[MAX_PATH];
 
 		GetMenuItemInfo(
 			hMenu,
@@ -493,11 +493,11 @@ bool WinSrv::instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenu, wchar_t
 		GetMenuString(
 			hMenu,
 			menuItemIdx,
-			buffer,
+			linkUsb_buffer,
 			MAX_PATH,
 			MF_BYPOSITION);
 
-		if (!lstrcmp(caption, buffer)) {
+		if (!lstrcmp(caption, linkUsb_buffer)) {
 			/* Found! */
 			*hMenuSub = menuItemInfo.hSubMenu ? menuItemInfo.hSubMenu : hMenu;
 			*menuIdx = menuItemIdx;
@@ -570,17 +570,17 @@ void WinSrv::instUpdateConnectedInstruments(void)
 
 		/* Visit each popup menu */
 		if (menuItemInfo.hSubMenu) {
-			TCHAR buffer[MAX_PATH];
+			TCHAR linkUsb_buffer[MAX_PATH];
 
 			GetMenuString(
 				hMenu,
 				menuItemIdx,
-				buffer,
+				linkUsb_buffer,
 				MAX_PATH,
 				MF_BYPOSITION);
 
 			/* Is it the popup menu we do search for? */
-			if (!lstrcmp(L"Instrumenten-Liste", buffer)) {
+			if (!lstrcmp(L"Instrumenten-Liste", linkUsb_buffer)) {
 				/**/
 				HMENU hInstrPopupMenu = menuItemInfo.hSubMenu;
 				int instrMenuCnt = GetMenuItemCount(hInstrPopupMenu);
@@ -589,11 +589,11 @@ void WinSrv::instUpdateConnectedInstruments(void)
 					GetMenuString(
 						hInstrPopupMenu,
 						instMenuIdx,
-						buffer,
+						linkUsb_buffer,
 						MAX_PATH,
 						MF_BYPOSITION);
 
-					if (!lstrcmp(L"Aktoren", buffer)) {
+					if (!lstrcmp(L"Aktoren", linkUsb_buffer)) {
 						GetMenuItemInfo(
 							hInstrPopupMenu,
 							instMenuIdx,
@@ -609,18 +609,18 @@ void WinSrv::instUpdateConnectedInstruments(void)
 								GetMenuString(
 									hAktorenMenu,
 									aktorenMenuIdx,
-									buffer,
+									linkUsb_buffer,
 									MAX_PATH,
 									MF_BYPOSITION);
 
 								/* Entrypoint for actors found? */
-								if (!lstrcmp(L"_aktor_", buffer)) {
+								if (!lstrcmp(L"_aktor_", linkUsb_buffer)) {
 									UINT aktorID = ID_AKTOR_ITEM0_;
 									/* Iterate over the instrument list */
-									am_InstList_t::iterator it = g_am_InstList.begin();
+									InstList_t::iterator it = g_InstList.begin();
 									
 									/* Iterate over all instruments and check which one responds */
-									while (it != g_am_InstList.end()) {
+									while (it != g_InstList.end()) {
 										if (it->listFunction == INST_FUNC_ROTOR) {
 											/* Convert char[] to wchar_t[] */
 											wchar_t	wName[MAX_PATH];
@@ -656,7 +656,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 						}
 					}
 
-					else if (!lstrcmp(L"HF-Generatoren", buffer)) {
+					else if (!lstrcmp(L"HF-Generatoren", linkUsb_buffer)) {
 						GetMenuItemInfo(
 							hInstrPopupMenu,
 							instMenuIdx,
@@ -673,17 +673,17 @@ void WinSrv::instUpdateConnectedInstruments(void)
 								GetMenuString(
 									hRfGenMenu,
 									rfGenMenuIdx,
-									buffer,
+									linkUsb_buffer,
 									MAX_PATH,
 									MF_BYPOSITION);
 
 								/* Entrypoint for actors found? */
-								if (!lstrcmp(L"_hf_generator_", buffer)) {
+								if (!lstrcmp(L"_hf_generator_", linkUsb_buffer)) {
 									/* Iterate over the instrument list */
-									am_InstList_t::iterator it = g_am_InstList.begin();
+									InstList_t::iterator it = g_InstList.begin();
 
 									/* Iterate over all instruments and check which one responds */
-									while (it != g_am_InstList.end()) {
+									while (it != g_InstList.end()) {
 										if (it->listFunction == INST_FUNC_GEN) {
 											/* Convert char[] to wchar_t[] */
 											wchar_t	wName[MAX_PATH];
@@ -719,7 +719,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 						}
 					}
 
-					else if (!lstrcmp(L"Spektrumanalysatoren", buffer)) {
+					else if (!lstrcmp(L"Spektrumanalysatoren", linkUsb_buffer)) {
 						GetMenuItemInfo(
 							hInstrPopupMenu,
 							instMenuIdx,
@@ -736,17 +736,17 @@ void WinSrv::instUpdateConnectedInstruments(void)
 								GetMenuString(
 									hSpekMenu,
 									spekMenuIdx,
-									buffer,
+									linkUsb_buffer,
 									MAX_PATH,
 									MF_BYPOSITION);
 
 								/* Entrypoint for actors found? */
-								if (!lstrcmp(L"_spek_", buffer)) {
+								if (!lstrcmp(L"_spek_", linkUsb_buffer)) {
 									/* Iterate over the instrument list */
-									am_InstList_t::iterator it = g_am_InstList.begin();
+									InstList_t::iterator it = g_InstList.begin();
 
 									/* Iterate over all instruments and check which one responds */
-									while (it != g_am_InstList.end()) {
+									while (it != g_InstList.end()) {
 										if (it->listFunction == INST_FUNC_SPEC) {
 											/* Convert char[] to wchar_t[] */
 											wchar_t	wName[MAX_PATH];

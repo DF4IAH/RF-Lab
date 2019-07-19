@@ -115,7 +115,7 @@ DLL_DECLARE_FUNC(WINAPI, BOOL, UkwIsPipeHalted, (UKW_DEVICE, UCHAR, LPBOOL));
 #define STATUS_HALT_FLAG 0x1
 
 struct wince_device_priv {
-	UKW_DEVICE dev;
+	UKW_DEVICE pLinkUsb_dev;
 	UKW_DEVICE_DESCRIPTOR desc;
 };
 

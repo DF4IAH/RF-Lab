@@ -97,16 +97,16 @@ struct windows_usb_api_backend {
 	const char * const designation;
 	const char * const * const driver_name_list; // Driver name, without .sys, e.g. "usbccgp"
 	const uint8_t nb_driver_names;
-	int (*init)(struct libusb_context *ctx);
+	int (*init)(struct libusb_context *pLinkUsb_sr_ctx);
 	void (*exit)(void);
-	int (*open)(int sub_api, struct libusb_device_handle *dev_handle);
-	void (*close)(int sub_api, struct libusb_device_handle *dev_handle);
-	int (*configure_endpoints)(int sub_api, struct libusb_device_handle *dev_handle, int iface);
-	int (*claim_interface)(int sub_api, struct libusb_device_handle *dev_handle, int iface);
-	int (*set_interface_altsetting)(int sub_api, struct libusb_device_handle *dev_handle, int iface, int altsetting);
-	int (*release_interface)(int sub_api, struct libusb_device_handle *dev_handle, int iface);
-	int (*clear_halt)(int sub_api, struct libusb_device_handle *dev_handle, unsigned char endpoint);
-	int (*reset_device)(int sub_api, struct libusb_device_handle *dev_handle);
+	int (*open)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle);
+	void (*close)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle);
+	int (*configure_endpoints)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle, int iface);
+	int (*claim_interface)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle, int iface);
+	int (*set_interface_altsetting)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle, int iface, int altsetting);
+	int (*release_interface)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle, int iface);
+	int (*clear_halt)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle, unsigned char endpoint);
+	int (*reset_device)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle);
 	int (*submit_bulk_transfer)(int sub_api, struct usbi_transfer *itransfer);
 	int (*submit_iso_transfer)(int sub_api, struct usbi_transfer *itransfer);
 	int (*submit_control_transfer)(int sub_api, struct usbi_transfer *itransfer);
@@ -202,14 +202,14 @@ struct hid_device_priv {
 	uint8_t string_index[3]; // man, prod, ser
 };
 
-static inline struct winusb_device_priv *_device_priv(struct libusb_device *dev)
+static inline struct winusb_device_priv *_device_priv(struct libusb_device *pLinkUsb_dev)
 {
-	return (struct winusb_device_priv *)dev->os_priv;
+	return (struct winusb_device_priv *)pLinkUsb_dev->os_priv;
 }
 
-static inline struct winusb_device_priv *winusb_device_priv_init(struct libusb_device *dev)
+static inline struct winusb_device_priv *winusb_device_priv_init(struct libusb_device *pLinkUsb_dev)
 {
-	struct winusb_device_priv *p = _device_priv(dev);
+	struct winusb_device_priv *p = _device_priv(pLinkUsb_dev);
 	int i;
 
 	p->apib = &usb_api_backend[USB_API_UNSUPPORTED];
@@ -222,15 +222,15 @@ static inline struct winusb_device_priv *winusb_device_priv_init(struct libusb_d
 	return p;
 }
 
-static inline void winusb_device_priv_release(struct libusb_device *dev)
+static inline void winusb_device_priv_release(struct libusb_device *pLinkUsb_dev)
 {
-	struct winusb_device_priv *p = _device_priv(dev);
+	struct winusb_device_priv *p = _device_priv(pLinkUsb_dev);
 	int i;
 
 	free(p->dev_id);
 	free(p->path);
-	if ((dev->num_configurations > 0) && (p->config_descriptor != NULL)) {
-		for (i = 0; i < dev->num_configurations; i++)
+	if ((pLinkUsb_dev->num_configurations > 0) && (p->config_descriptor != NULL)) {
+		for (i = 0; i < pLinkUsb_dev->num_configurations; i++)
 			free(p->config_descriptor[i]);
 	}
 	free(p->config_descriptor);

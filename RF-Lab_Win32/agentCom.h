@@ -1,16 +1,19 @@
 #pragma once
 
-/* Agents Library */
-#include <agents.h>
 #include <string>
+#include <list>
 #include <iostream>
 #include <sstream>
 
-#include "agentModel_InstList.h"
+#include "instruments.h"
+
+/* Agents Library */
+#include <agents.h>
 
 
 using namespace concurrency;
 using namespace std;
+
 
 
 #define AGENT_COM_RECEIVE_TIMEOUT					500
@@ -52,6 +55,7 @@ enum C_USBREQ_ENUM {
 	C_USBREQ_IS_DEV_CONNECTED,
 	C_USBREQ_CONNECT,
 	C_USBREQ_DISCONNECT,
+	C_USBREQ_SEND_STRING,
 
 };
 
@@ -65,6 +69,7 @@ enum C_USBRSP_ENUM {
 	C_USBRSP_REGISTRATION_LIST,
 	C_USBRSP_IS_DEV_CONNECTED,
 	C_USBRSP_DEV_CONNECT_HANDLE,
+	C_USBREQ_USBTMC_SEND_ONLY,
 
 };
 
@@ -93,54 +98,50 @@ const int C_BUF_SIZE = 256;
 
 /* USB REQ */
 
-typedef struct agentUsbReq
-{
+typedef struct {
 
 	SHORT								 cmd;
-	void								*data;
+	void								*data1;
+	void								*data2;
 
-} agentUsbReq_t;
+} AgentUsbReq_t;
 
-typedef struct agentUsbReqDev
-{
+typedef struct {
 
 	WORD								usbIdVendor;
 	WORD								usbIdProduct;
 
-} agentComReqUsbDev_t;
+} AgentComReqUsbDev_t;
 
 
 /* USB RSP */
 
-typedef struct agentUsbRsp
-{
+typedef struct {
 
 	SHORT								 stat;
-	void								*data;
+	void								*data1;
 
-} agentUsbRsp_t;
+} AgentUsbRsp_t;
 
 
 /* COM REQ */
 
-typedef struct agentComReq
-{
+typedef struct {
 
 	SHORT								 cmd;
 	string								 parm;
 
-} agentComReq_t;
+} AgentComReq_t;
 
 
 /* COM RSP */
 
-typedef struct agentComRsp
-{
+typedef struct {
 
 	SHORT								 stat;
-	string								 data;
+	string								 data1;
 
-} agentComRsp_t;
+} AgentComRsp_t;
 
 
 
@@ -151,19 +152,19 @@ private:
 	bool								 _isStarted;
 	bool								 _running;
 	bool								 _done;
-	ISource<agentComReq>&				 _src;
-	ITarget<agentComRsp>&				 _tgt;
+	ISource<AgentComReq_t>				&_src;
+	ITarget<AgentComRsp_t>				&_tgt;
 
 	HANDLE								 _hCom;
 
-	am_InstList_t::iterator*			 _pInstrument;
+    InstList_t::iterator			    *_pInstrument;
 
 	bool								 _isIec;
 	int									 _iecAddr;
 
 
 public:
-	explicit agentCom(ISource<agentComReq>& src, ITarget<agentComRsp>& tgt);
+	explicit agentCom(ISource<AgentComReq_t>& src, ITarget<AgentComRsp_t>& tgt);
 	void   start(void);
 	bool   isRunning(void);
 	bool   isDone(void);
@@ -172,8 +173,8 @@ public:
 
 	string trim(string haystack);
 
-	void   setInstrument(am_InstList_t::iterator* instrument);
-	am_InstList_t::iterator* getInstrument(void);
+	void   setInstrument(InstList_t::iterator* instrument);
+	InstList_t::iterator* getInstrument(void);
 
 	bool   isIec(void);
 	void   setIecAddr(int iecAddr);

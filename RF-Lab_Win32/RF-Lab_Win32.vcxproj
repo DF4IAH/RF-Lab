@@ -170,7 +170,6 @@
     <ClInclude Include="os\threads_posix.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RF-Lab_Win32.h" />
-    <ClInclude Include="agentModel_InstList.h" />
     <ClInclude Include="USB_TMC.h" />
     <ClInclude Include="USB_TMC_types.h" />
     <ClInclude Include="WinSrv.h" />

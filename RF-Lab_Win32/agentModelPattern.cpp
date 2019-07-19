@@ -1028,6 +1028,10 @@ void agentModelPattern::run(void)
 				/* Shutdown the COM and USB agents */
 				agentsShutdown();
 
+				/* Enable Connect menu item */
+				HMENU hMenu = GetMenu(g_hWnd);
+				EnableMenuItem(hMenu, ID_INSTRUMENTEN_CONNECT, MF_BYCOMMAND);
+
 				if (_loopShut) {
 					_runState = C_MODELPATTERN_RUNSTATES_NOOP;
 					_running = false;
@@ -1041,7 +1045,6 @@ void agentModelPattern::run(void)
 
 					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: shut down", L"REINIT ...");
-						Sleep(500L);
 					}
 				}
 				else {
@@ -1517,6 +1520,10 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 
 		case ID_INSTRUMENTEN_CONNECT:
 			connectDevices();
+
+			/* Disable Connect menu item */
+			EnableMenuItem(hMenu, ID_INSTRUMENTEN_CONNECT,		MF_BYCOMMAND | MF_DISABLED);
+			EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT,	MF_BYCOMMAND);
 			break;
 
 		case ID_INSTRUMENTEN_DISCONNECT:
@@ -1604,12 +1611,12 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 	/* Loop as long no end-signalling has entered */
 	bool doLoop = true;
 	do {
-		/* different jobs to be processed */
+		/* Different jobs to be processed */
 		switch (m->o->processing_ID)
 		{
 
 		case C_MODELPATTERN_PROCESS_GOTO_X:
-		{  // go to direction
+		{  /* Go to new direction */
 			int gotoMilliDegPos = m->o->processing_arg1;
 			m->o->processing_arg1 = 0;
 
@@ -1643,7 +1650,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		break;
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG:
-		{  /* run a 360° antenna pattern from left = -180° to the right = +180° */
+		{  /* Run a 360° antenna pattern from left = -180° to the right = +180° */
 			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 360° pattern", L"goto START position");
 
 			int ret = m->o->runningProcessPattern(

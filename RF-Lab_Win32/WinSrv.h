@@ -25,6 +25,7 @@ public:
 		bool							 rotorEnabled;
 		bool							 rfGenEnabled;
 		bool							 specEnabled;
+		bool							 modelPatternAct;
 	} MenuInfo_t;
 
 	MenuInfo_t							 _menuInfo;

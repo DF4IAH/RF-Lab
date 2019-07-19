@@ -913,17 +913,36 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 {
 	HMENU hMenu = GetMenu(this->hWnd);
 
+	/* When every type is connected activate Pattern Model */
 	if (_menuInfo.rotorEnabled && _menuInfo.rfGenEnabled && _menuInfo.specEnabled) {
-		EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
-		EnableMenuItem(hMenu, ID_CTRL_ALL_RESET, MF_BYCOMMAND);
+		if (!_menuInfo.modelPatternAct) {
+			EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND);
+			EnableMenuItem(hMenu, ID_CTRL_ALL_RESET, MF_BYCOMMAND);
 
-		/* Append ModelPattern specific items to the menu */
-		InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_STOP,			L"Richtdiagramm: anhalten und beenden");
-		InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_180_START,	L"Richtdiagramm über 180° ausmessen");
-		InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_360_START,	L"Richtdiagramm über 360° ausmessen");
+			/* Append ModelPattern specific items to the menu */
+			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_STOP,			L"Richtdiagramm: anhalten und beenden");
+			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_180_START,	L"Richtdiagramm über 180° ausmessen");
+			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_360_START,	L"Richtdiagramm über 360° ausmessen");
 
-		/* Remove place holder */
-		RemoveMenu(hMenu, ID_ANSTEUERUNG_, MF_BYCOMMAND);
+			/* Remove place holder */
+			RemoveMenu(hMenu, ID_ANSTEUERUNG_, MF_BYCOMMAND);
+
+			_menuInfo.modelPatternAct = true;
+		}
+	}
+	else {
+		/* When not every type is any more connected deactivate Pattern Model */
+		if (_menuInfo.modelPatternAct) {
+			/* Remove menu items */
+			RemoveMenu(hMenu, ID_MODEL_PATTERN_STOP, MF_BYCOMMAND);
+			RemoveMenu(hMenu, ID_MODEL_PATTERN_180_START, MF_BYCOMMAND);
+			RemoveMenu(hMenu, ID_MODEL_PATTERN_360_START, MF_BYCOMMAND);
+
+			EnableMenuItem(hMenu, ID_INSTRUMENTEN_DISCONNECT, MF_BYCOMMAND | MF_DISABLED);
+			EnableMenuItem(hMenu, ID_CTRL_ALL_RESET, MF_BYCOMMAND | MF_DISABLED);
+
+			_menuInfo.modelPatternAct = false;
+		}
 	}
 	return FALSE;
 }

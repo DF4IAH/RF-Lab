@@ -896,15 +896,14 @@ void agentModelPattern::run(void)
 			/* Initilization of selected USB instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_USB_INIT:
 			{
-				if (!_noWinMsg) {
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB bus init", L"... DONE");
-				}
-
 				// TODO: coding
 
 
 
 
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Ready to run meassurements", L"--- SELECT NOW ---");
+				}
 
 				/* success, all devices are ready */
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;

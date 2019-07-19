@@ -300,7 +300,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 // returns milli-degrees
 static int AskRotorPosX(HINSTANCE g_hInst, HWND hWnd)
 {
-	int lastPos = agentModel::requestPos() / 800;
+	int lastPos = agentModel::getLastTickPos() / AGENT_PATTERN_ROT_TICKS_PER_DEGREE;
 	g_iCbValue = lastPos;
 
 	// MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);

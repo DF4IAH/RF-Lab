@@ -184,22 +184,22 @@ private:
 	unbounded_buffer<agentUsbRsp_t>		*pAgtUsbTmcRsp;
 	HANDLE								 hThreadAgtUsbTmc;
 
-	int									 processing_ID;
-	int									 processing_arg1;
-	int									 simuMode;
+	volatile int						 processing_ID;
+	volatile int						 processing_arg1;
+	volatile int						 simuMode;
 
-	int									 initState;
-	bool								 guiPressedConnect;
+	volatile int						 initState;
+	volatile bool						 guiPressedConnect;
 
-	long								 lastTickPos;
+	volatile long						 lastTickPos;
 
-	bool								 txOn;
-	double								 txFrequency;
-	double								 txPower;
+	volatile bool						 txOn;
+	volatile double						 txFrequency;
+	volatile double						 txPower;
 
-	double								 rxFrequency;
-	double								 rxSpan;
-	double								 rxLevelMax;
+	volatile double						 rxFrequency;
+	volatile double						 rxSpan;
+	volatile double						 rxLevelMax;
 
 
 public:

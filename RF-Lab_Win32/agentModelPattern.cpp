@@ -1610,13 +1610,15 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_GOTO_X:
 		{  // go to direction
-			int gotoMilliPos = m->o->processing_arg1;
+			int gotoMilliDegPos = m->o->processing_arg1;
 			m->o->processing_arg1 = 0;
 
-			long posNow = m->o->requestPos();
-			long posNext = (long)(gotoMilliPos * (AGENT_PATTERN_ROT_TICKS_PER_DEGREE / 1000.0));
-			m->o->sendPos(posNext);
-			Sleep(calcTicks2Ms(posNext - posNow));
+			long posTicksNow = m->o->getLastTickPos();
+			long posTicksNext = (long)(gotoMilliDegPos * (AGENT_PATTERN_ROT_TICKS_PER_DEGREE / 1000.0));
+			if (posTicksNow != posTicksNext) {
+				m->o->sendPos(posTicksNext);
+				Sleep(calcTicks2Ms(posTicksNext - posTicksNow));
+			}
 
 			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
 			m->o->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
@@ -1737,6 +1739,10 @@ void agentModelPattern::runProcess(int processID, int arg)
 	/* STOP at once processing ID */
 	if (processID == C_MODELPATTERN_PROCESS_STOP) {
 		processing_arg1 = arg;
+
+		/* Make sure out-of-order execution is not relevant */
+		Sleep(1);
+
 		processing_ID = processID;
 		return;
 	}
@@ -1744,6 +1750,10 @@ void agentModelPattern::runProcess(int processID, int arg)
 	/* Cue in process ID to be done */
 	if (processing_ID == C_MODELPATTERN_PROCESS_NOOP) {
 		processing_arg1 = arg;
+
+		/* Make sure out-of-order execution is not relevant */
+		Sleep(1);
+
 		processing_ID = processID;
 	}
 }
@@ -1812,18 +1822,23 @@ long agentModelPattern::requestPos(void)
 	return pos;
 }
 
-void agentModelPattern::sendPos(long tickPos)
+void agentModelPattern::sendPos(long ticksPos)
 {
 	agentComReq comReqData;
 	agentComRsp comRspData;
-	long posDiff = tickPos - getLastTickPos();
+	long posDiff = ticksPos - getLastTickPos();
 	char cbuf[C_BUF_SIZE];
 
 	try {
+		/* Send rotation command */
 		_snprintf_s(cbuf, C_BUF_SIZE - 1, "%cX,%ld\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
 		comReqData.cmd = C_COMREQ_COM_SEND;
 		comReqData.parm = string(cbuf);
 		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+		/* Update current position value */
+		setLastTickPos(ticksPos);
+
 		comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 	}
 	catch (const Concurrency::operation_timed_out& e) {

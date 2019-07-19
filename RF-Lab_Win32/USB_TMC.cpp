@@ -93,7 +93,7 @@ void USB_TMC::run(void)
 		agentUsbReq usbReqData;
 
 		try {
-			usbReqData = receive(*pAgtUsbTmcReq, AGENT_PATTERN_USBTMC_TIMEOUT);
+			usbReqData = receive(*pAgtUsbTmcReq);
 
 			switch (usbReqData.cmd) {
 			case C_USBREQ_DO_REGISTRATION:

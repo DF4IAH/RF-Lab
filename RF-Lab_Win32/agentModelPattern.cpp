@@ -175,7 +175,9 @@ void agentModelPattern::threadsStop(void)
 {
 	/* End thread */
 	processing_ID = C_MODELPATTERN_PROCESS_END;
-	//pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Shutting down ...", L"");
+	if (!_noWinMsg) {
+		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Shutting down ...", L"");
+	}
 	WaitForSingleObject(hThreadAgtUsbTmc, 10000L);			// Wait until the thread has ended (timeout = 10 secs
 	CloseHandle(hThreadAgtUsbTmc);
 }
@@ -209,7 +211,6 @@ void agentModelPattern::run(void)
 
 				if (!_noWinMsg) {
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads", L"STARTING ...");
-					Sleep(500L);
 				}
 
 				/* Set up list of instruments */
@@ -223,7 +224,6 @@ void agentModelPattern::run(void)
 
 				if (!_noWinMsg) {
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Starting COM threads", L"... DONE");
-					Sleep(500L);
 				}
 
 
@@ -240,7 +240,6 @@ void agentModelPattern::run(void)
 
 						if (!_noWinMsg) {
 							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB bus registration", L"... DONE");
-							Sleep(500L);
 						}
 					}
 				}
@@ -267,7 +266,7 @@ void agentModelPattern::run(void)
 
 			case C_MODELPATTERN_RUNSTATES_WAIT_FOR_GUI:
 			{
-				/* Wait for User decission at the GUI */
+				/* Wait for user decissions at the GUI */
 				if (guiPressedConnect) {
 					_runState = C_MODELPATTERN_RUNSTATES_COM_CONNECT;
 				}
@@ -278,7 +277,7 @@ void agentModelPattern::run(void)
 			break;
 
 
-			/* Find COM / IEC instruments for registration */
+			/* Connect the selected COM / IEC instruments */
 			case C_MODELPATTERN_RUNSTATES_COM_CONNECT:
 			{
 				char buf[C_BUF_SIZE];
@@ -307,7 +306,6 @@ void agentModelPattern::run(void)
 				if (pAgtCom[C_COMINST_ROT]) {
 					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Connect COMs", L"ROTOR ...");
-						Sleep(500L);
 					}
 
 					/* Search rotor */
@@ -352,6 +350,7 @@ void agentModelPattern::run(void)
 									pAgtCom[C_COMINST_ROT]->setInstrument(&it);
 
 									/* Fast access table */
+									it->actIfcType = ACT_IFC_COM;
 									pConInstruments[C_COMINST_ROT] = it;
 
 									initState = 0x02;
@@ -366,7 +365,6 @@ void agentModelPattern::run(void)
 				if (pAgtCom[C_COMINST_TX] && pAgtCom[C_COMINST_RX]) {
 					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Connect COMs", L"RF-Gen & Spec ...");
-						Sleep(500L);
 					}
 
 					/* Iterate over all instruments */
@@ -410,6 +408,7 @@ void agentModelPattern::run(void)
 									isComTxConDone = true;
 
 									/* Fast access table */
+									it->actIfcType = ACT_IFC_COM;
 									pConInstruments[C_COMINST_TX] = it;
 								}
 							}
@@ -439,6 +438,7 @@ void agentModelPattern::run(void)
 									isComRxConDone = true;
 
 									/* Fast access table */
+									it->actIfcType = ACT_IFC_COM;
 									pConInstruments[C_COMINST_RX] = it;
 								}
 							}
@@ -453,8 +453,8 @@ void agentModelPattern::run(void)
 						it++;
 					}
 
+					/* Stop and drop COM-Server for the TX when not connected */
 					if (!isComTxConDone) {
-						/* Stop and drop COM-Server for the TX */
 						comReqData.cmd = C_COMREQ_END;
 						send(*(pAgtComReq[C_COMINST_TX]), comReqData);
 						receive(*(pAgtComRsp[C_COMINST_TX]));
@@ -465,8 +465,8 @@ void agentModelPattern::run(void)
 						SafeReleaseDelete(&(pAgtCom[C_COMINST_TX]));
 					}
 
+					/* Stop and drop COM-Server for the RX when not connected */
 					if (!isComRxConDone) {
-						/* Stop and drop COM-Server for the TX */
 						comReqData.cmd = C_COMREQ_END;
 						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 						receive(*(pAgtComRsp[C_COMINST_RX]));
@@ -482,13 +482,11 @@ void agentModelPattern::run(void)
 				}
 			break;
 
-
-			/* Find USB instruments for registration */
+			/* Connect the selected USB instruments */
 			case C_MODELPATTERN_RUNSTATES_USB_CONNECT:
 			{
 				if (!_noWinMsg) {
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Connect USB", L"RF-Gen & Spec ...");
-					Sleep(500L);
 				}
 
 				/* Following state if all goes well */
@@ -517,7 +515,7 @@ void agentModelPattern::run(void)
 						send(*pAgtUsbTmcReq, usbReqData);
 
 						/* Get USB handle */
-						agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp, AGENT_PATTERN_USBTMC_TIMEOUT);
+						agentUsbRsp usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/ );
 						if (usbRspData.stat == C_USBRSP_DEV_CONNECT_HANDLE) {
 							/* Success connection USB device */
 							it->pLinkUsbHandle = (libusb_device_handle*)usbRspData.data;
@@ -525,11 +523,13 @@ void agentModelPattern::run(void)
 							switch (it->listFunction) {
 							case INST_FUNC_GEN:
 								/* Fast access table */
+								it->actIfcType = ACT_IFC_USB;
 								pConInstruments[C_COMINST_TX] = it;
 								break;
 
 							case INST_FUNC_SPEC:
 								/* Fast access table */
+								it->actIfcType = ACT_IFC_USB;
 								pConInstruments[C_COMINST_RX] = it;
 								break;
 							}
@@ -560,16 +560,15 @@ void agentModelPattern::run(void)
 			/* Initilization of selected COM / IEC instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_COM_INIT:
 			{
-#ifdef OLD_CODE
 				agentComReq comReqData;
 				agentComRsp comRspData;
 
 				initState = 0x40;
 				_runState = C_MODELPATTERN_RUNSTATES_INST_USB_INIT;				// next runstate default setting
 
-				// Rotor Init
+				/* COM: Rotor Init */
 				if (pAgtCom[C_COMINST_ROT]) {
-					// Zolix commands to init device
+					/* Zolix commands to init device */
 					{
 						initState = 0x41;
 						try {
@@ -591,15 +590,17 @@ void agentModelPattern::run(void)
 							// read current tick position of rotor and store value
 							(void)requestPos();
 
-							if (!_noWinMsg)
+							if (!_noWinMsg) {
 								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor init done", L"");
+							}
 							initState = 0x44;
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;
 							initState = 0x45;
-							if (!_noWinMsg)
+							if (!_noWinMsg) {
 								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 1 ~ rotor init exception!", L"ERROR!");
+							}
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 						}
 					}
@@ -608,9 +609,9 @@ void agentModelPattern::run(void)
 					break;
 				}
 
-				// TX init
+				/* COM: TX Init */
 				if (pAgtCom[C_COMINST_TX]) {
-					// syncing with the device
+					/* Syncing with the device */
 					{
 						initState = 0x51;
 						try {
@@ -636,8 +637,9 @@ void agentModelPattern::run(void)
 								comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 								if (comRspData.stat != C_COMRSP_DATA) {
 									initState = 0x5E;
-									if (!_noWinMsg)
+									if (!_noWinMsg) {
 										pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 2 ~ TX init exception! (1)", L"ERROR!");
+									}
 									_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 									break;
 								}
@@ -650,16 +652,18 @@ void agentModelPattern::run(void)
 								comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 								initState = 0x55;
 								Sleep(2500L);
-								if (!_noWinMsg)
+								if (!_noWinMsg) {
 									pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX init done", L"");
+								}
 								initState = 0x56;
 							}
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;
 							initState = 0x5F;
-							if (!_noWinMsg)
+							if (!_noWinMsg) {
 								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 2 ~ TX init exception! (2)", L"ERROR!");
+							}
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 						}
 					}
@@ -765,15 +769,16 @@ void agentModelPattern::run(void)
 						initState = 0x92;
 						setTxOnState(agentModel::getTxOnDefault());
 						initState = 0x93;
-						if (!_noWinMsg)
+						if (!_noWinMsg) {
 							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 2 ~ TX default parameters are set", L"");
+						}
 					}
 #endif
 				}
 
-				// RX init
+				/* COM: RX Init */
 				if (pAgtCom[C_COMINST_RX]) {
-					// syncing with the device
+					/* Syncing with the device */
 					{
 						initState = 0xA0;
 						try {
@@ -800,8 +805,9 @@ void agentModelPattern::run(void)
 								comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 								if (comRspData.stat != C_COMRSP_DATA) {
 									initState = 0xAE;
-									if (!_noWinMsg)
+									if (!_noWinMsg) {
 										pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 3 ~ RX init exception! (1)", L"ERROR!");
+									}
 									_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 									break;
 								}
@@ -819,14 +825,16 @@ void agentModelPattern::run(void)
 							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							initState = 0xA7;
-							if (!_noWinMsg)
+							if (!_noWinMsg) {
 								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX init done", L"");
+							}
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;
 							initState = 0xAF;
-							if (!_noWinMsg)
+							if (!_noWinMsg) {
 								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 3 ~ RX init exception! (2)", L"ERROR!");
+							}
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 						}
 					}
@@ -843,8 +851,9 @@ void agentModelPattern::run(void)
 						initState = 0xB2;
 						setRxLevelMaxValue(agentModel::getTxPwrDefault());
 						initState = 0xB3;
-						if (!_noWinMsg)
+						if (!_noWinMsg) {
 							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RX 3 ~ default parameters are set", L"");
+						}
 					}
 
 					// Display settings
@@ -866,62 +875,36 @@ void agentModelPattern::run(void)
 							send(*(pAgtComReq[C_COMINST_RX]), comReqData);
 							comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 							initState = 0xC3;
-							if (!_noWinMsg)
+							if (!_noWinMsg) {
 								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 3 ~ RX display parameters are set", L"");
+							}
 						}
 						catch (const Concurrency::operation_timed_out& e) {
 							(void)e;
 							initState = 0xCF;
-							if (!_noWinMsg)
+							if (!_noWinMsg) {
 								pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 3 ~ RX display parameters", L"WARNING!");
+							}
 							_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 						}
 					}
 				}
-#endif
 				_runState = C_MODELPATTERN_RUNSTATES_INST_USB_INIT;
 			}
 			break;
 
-
-#if 0
-			case C_MODELPATTERN_COM_INIT_2:
-			{
-				agentComRsp comRspData;
-
-				initState = 0xD0;
-				if (!_noWinMsg)
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ waiting for response from the rotor", L"");
-				bool state = try_receive(*(pAgtComRsp[C_COMINST_ROT]), comRspData);
-				if (state) {
-					// consume each reported state
-					if (comRspData.stat == C_COMRSP_FAIL) {
-						initState = 0xDF;
-						if (!_noWinMsg)
-							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM ERR: 1 ~ no response from the rotor", L"ERROR!");
-						_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
-					}
-				}
-				else {
-					initState = 0xD1;
-					if (!_noWinMsg)
-						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
-					_runState = C_MODELPATTERN_RUNSTATES_USB_INST_INIT;
-				}
-			}
-			break;
-#endif
-
-
 			/* Initilization of selected USB instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_USB_INIT:
 			{
-				// TODO: coding
-
 				if (!_noWinMsg) {
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB bus init", L"... DONE");
-					Sleep(500L);
 				}
+
+				// TODO: coding
+
+
+
+
 
 				/* success, all devices are ready */
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
@@ -1792,26 +1775,25 @@ long agentModelPattern::requestPos(void)
 	long pos = 0;
 
 	try {
-		// request position
+		/* Do sync COM */
 		comReqData.cmd = C_COMREQ_COM_SEND;
-		comReqData.parm = string("?X\r");
-
 		comReqData.parm = string("\r");
-		for (int tries = 100000; tries; tries--) {
+		for (int tries = 10; tries; tries--) {
 			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 			comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);	// drop queue
-			if (strncmp(comRspData.data.c_str(), "OK", 2)) {
+			if (!strncmp(comRspData.data.c_str(), "OK", 2)) {
 				break;
 			}
 			Sleep(10L);
 		}
 
+		/* Try to receive the position */
 		for (int tries = 2; tries; tries--) {
 			comReqData.parm = string("?X\r");
 			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 			comRspData = receive(*(pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 
-			if (strncmp(comRspData.data.c_str(), "?X", 2)) {
+			if (!strncmp(comRspData.data.c_str(), "?X", 2)) {
 				break;
 			}
 			Sleep(10L);
@@ -1820,17 +1802,9 @@ long agentModelPattern::requestPos(void)
  		if (comRspData.stat == C_COMRSP_DATA) {
 			int posDiff = 0;
 
-#if 0
-			const char* str_start = strrchr(comRspData.data.c_str(), '?');
-			if (str_start) {
-				sscanf_s(str_start, "?X,%d", &pos);
-				agentModel::setLastTickPos(pos);
-			}
-#else
 			if (!agentModel::parseStr2Long(&pos, comRspData.data.c_str(), "?X,%ld", '?')) {
 				agentModel::setLastTickPos(pos);
 			}
-#endif
 		}
 	}
 	catch (const Concurrency::operation_timed_out& e) {

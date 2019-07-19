@@ -173,7 +173,7 @@ private:
 	class agentModel					*pAgtMod;
 	threadDataAgentModelPattern_t		 sThreadDataAgentModelPattern;
 
-	am_InstList_t::iterator				 pConInstruments[C_COMINST__COUNT];
+	am_InstList_t::iterator				 pConInstruments[C_CONNECTED__COUNT];
 
 	agentCom							*pAgtCom[C_COMINST__COUNT];
 	unbounded_buffer<agentComReq_t>		*pAgtComReq[C_COMINST__COUNT];

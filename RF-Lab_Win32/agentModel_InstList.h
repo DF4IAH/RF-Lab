@@ -14,11 +14,13 @@ using namespace std;
 
 
 typedef enum {
+
 	INST_FUNC_UNKNOWN = 0,
 	INST_FUNC_ROTOR,
 	INST_FUNC_GEN,
 	INST_FUNC_SPEC,
 	INST_FUNC_VNA,
+
 } Inst_Function_t;
 
 
@@ -35,6 +37,16 @@ typedef uint16_t						LinkType_BM_t;
 #define LINKTYPE_ETH_LXI				0x4000U
 
 
+typedef enum {
+
+	ACT_IFC_NONE = 0,
+	ACT_IFC_COM,
+	ACT_IFC_USB,
+	ACT_IFC_ETH,
+
+} Inst_ActIfcType_t;
+
+
 typedef struct {
 
 	/* List information */
@@ -44,9 +56,9 @@ typedef struct {
 
 
 	/* Instrument activation */
-	int									actRank;
 	bool								actSelected;
 	bool								actLink;
+	Inst_ActIfcType_t					actIfcType;
 	UINT								winID;
 	
 

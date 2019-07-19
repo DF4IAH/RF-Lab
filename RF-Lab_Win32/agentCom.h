@@ -27,21 +27,36 @@ using namespace std;
 
 
 enum C_COMINST_ENUM {
+
 	C_COMINST_ROT = 0,
 	C_COMINST_TX,
 	C_COMINST_RX,
 	C_COMINST__COUNT
+
 };
 
+enum C_CONNECTED_ENUM {
+
+	C_CONNECTED_ROT = 0,
+	C_CONNECTED_TX,
+	C_CONNECTED_RX,
+	C_CONNECTED__COUNT
+
+};
+
+
 enum C_USBREQ_ENUM {
+
 	C_USBREQ_END = 0,
 	C_USBREQ_DO_REGISTRATION,
 	C_USBREQ_IS_DEV_CONNECTED,
 	C_USBREQ_CONNECT,
 	C_USBREQ_DISCONNECT,
+
 };
 
 enum C_USBRSP_ENUM {
+
 	C_USBRSP_END = 0,
 	C_USBRSP_OK,
 	C_USBRSP_ERR,
@@ -50,22 +65,27 @@ enum C_USBRSP_ENUM {
 	C_USBRSP_REGISTRATION_LIST,
 	C_USBRSP_IS_DEV_CONNECTED,
 	C_USBRSP_DEV_CONNECT_HANDLE,
+
 };
 
 enum C_COMREQ_ENUM {
+
 	C_COMREQ_END = 0,
 	C_COMREQ_OPEN_ZOLIX,
 	C_COMREQ_OPEN_IDN,
 	C_COMREQ_COM_SEND,
 	C_COMREQ_CLOSE,
+
 };
 
 enum C_COMRSP_ENUM {
+
 	C_COMRSP_END = 0,
 	C_COMRSP_DROP,
 	C_COMRSP_FAIL,
 	C_COMRSP_DATA,
 	C_COMRSP_OK,
+
 };
 
 const int C_BUF_SIZE = 256;
@@ -75,14 +95,18 @@ const int C_BUF_SIZE = 256;
 
 typedef struct agentUsbReq
 {
+
 	SHORT								 cmd;
 	void								*data;
+
 } agentUsbReq_t;
 
 typedef struct agentUsbReqDev
 {
+
 	WORD								usbIdVendor;
 	WORD								usbIdProduct;
+
 } agentComReqUsbDev_t;
 
 
@@ -90,8 +114,10 @@ typedef struct agentUsbReqDev
 
 typedef struct agentUsbRsp
 {
+
 	SHORT								 stat;
 	void								*data;
+
 } agentUsbRsp_t;
 
 
@@ -99,8 +125,10 @@ typedef struct agentUsbRsp
 
 typedef struct agentComReq
 {
+
 	SHORT								 cmd;
 	string								 parm;
+
 } agentComReq_t;
 
 
@@ -108,14 +136,17 @@ typedef struct agentComReq
 
 typedef struct agentComRsp
 {
+
 	SHORT								 stat;
 	string								 data;
+
 } agentComRsp_t;
 
 
 
 class agentCom : public agent
 {
+
 private:
 	bool								 _isStarted;
 	bool								 _running;
@@ -162,4 +193,5 @@ protected:
 public:
 	static string int2String(int val);
 	static string double2String(double val);
+
 };

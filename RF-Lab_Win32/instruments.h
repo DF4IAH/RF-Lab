@@ -160,6 +160,7 @@ typedef struct {
 	/* Link: USB */
 	libusb_device					   *pLinkUsb_dev;
 	int									linkUsb_devs_idx;
+
 	libusb_device_handle			   *pLinkUsb_dev_handle;
 	uint8_t								linkUsb_dev_config;
 	uint8_t								linkUsb_dev_interface;
@@ -187,6 +188,7 @@ typedef struct {
 
 	char								linkUsb_idn[256];
 	uint8_t								linkUsb_buffer[USB_MAX_TRANSFER_LENGTH];
+	char								linkUsb_lastErrStr[256];
 
 
 	/* Link: COM & IEC */

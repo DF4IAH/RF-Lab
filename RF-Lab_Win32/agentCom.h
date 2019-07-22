@@ -101,8 +101,8 @@ const int C_BUF_SIZE = 256;
 typedef struct {
 
 	SHORT								 cmd;
+	Instrument_t						 thisInst;
 	void								*data1;
-	void								*data2;
 
 } AgentUsbReq_t;
 
@@ -119,6 +119,7 @@ typedef struct {
 typedef struct {
 
 	SHORT								 stat;
+	Instrument_t						 thisInst;
 	void								*data1;
 
 } AgentUsbRsp_t;

@@ -34,9 +34,11 @@ WCHAR				g_szWindowClass[MAX_LOADSTRING] = { 0 };	// Klassenname des Hauptfenste
 LRESULT				g_iCbValue						= 0ULL;
 agentModel		   *g_am							= nullptr;
 
-bool				g_InstList_locked			    = false;	// List of Instruments is locked
-InstList_t		    g_InstList;									// List of Instruments (rotors, TX, RX)
-
+InstList_t			g_InstList;									// List of Instruments (rotors, TX, RX)
+HANDLE				g_InstListMutex					= CreateMutex(
+	NULL,														// Default security attributes
+	FALSE,														// Initially not owned
+	L"InstList");												// Named mutex
 
 // Vorwärtsdeklarationen der in diesem Codemodul enthaltenen Funktionen:
 ATOM                MyRegisterClass(HINSTANCE hInstance);

@@ -35,12 +35,6 @@ USB_TMC::USB_TMC(unbounded_buffer<AgentUsbReq_t>* pAgtUsbTmcReq, unbounded_buffe
 	, _isOpen(false)
 {
 	g_usb_tmc = this;
-
-#ifdef OLD
-	if (g_am) {
-		pAI = ((agentModelPattern*)(g_am->getCurModCtx()))->getAIPtr();
-	}
-#endif
 }
 
 USB_TMC::~USB_TMC()
@@ -121,14 +115,13 @@ void USB_TMC::run(void)
 
 			case C_USBREQ_IS_DEV_CONNECTED:
 			{
-				AgentUsbRsp_t usbRspData;
+				AgentUsbRsp_t usbRspData = { 0 };
 				usbRspData.stat = C_USBRSP_ERR;
-				usbRspData.data1 = nullptr;
 
 				if (_isOpen) {
 					const bool							absent		= false;
 					const bool							connected	= true;
-					AgentComReqUsbDev_t*				rd			= (AgentComReqUsbDev_t*) usbReqData.data1;
+					AgentComReqUsbDev_t*				rd			= (AgentComReqUsbDev_t*)usbReqData.data1;
 					libusb_device**						thisDev		= devs;
 					struct libusb_device_descriptor		desc;
 
@@ -159,16 +152,14 @@ void USB_TMC::run(void)
 
 			case C_USBREQ_CONNECT:
 			{
-				AgentUsbRsp_t usbRspData;
-				usbRspData.stat = C_USBRSP_ERR;
-				usbRspData.data1 = nullptr;
+				AgentUsbRsp_t usbRspData = { 0 };
+				AgentComReqUsbDev_t* rd	= (AgentComReqUsbDev_t*)usbReqData.data1;
 
 				if (_isOpen) {
-					libusb_device**					thisDev = devs;
+					libusb_device**	thisDev = devs;
 					struct libusb_device_descriptor	desc;
-					InstList_t::iterator            it = *(InstList_t::iterator*)usbReqData.data1;
-					AgentComReqUsbDev_t*			rd =  (AgentComReqUsbDev_t*) usbReqData.data2;
-					
+					int	usbDevIdx = 0;
+
 					while (*thisDev) {
 						int r = libusb_get_device_descriptor(*thisDev, &desc);
 						if (r < 0) {
@@ -177,37 +168,30 @@ void USB_TMC::run(void)
 
 						/* Check if USB_VENDOR and USB_PRODUCT does match */
 						if ((rd->usbIdVendor == desc.idVendor) && (rd->usbIdProduct == desc.idProduct)) {
-							libusb_device_handle *handle = nullptr;
-							int err = libusb_open(*thisDev, &handle);
-							if (!err)
-							{
-								/* Set handle entry */
-								it->pLinkUsb_dev_handle = handle;
+							usbReqData.thisInst.linkUsb_devs_idx = usbDevIdx;
 
-								/* Return handle */
-								usbRspData.stat = C_USBRSP_OK;
-								usbRspData.data1 = nullptr;
+							int flags = 0x0;
+							if (openUsb(&usbReqData.thisInst)) {
+								flags |= 0x1;
+
+								if (openTmc(&usbReqData.thisInst)) {
+									flags |= 0x2;
+									/* Reset Instrument */
+									usbTmcCmdRST(&usbReqData.thisInst);
+								}
 							}
-							else if (err == -12) {
-								/* LibUSB not assigned to device - use Zadig to do that */
-								usbRspData.stat = C_USBRSP_ERR__LIBUSB_ASSIGNMENT_MISSING;
-							}
-#if 0
-							else {
-								/* Unknown error */
-								const char* errStr = libusb_error_name(err);
-								(void)errStr;
-								__nop();
-							}
-#endif
+
+							usbRspData.stat = (flags == 0x3) ?  C_USBRSP_OK : C_USBRSP_ERR;
 							break;
 						}
 
 						/* Move to next entry */
 						thisDev++;
+						usbDevIdx++;
 					}
 				}
 
+				usbRspData.thisInst = usbReqData.thisInst;
 				send(pAgtUsbTmcRsp, usbRspData);
 				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
@@ -215,24 +199,37 @@ void USB_TMC::run(void)
 
 			case C_USBREQ_DISCONNECT:
 			{
-#ifdef TODO
-				if (inst[idx].dev_handle && inst[idx].dev_interface) {
-					libusb_release_interface(inst[idx].dev_handle, inst[idx].dev_interface);
+				Instrument_t* pThisInst = (Instrument_t*)usbReqData.data1;
+				if (pThisInst) {
+					/* Shut down TMC and USB */
+					closeUsb(pThisInst);
 				}
-#endif
 			}
 			break;
 
 			case C_USBREQ_USBTMC_SEND_ONLY:
 			{
 				AgentUsbRsp_t usbRspData;
-				usbRspData.stat = C_USBRSP_OK;
 				usbRspData.data1 = nullptr;
 
-				/* data1: instrument, data2: string to send */
-				scpi_usbtmc_libusb_send(usbReqData.data1, (const char*) usbReqData.data2);
+				if (usbReqData.thisInst.linkUsb_dev_usb_up == false) {
+					break;
+				}
 
+				/* Send SCPI-TMC string to the instrument 
+				 * data1: instrument, data2: chr[] string to send 
+				 */
+				int ret = scpi_usbtmc_libusb_send(&usbReqData.thisInst, (const char*) usbReqData.data1);
+				if (ret != false) {
+					/* OK response */
+					usbRspData.stat = C_USBRSP_OK;
+				}
+				else {
+					/* ERR response */
+					usbRspData.stat = C_USBRSP_ERR;
+				}
 				send(pAgtUsbTmcRsp, usbRspData);
+
 				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
 			break;
@@ -305,7 +302,11 @@ void USB_TMC::shutdown_libusb(void)
 	if (devs) {
 		libusb_free_device_list(devs, 1);
 		devs = NULL;
+	}
+
+	if (pLinkUsb_sr_ctx) {
 		libusb_exit(pLinkUsb_sr_ctx);
+		pLinkUsb_sr_ctx = NULL;
 	}
 }
 
@@ -469,7 +470,7 @@ int USB_TMC::scpi_usbtmc_bulkout(Instrument_t *inst, uint8_t msg_id, const void 
 		return false;
 	}
 
-	return transferred == USBTMC_BULK_HEADER_SIZE;
+	return transferred >= USBTMC_BULK_HEADER_SIZE;
 }
 
 int USB_TMC::scpi_usbtmc_bulkin_start(Instrument_t *inst, uint8_t msg_id, uint8_t *data1, int32_t size, uint8_t *transfer_attributes)
@@ -523,8 +524,7 @@ int USB_TMC::scpi_usbtmc_libusb_send(void *priv, const char *command)
 	if (scpi_usbtmc_bulkout(uscpi, DEV_DEP_MSG_OUT, command, (int32_t) strlen(command), EOM) <= 0)
 		return false;
 
-	wsprintf(strbuf, L"Successfully sent SCPI command: '%s'.", command);  OutputDebugString(strbuf);
-
+	swprintf_s(strbuf, sizeof(strbuf) >> 1, L"Successfully sent SCPI command: '%hs'.\n", command);  OutputDebugString(strbuf);
 	return true;
 }
 
@@ -704,6 +704,11 @@ void USB_TMC::releaseInstrument_usb_iface(Instrument_t inst[], int cnt)
 
 bool USB_TMC::openUsb(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	libusb_device							*pLinkUsb_dev			= devs[inst->linkUsb_devs_idx];
 	libusb_device_handle					*pLinkUsb_dev_handle	= NULL;
 	libusb_device_descriptor				 dev_desc;
@@ -716,14 +721,9 @@ bool USB_TMC::openUsb(Instrument_t *inst)
 	uint8_t									 string_index[3];	// indexes of the string descriptors
 	wchar_t									 strbuf[256];
 
-	/* Sanity check */
-	if (!inst) {
-		return false;
-	}
-
 	//devHandle = libusb_open_device_with_vid_pid(NULL, dev->device_descriptor.idVendor, dev->device_descriptor.idProduct);
-	libusb_open(pLinkUsb_dev, &pLinkUsb_dev_handle);
-	if (pLinkUsb_dev_handle) {
+	int err = libusb_open(pLinkUsb_dev, &pLinkUsb_dev_handle);
+	if (!err && pLinkUsb_dev_handle) {
 		inst->pLinkUsb_dev_handle	= pLinkUsb_dev_handle;
 		inst->pLinkUsb_dev			= pLinkUsb_dev;
 
@@ -920,10 +920,23 @@ bool USB_TMC::openUsb(Instrument_t *inst)
 			inst->linkUsb_dev_usb488_dev_cap2 & USB488_DEV_CAP2_RL1			?  L"1"		: L"0",
 			inst->linkUsb_dev_usb488_dev_cap2 & USB488_DEV_CAP2_DT1			?  L"1"		: L"0");  OutputDebugString(strbuf);
 #endif
+		/* Remove any error message */
+		memset(inst->linkUsb_lastErrStr, 0, sizeof(inst->linkUsb_lastErrStr));
 
 		/* Instrument USB port is up and running */
 		inst->linkUsb_dev_usb_up = true;
 		return inst->linkUsb_dev_usb_up;
+	}
+	else {
+		if (err == -12) {
+			const char errMsg[] = "libUSB is not assigned to this device, use ZADIG to fix that";
+			strncpy_s(inst->linkUsb_lastErrStr, errMsg, sizeof(inst->linkUsb_lastErrStr) - 1);
+		}
+		else {
+			/* Any other error */
+			const char* errStr = libusb_error_name(err);
+			strncpy_s(inst->linkUsb_lastErrStr, libusb_error_name(err), sizeof(inst->linkUsb_lastErrStr) - 1);
+		}
 	}
 
 	/* Got no device handle */

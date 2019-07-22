@@ -1274,9 +1274,13 @@ void agentModel::setupInstrumentList(void)
 	/* Set up list of instruments */
 	errno_t err = strncpy_s(_fs_instrument_settings_filename, sizeof(_fs_instrument_settings_filename) - 1, C_FS_INSTRUMENTS_FILENAME_DEFAULT, strlen(C_FS_INSTRUMENTS_FILENAME_DEFAULT));
 
-	g_InstList_locked = true;
-
-	fsLoadInstruments(_fs_instrument_settings_filename);
-
-	g_InstList_locked = false;
+	DWORD dwWaitResult = WaitForSingleObject(g_InstListMutex, INFINITE);  // No time-out interval
+	if (WAIT_OBJECT_0 == dwWaitResult) {
+		/* Got mutex */
+		fsLoadInstruments(_fs_instrument_settings_filename);
+		ReleaseMutex(g_InstListMutex);
+	}
+	else if (WAIT_ABANDONED == dwWaitResult) {
+		/* Oops? */
+	}
 }

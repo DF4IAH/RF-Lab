@@ -194,6 +194,24 @@ void agentModelPattern::run(void)
 		Sleep(25);
 	}
 
+	DWORD dwWaitResult = WaitForSingleObject(g_InstListMutex, INFINITE);  // No time-out interval
+	if (WAIT_ABANDONED == dwWaitResult) {
+		/* Oops? */
+		if (!_noWinMsg) {
+			pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Internal error - can not get access to InstList", L"???");
+		}
+
+		_done = true;
+		agent::done();
+		return;
+	}
+	else if (WAIT_OBJECT_0 == dwWaitResult) {
+		/* Got mutex */
+
+		/* run code below ... */
+	}
+
+
 	/* model's working loop */
 	_running	= true;
 	_runReinit	= false;
@@ -502,22 +520,26 @@ void agentModelPattern::run(void)
 						continue;
 					}
 
-					/* Open USB device */
+					/* Open USB-TMC device */
 					{
 						AgentComReqUsbDev_t usbDev;
 						usbDev.usbIdVendor  = it->linkUsb_dev_usb_idVendor;
 						usbDev.usbIdProduct = it->linkUsb_dev_usb_idProduct;
 
 						/* Request to open */
-						AgentUsbReq_t usbReqData;
+						AgentUsbReq_t usbReqData = { 0 };
 						usbReqData.cmd = C_USBREQ_CONNECT;
-						usbReqData.data1 = &it;
-						usbReqData.data2 = &usbDev;
+						usbReqData.thisInst = *it;
+						usbReqData.data1 = &usbDev;
 						send(*pAgtUsbTmcReq, usbReqData);
 
-						/* Get USB handle */
+						/* Get open state */
 						AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/ );
+						*it = usbRspData.thisInst;
+
+						/* Check for result */
 						if (usbRspData.stat == C_USBRSP_OK) {
+
 							/* Success connection USB device */
 							switch (it->listFunction) {
 							case INST_FUNC_GEN:
@@ -533,16 +555,9 @@ void agentModelPattern::run(void)
 								break;
 							}
 						}
-						else if (usbRspData.stat == C_USBRSP_ERR__LIBUSB_ASSIGNMENT_MISSING) {
+						else if (usbRspData.stat == C_USBRSP_ERR) {
 							char errMsg[256] = { 0 };
-							sprintf_s(errMsg, sizeof(errMsg) >> 1, "Error when connecting USB device %s\n\nUse ZADIG to assign libusb to that device.\n", it->listEntryName.c_str());
-							MessageBoxA(pAgtMod->getWnd(), errMsg, "LibUSB connection error", MB_ICONERROR);
-							_runState = C_MODELPATTERN_RUNSTATES_SHUTDOWN;
-							break;
-						}
-						else {
-							char errMsg[256] = { 0 };
-							sprintf_s(errMsg, sizeof(errMsg) >> 1, "Error when connecting USB device %s\n\nLibUSB denies connection.\n", it->listEntryName.c_str());
+							sprintf_s(errMsg, sizeof(errMsg), "Error when connecting USB device %s\n\nLibUSB denies connection.\nlibUSB error: %s\n", it->listEntryName.c_str(), (const char*)usbRspData.data1);
 							MessageBoxA(pAgtMod->getWnd(), errMsg, "LibUSB connection error", MB_ICONERROR);
 							_runState = C_MODELPATTERN_RUNSTATES_SHUTDOWN;
 							break;
@@ -911,10 +926,14 @@ void agentModelPattern::run(void)
 					switch (it->listFunction) {
 					case INST_FUNC_GEN:
 					{
-						/* Send RESET */
+						Instrument_t thisInst = *it;
+
+						/* Send frequency */
 						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
-						usbReqData.data1 = &it;
-						usbReqData.data2 = (void*) string("*RST\r\n").c_str();
+						usbReqData.thisInst = thisInst;
+						usbReqData.data1 = ":FREQ 12345khz";
+
+						// TODO: data setup needed here
 
 						send(*pAgtUsbTmcReq, usbReqData);
 						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
@@ -923,6 +942,17 @@ void agentModelPattern::run(void)
 
 					case INST_FUNC_SPEC:
 					{
+						Instrument_t thisInst = *it;
+
+						/* Send frequency */
+						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
+						usbReqData.thisInst = thisInst;
+						usbReqData.data1 = ":FREQuency:SPAN 1mhz";
+
+						// TODO: data setup needed here
+
+						send(*pAgtUsbTmcReq, usbReqData);
+						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 					}
 					break;
 
@@ -1154,6 +1184,8 @@ void agentModelPattern::run(void)
 		pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Shutting down - please close the application", L"BYE");
 		Sleep(500L);
 	}
+
+	ReleaseMutex(g_InstListMutex);
 
 	_done = true;
 	agent::done();

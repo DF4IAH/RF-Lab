@@ -29,6 +29,28 @@ typedef struct threadDataUsbTmc_s {
 
 class USB_TMC : public agent
 {
+private:
+	/* Attributes */
+
+	HANDLE								 hThreadAgtUsbTmc;
+	threadDataUsbTmc_t					 sThreadDataUsbTmc;
+
+	const struct libusb_version			*version;
+	libusb_context						*pLinkUsb_sr_ctx;
+	libusb_device					   **devs;
+
+	/* Server connection */
+	unbounded_buffer<AgentUsbReq_t>		*pAgtUsbTmcReq;
+	unbounded_buffer<AgentUsbRsp_t>		*pAgtUsbTmcRsp;
+
+	bool								 _isStarted;
+	bool								 _running;
+	short								 _runState;
+	bool								 _isOpen;
+	bool								 _done;
+
+
+	/* Methods */
 public:
 	USB_TMC(unbounded_buffer<AgentUsbReq_t>* pAgtUsbTmcReq, unbounded_buffer<AgentUsbRsp_t>* pAgtUsbTmcRsp);
 	virtual ~USB_TMC();
@@ -45,9 +67,6 @@ public:
 
 
 private:
-
-	/* Methods */
-
 //	void threadsStart(void);
 //	void threadsStop(void);
 
@@ -90,24 +109,6 @@ private:
 	int scpi_usbtmc_libusb_read_complete(void *priv);
 
 
-	/* Attributes */
-
-	HANDLE								 hThreadAgtUsbTmc;
-	threadDataUsbTmc_t					 sThreadDataUsbTmc;
-
-	const struct libusb_version			*version;
-	libusb_context						*pLinkUsb_sr_ctx;
-	libusb_device					   **devs;
-
-	/* Server connection */
-	unbounded_buffer<AgentUsbReq_t>		*pAgtUsbTmcReq;
-	unbounded_buffer<AgentUsbRsp_t>		*pAgtUsbTmcRsp;
-
-	bool								 _isStarted;
-	bool								 _running;
-	short								 _runState;
-	bool								 _isOpen;
-	bool								 _done;
 };
 
 

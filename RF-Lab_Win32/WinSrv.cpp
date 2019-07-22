@@ -89,6 +89,9 @@ WinSrv::~WinSrv()
 	SafeReleaseDelete(&pFactory);
 
 	CoUninitialize();
+
+	CloseHandle(g_InstListMutex);
+	g_InstListMutex = nullptr;
 }
 
 
@@ -301,10 +304,10 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst,
 	PINT paParts;
 	int i, nWidth;
 
-	// Ensure that the common control DLL is loaded.
+	/* Ensure that the common control DLL is loaded. */
 	//InitCommonControls();
 
-	// Create the status bar.
+	/* Create the status bar. */
 	hWndStatus = CreateWindowEx(
 		0,                       // no extended styles
 		STATUSCLASSNAME,         // name of status bar class
@@ -320,12 +323,13 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst,
 								 // Get the coordinates of the parent window's client area.
 	GetClientRect(hwndParent, &rcClient);
 
-	// Allocate an array for holding the right edge coordinates.
+	/* Allocate an array for holding the right edge coordinates. */
 	hloc = LocalAlloc(LHND, sizeof(int) * cParts);
 	paParts = (PINT)LocalLock(hloc);
 
-	// Calculate the right edge coordinate for each part, and
-	// copy the coordinates to the array.
+	/* Calculate the right edge coordinate for each part, and
+	 * copy the coordinates to the array. 
+	 */
 	nWidth = rcClient.right / cParts;
 	int rightEdge = nWidth;
 	for (i = 0; i < cParts; i++) {
@@ -333,7 +337,7 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst,
 		rightEdge += nWidth;
 	}
 
-	// Tell the status bar to create the window parts.
+	/* Tell the status bar to create the window parts. */
 	SendMessage(hWndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
 
 	/* Status line information */
@@ -341,7 +345,7 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst,
 	SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)L"Status 2");
 	SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)L"Status 3");
 
-	// Free the array, and return.
+	/* Free the array, and return. */
 	LocalUnlock(hloc);
 	LocalFree(hloc);
 	return hWndStatus;

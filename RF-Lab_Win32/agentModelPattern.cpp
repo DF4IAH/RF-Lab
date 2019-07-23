@@ -286,7 +286,7 @@ void agentModelPattern::run(void)
 			{
 				/* Wait for user decissions at the GUI */
 				if (guiPressedConnect) {
-					_runState = C_MODELPATTERN_RUNSTATES_COM_CONNECT;
+					_runState = C_MODELPATTERN_RUNSTATES_USB_CONNECT;
 				}
 				else {
 					Sleep(25);
@@ -294,6 +294,74 @@ void agentModelPattern::run(void)
 			}
 			break;
 
+
+			/* Connect the selected USB instruments */
+			case C_MODELPATTERN_RUNSTATES_USB_CONNECT:
+			{
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Connect USB", L"RF-Gen & Spec ...");
+				}
+
+				/* Following state if all goes well */
+				_runState = C_MODELPATTERN_RUNSTATES_COM_CONNECT;
+
+				/* Iterate over all instruments */
+				InstList_t::iterator it = g_InstList.begin();
+				while (it != g_InstList.end()) {
+					if (!it->actSelected || !it->actLink || (it->actIfcType != ACT_IFC_USB) ||
+						((it->listFunction != INST_FUNC_GEN) && (it->listFunction != INST_FUNC_SPEC))) {
+						/* Try next */
+						it++;
+						continue;
+					}
+
+					/* Open USB-TMC device */
+					{
+						AgentComReqUsbDev_t usbDev;
+						usbDev.usbIdVendor = it->linkUsb_dev_usb_idVendor;
+						usbDev.usbIdProduct = it->linkUsb_dev_usb_idProduct;
+
+						/* Request to open */
+						AgentUsbReq_t usbReqData = { 0 };
+						usbReqData.cmd = C_USBREQ_CONNECT;
+						usbReqData.thisInst = *it;
+						usbReqData.data1 = &usbDev;
+						send(*pAgtUsbTmcReq, usbReqData);
+
+						/* Get open state */
+						AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/);
+						*it = usbRspData.thisInst;
+
+						/* Check for result */
+						if (usbRspData.stat == C_USBRSP_OK) {
+
+							/* Success connection USB device */
+							switch (it->listFunction) {
+							case INST_FUNC_GEN:
+								/* Fast access table */
+								pConInstruments[C_COMINST_TX] = it;
+								break;
+
+							case INST_FUNC_SPEC:
+								/* Fast access table */
+								pConInstruments[C_COMINST_RX] = it;
+								break;
+							}
+						}
+						else if (usbRspData.stat == C_USBRSP_ERR) {
+							char errMsg[256] = { 0 };
+							sprintf_s(errMsg, sizeof(errMsg), "Error when connecting USB device %s\n\nLibUSB denies connection.\nlibUSB error: %s\n", it->listEntryName.c_str(), (const char*)usbRspData.data1);
+							MessageBoxA(pAgtMod->getWnd(), errMsg, "LibUSB connection error", MB_ICONERROR);
+							_runState = C_MODELPATTERN_RUNSTATES_SHUTDOWN;
+							break;
+						}
+					}
+
+					/* Next instrument to check */
+					it++;
+				}
+			}
+			break;
 
 			/* Connect the selected COM / IEC instruments */
 			case C_MODELPATTERN_RUNSTATES_COM_CONNECT:
@@ -368,7 +436,6 @@ void agentModelPattern::run(void)
 									pAgtCom[C_COMINST_ROT]->setInstrument(&it);
 
 									/* Fast access table */
-									it->actIfcType = ACT_IFC_COM;
 									pConInstruments[C_COMINST_ROT] = it;
 
 									initState = 0x02;
@@ -388,7 +455,7 @@ void agentModelPattern::run(void)
 					/* Iterate over all instruments */
 					InstList_t::iterator it = g_InstList.begin();
 					while (it != g_InstList.end()) {
-						if (!it->actSelected || !it->actLink || !(it->linkType & LINKTYPE_COM) || 
+						if (!it->actSelected || !it->actLink || (it->actIfcType != ACT_IFC_COM) ||
 							((it->listFunction != INST_FUNC_GEN) && (it->listFunction != INST_FUNC_SPEC))) {
 							/* Try next */
 							it++;
@@ -426,7 +493,6 @@ void agentModelPattern::run(void)
 									isComTxConDone = true;
 
 									/* Fast access table */
-									it->actIfcType = ACT_IFC_COM;
 									pConInstruments[C_COMINST_TX] = it;
 								}
 							}
@@ -456,7 +522,6 @@ void agentModelPattern::run(void)
 									isComRxConDone = true;
 
 									/* Fast access table */
-									it->actIfcType = ACT_IFC_COM;
 									pConInstruments[C_COMINST_RX] = it;
 								}
 							}
@@ -496,19 +561,20 @@ void agentModelPattern::run(void)
 					}
 
 					/* Jump to next state */
-					_runState = C_MODELPATTERN_RUNSTATES_USB_CONNECT;
+					_runState = C_MODELPATTERN_RUNSTATES_INST_USB_INIT;
 				}
 			break;
 
-			/* Connect the selected USB instruments */
-			case C_MODELPATTERN_RUNSTATES_USB_CONNECT:
-			{
-				if (!_noWinMsg) {
-					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Connect USB", L"RF-Gen & Spec ...");
-				}
 
-				/* Following state if all goes well */
-				_runState = C_MODELPATTERN_RUNSTATES_INST_COM_INIT;
+			/* Initilization of selected USB instrument(s) */
+			case C_MODELPATTERN_RUNSTATES_INST_USB_INIT:
+			{
+				AgentUsbReq_t usbReqData;
+				AgentUsbRsp_t usbRspData;
+
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB instruments are initialized", L"USB INIT");
+				}
 
 				/* Iterate over all instruments */
 				InstList_t::iterator it = g_InstList.begin();
@@ -520,62 +586,73 @@ void agentModelPattern::run(void)
 						continue;
 					}
 
-					/* Open USB-TMC device */
+					switch (it->listFunction) {
+					case INST_FUNC_GEN:
 					{
-						AgentComReqUsbDev_t usbDev;
-						usbDev.usbIdVendor  = it->linkUsb_dev_usb_idVendor;
-						usbDev.usbIdProduct = it->linkUsb_dev_usb_idProduct;
+						Instrument_t thisInst = *it;
+						char wrkBuf[256] = { 0 };
 
-						/* Request to open */
-						AgentUsbReq_t usbReqData = { 0 };
-						usbReqData.cmd = C_USBREQ_CONNECT;
-						usbReqData.thisInst = *it;
-						usbReqData.data1 = &usbDev;
+						/* Send frequency in Hz */
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ %f Hz", it->txCurRfQrg);  // SMC100A
+						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
+						usbReqData.thisInst = thisInst;
+						usbReqData.data1 = wrkBuf;
+
 						send(*pAgtUsbTmcReq, usbReqData);
+						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
-						/* Get open state */
-						AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_USBTMC_TIMEOUT*/ );
-						*it = usbRspData.thisInst;
+						/* Send power in dBm */
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW %f dBm", it->txCurRfPwr);  // SMC100A
+						usbReqData.data1 = wrkBuf;
 
-						/* Check for result */
-						if (usbRspData.stat == C_USBRSP_OK) {
+						send(*pAgtUsbTmcReq, usbReqData);
+						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
-							/* Success connection USB device */
-							switch (it->listFunction) {
-							case INST_FUNC_GEN:
-								/* Fast access table */
-								it->actIfcType = ACT_IFC_USB;
-								pConInstruments[C_COMINST_TX] = it;
-								break;
+						/* Send power On/Off */
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":OUTP %s", (it->txCurRfOn ? "ON" : "OFF"));  // SMC100A
+						usbReqData.data1 = wrkBuf;
 
-							case INST_FUNC_SPEC:
-								/* Fast access table */
-								it->actIfcType = ACT_IFC_USB;
-								pConInstruments[C_COMINST_RX] = it;
-								break;
-							}
-						}
-						else if (usbRspData.stat == C_USBRSP_ERR) {
-							char errMsg[256] = { 0 };
-							sprintf_s(errMsg, sizeof(errMsg), "Error when connecting USB device %s\n\nLibUSB denies connection.\nlibUSB error: %s\n", it->listEntryName.c_str(), (const char*)usbRspData.data1);
-							MessageBoxA(pAgtMod->getWnd(), errMsg, "LibUSB connection error", MB_ICONERROR);
-							_runState = C_MODELPATTERN_RUNSTATES_SHUTDOWN;
-							break;
-						}
+						send(*pAgtUsbTmcReq, usbReqData);
+						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 					}
+					break;
 
-					/* Next instrument to check */
+					case INST_FUNC_SPEC:
+					{
+						Instrument_t thisInst = *it;
+
+						/* Send frequency */
+						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
+						usbReqData.thisInst = thisInst;
+						usbReqData.data1 = ":FREQuency:SPAN 1mhz";
+
+						// TODO: data setup needed here
+
+						send(*pAgtUsbTmcReq, usbReqData);
+						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+					}
+					break;
+
+					}  // switch()
+
+					   /* Next instrument to check */
 					it++;
 				}
+
+				/* Success, all devices are ready */
+				_runState = C_MODELPATTERN_RUNSTATES_INST_COM_INIT;
 			}
 			break;
-
 
 			/* Initilization of selected COM / IEC instrument(s) */
 			case C_MODELPATTERN_RUNSTATES_INST_COM_INIT:
 			{
 				AgentComReq_t comReqData;
 				AgentComRsp_t comRspData;
+
+				if (!_noWinMsg) {
+					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM instruments are initialized", L"COM INIT");
+				}
 
 				initState = 0x40;
 				_runState = C_MODELPATTERN_RUNSTATES_INST_USB_INIT;				// next runstate default setting
@@ -903,70 +980,11 @@ void agentModelPattern::run(void)
 						}
 					}
 				}
-				_runState = C_MODELPATTERN_RUNSTATES_INST_USB_INIT;
-			}
-			break;
-
-			/* Initilization of selected USB instrument(s) */
-			case C_MODELPATTERN_RUNSTATES_INST_USB_INIT:
-			{
-				AgentUsbReq_t usbReqData;
-				AgentUsbRsp_t usbRspData;
-
-				/* Iterate over all instruments */
-				InstList_t::iterator it = g_InstList.begin();
-				while (it != g_InstList.end()) {
-					if (!it->actSelected || !it->actLink || !(it->linkType & LINKTYPE_USB) ||
-						((it->listFunction != INST_FUNC_GEN) && (it->listFunction != INST_FUNC_SPEC))) {
-						/* Try next */
-						it++;
-						continue;
-					}
-
-					switch (it->listFunction) {
-					case INST_FUNC_GEN:
-					{
-						Instrument_t thisInst = *it;
-
-						/* Send frequency */
-						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
-						usbReqData.thisInst = thisInst;
-						usbReqData.data1 = ":FREQ 12345khz";
-
-						// TODO: data setup needed here
-
-						send(*pAgtUsbTmcReq, usbReqData);
-						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
-					}
-					break;
-
-					case INST_FUNC_SPEC:
-					{
-						Instrument_t thisInst = *it;
-
-						/* Send frequency */
-						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
-						usbReqData.thisInst = thisInst;
-						usbReqData.data1 = ":FREQuency:SPAN 1mhz";
-
-						// TODO: data setup needed here
-
-						send(*pAgtUsbTmcReq, usbReqData);
-						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
-					}
-					break;
-
-					}  // switch()
-
-					/* Next instrument to check */
-					it++;
-				}
 
 				if (!_noWinMsg) {
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Ready to run meassurements", L"--- SELECT NOW ---");
 				}
 
-				/* success, all devices are ready */
 				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 			}
 			break;
@@ -998,8 +1016,6 @@ void agentModelPattern::run(void)
 			case C_MODELPATTERN_RUNSTATES_USB_CLOSE_SEND:
 			{
 				AgentUsbReq_t usbReqData;
-				usbReqData.cmd = C_USBREQ_END;
-				comReqData.parm = string();
 
 				if (!_noWinMsg) {
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"USB: close", L"SHUTTING DOWN ...");
@@ -1007,8 +1023,33 @@ void agentModelPattern::run(void)
 				}
 
 				try {
+					/* Iterate over all instruments */
+					InstList_t::iterator it = g_InstList.begin();
+					while (it != g_InstList.end()) {
+						if (!it->actSelected || !it->actLink || !(it->linkType & LINKTYPE_USB) ||
+							((it->listFunction != INST_FUNC_GEN) && (it->listFunction != INST_FUNC_SPEC))) {
+							/* Try next */
+							it++;
+							continue;
+						}
+
+						Instrument_t thisInst = *it;
+
+						/* Stop messaging to the devices */
+						usbReqData.cmd = C_USBREQ_DISCONNECT;
+						usbReqData.thisInst = thisInst;
+						send(*pAgtUsbTmcReq, usbReqData);
+						AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+						*it = usbRspData.thisInst;
+
+						/* Move to next instrument */
+						it++;
+					}
+
 					/* Send shutdown request to the USB_TMC module */
+					usbReqData.cmd = C_USBREQ_END;
 					send(*pAgtUsbTmcReq, usbReqData);
+					(void) receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 				}
 				catch (const Concurrency::operation_timed_out& e) {
 					(void)e;
@@ -1204,15 +1245,14 @@ void agentModelPattern::checkInstruments(void)
 	while (it != g_InstList.end()) {
 		const LinkType_BM_t linkType = it->linkType;
 
-		/* Try Ethernet connection */
-		if (linkType & LINKTYPE_ETH) {
-			instTryEth(it);
-			//it->actLink = true;				// TODO: remove me!
-		}
-
 		/* Try USB connection */
 		if (linkType & LINKTYPE_USB) {
 			instTryUsb(it);
+		}
+
+		/* Try Ethernet connection */
+		if (linkType & LINKTYPE_ETH) {
+			instTryEth(it);
 		}
 
 		/* Try COM connection, even when IEC is interfaced to a COM port */
@@ -1221,7 +1261,6 @@ void agentModelPattern::checkInstruments(void)
 		}
 
 		if (!linkType) {
-			//it->actLink = false;
 			it->actSelected = false;
 		}
 
@@ -1262,6 +1301,7 @@ bool agentModelPattern::instTryUsb(InstList_t::iterator it)
 			it->linkType &= ~(LINKTYPE_USB);
 		}
 		else {
+			it->actIfcType = ACT_IFC_USB;
 			it->actLink = true;
 		}
 	}
@@ -1305,9 +1345,13 @@ bool agentModelPattern::instTryCom(InstList_t::iterator it)
 		}
 
 		if (isConnected) {
-			/* Device linked */
-			it->actLink = true;
-
+			/* If not already connected by another protocol, use COM */
+			if (it->actIfcType == ACT_IFC_NONE) {
+				/* Device linked */
+				it->actIfcType = ACT_IFC_COM;
+				it->actLink = true;
+			}
+			
 			if (!_noWinMsg) {
 				pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: rotor", L"... FOUND");
 				Sleep(500L);
@@ -1362,8 +1406,12 @@ bool agentModelPattern::instTryCom(InstList_t::iterator it)
 			}
 
 			if (isConnected) {
-				/* Device linked */
-				it->actLink = true;
+				/* If not already connected by another protocol, use COM */
+				if (it->actIfcType == ACT_IFC_NONE) {
+					/* Device linked */
+					it->actIfcType = ACT_IFC_COM;
+					it->actLink = true;
+				}
 
 				/* Check for the device function */
 				if (it->listFunction == INST_FUNC_GEN) {

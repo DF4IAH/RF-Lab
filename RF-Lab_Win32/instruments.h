@@ -109,27 +109,6 @@ typedef enum INSTRUMENT_ENUM {
 #define INSTRUMENT_DEVICE_GENERIC				  0x0091
 
 
-#ifdef OLD
-typedef struct instrument {
-
-	INSTRUMENT_ENUM_t		 type;
-
-	/* Serial entries */
-	agentCom				*pAgtCom;
-	uint8_t					 comPort;
-	uint32_t				 comBaud;
-	uint8_t					 comBits;
-	uint8_t					 comParity;
-	uint8_t					 comStopbits;
-	bool					 isIec;
-	uint8_t					 iecAddr;
-
-
-
-} instrument_t;
-#endif
-
-
 typedef struct {
 
 	/* List information */

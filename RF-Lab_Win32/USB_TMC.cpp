@@ -199,11 +199,21 @@ void USB_TMC::run(void)
 
 			case C_USBREQ_DISCONNECT:
 			{
-				Instrument_t* pThisInst = (Instrument_t*)usbReqData.data1;
-				if (pThisInst) {
+				AgentUsbRsp_t usbRspData = { 0 };
+				Instrument_t thisInst = usbReqData.thisInst;
+
+				if (&thisInst) {
+					/* Send reset to the device first */
+					usbTmcCmdRST(&thisInst);
+
 					/* Shut down TMC and USB */
-					closeUsb(pThisInst);
+					closeUsb(&thisInst);
 				}
+
+				usbRspData.stat = C_USBRSP_OK;
+				usbRspData.thisInst = thisInst;
+				send(pAgtUsbTmcRsp, usbRspData);
+				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
 			break;
 
@@ -325,7 +335,7 @@ void USB_TMC::print_devs_libusb(libusb_device **devs)
 			return;
 		}
 
-		wsprintf(strbuf, L"%04x:%04x (bus %d, device %d)",
+		wsprintf(strbuf, L"%04X:%04X (bus %d, device %d)",
 			desc.idVendor, desc.idProduct,
 			libusb_get_bus_number(pLinkUsb_dev), libusb_get_device_address(pLinkUsb_dev));  OutputDebugString(strbuf);
 
@@ -352,7 +362,7 @@ void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descripto
 		libusb_get_usb_2_0_extension_descriptor(NULL, dev_cap, &usb_2_0_ext);
 		if (usb_2_0_ext) {
 			wsprintf(strbuf, L"    USB 2.0 extension:\n");  OutputDebugString(strbuf);
-			wsprintf(strbuf, L"      attributes             : %02X\n", usb_2_0_ext->bmAttributes);  OutputDebugString(strbuf);
+			wsprintf(strbuf, L"      attributes             : 0x%02X\n", usb_2_0_ext->bmAttributes);  OutputDebugString(strbuf);
 			libusb_free_usb_2_0_extension_descriptor(usb_2_0_ext);
 		}
 	}
@@ -364,9 +374,9 @@ void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descripto
 		libusb_get_ss_usb_device_capability_descriptor(NULL, dev_cap, &ss_usb_device_cap);
 		if (ss_usb_device_cap) {
 			wsprintf(strbuf, L"    USB 3.0 capabilities:\n");  OutputDebugString(strbuf);
-			wsprintf(strbuf, L"      attributes             : %02X\n", ss_usb_device_cap->bmAttributes);  OutputDebugString(strbuf);
-			wsprintf(strbuf, L"      supported speeds       : %04X\n", ss_usb_device_cap->wSpeedSupported);  OutputDebugString(strbuf);
-			wsprintf(strbuf, L"      supported functionality: %02X\n", ss_usb_device_cap->bFunctionalitySupport);  OutputDebugString(strbuf);
+			wsprintf(strbuf, L"      attributes             : 0x%02X\n", ss_usb_device_cap->bmAttributes);  OutputDebugString(strbuf);
+			wsprintf(strbuf, L"      supported speeds       : 0x%04X\n", ss_usb_device_cap->wSpeedSupported);  OutputDebugString(strbuf);
+			wsprintf(strbuf, L"      supported functionality: 0x%02X\n", ss_usb_device_cap->bFunctionalitySupport);  OutputDebugString(strbuf);
 			libusb_free_ss_usb_device_capability_descriptor(ss_usb_device_cap);
 		}
 	}
@@ -384,7 +394,7 @@ void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descripto
 	break;
 
 	default:
-		wsprintf(strbuf, L"    Unknown BOS device capability %02x:\n", dev_cap->bDevCapabilityType);  OutputDebugString(strbuf);
+		wsprintf(strbuf, L"    Unknown BOS device capability 0x%02X:\n", dev_cap->bDevCapabilityType);  OutputDebugString(strbuf);
 	}
 }
 
@@ -806,7 +816,7 @@ bool USB_TMC::openUsb(Instrument_t *inst)
 
 						endpoint = &conf_desc->lu_interface[idx_iface].altsetting[idx_alt].endpoint[idx_ep];
 #ifdef DEBUG_USB
-						wsprintf(strbuf, L"       endpoint[%d].address: %02X\n", idx_ep, endpoint->bEndpointAddress);  OutputDebugString(strbuf);
+						wsprintf(strbuf, L"       endpoint[%d].address: 0x%02X\n", idx_ep, endpoint->bEndpointAddress);  OutputDebugString(strbuf);
 #endif
 
 						if (endpoint->bmAttributes == LIBUSB_TRANSFER_TYPE_BULK && !(endpoint->bEndpointAddress & (LIBUSB_ENDPOINT_DIR_MASK))) {
@@ -829,15 +839,15 @@ bool USB_TMC::openUsb(Instrument_t *inst)
 						}
 
 #ifdef DEBUG_USB
-						wsprintf(strbuf, L"           max packet size: %04X\n", endpoint->wMaxPacketSize);  OutputDebugString(strbuf);
-						wsprintf(strbuf, L"          polling interval: %02X\n", endpoint->bInterval);  OutputDebugString(strbuf);
+						wsprintf(strbuf, L"           max packet size: 0x%04X\n", endpoint->wMaxPacketSize);  OutputDebugString(strbuf);
+						wsprintf(strbuf, L"          polling interval: 0x%02X\n", endpoint->bInterval);  OutputDebugString(strbuf);
 #endif
 
 #ifdef DEBUG_USB
 						libusb_get_ss_endpoint_companion_descriptor(NULL, endpoint, &ep_comp);
 						if (ep_comp) {
-							wsprintf(strbuf, L"                 max burst: %02X   (USB 3.0)\n", ep_comp->bMaxBurst);  OutputDebugString(strbuf);
-							wsprintf(strbuf, L"        bytes per interval: %04X (USB 3.0)\n", ep_comp->wBytesPerInterval);  OutputDebugString(strbuf);
+							wsprintf(strbuf, L"                 max burst: 0x%02X   (USB 3.0)\n", ep_comp->bMaxBurst);  OutputDebugString(strbuf);
+							wsprintf(strbuf, L"        bytes per interval: 0x%04X (USB 3.0)\n", ep_comp->wBytesPerInterval);  OutputDebugString(strbuf);
 							libusb_free_ss_endpoint_companion_descriptor(ep_comp);
 						}
 #endif
@@ -1214,7 +1224,7 @@ C_USB_TMC_INSTRUMENT_TYPE_t USB_TMC::usbTmcInstType(int linkUsb_devs_idx, Instru
 		if (openTmc(inst)) {
 			if (!usbTmcCmdRST(inst)) {
 				stat |= 0x01;
-				wsprintf(strbuf, L"Can not reset the instrument (VID:PID = %04x:%04x).\n", inst->linkUsb_dev_usb_idVendor, inst->linkUsb_dev_usb_idProduct);  OutputDebugString(strbuf);
+				wsprintf(strbuf, L"Can not reset the instrument (VID:PID = %04X:%04X).\n", inst->linkUsb_dev_usb_idVendor, inst->linkUsb_dev_usb_idProduct);  OutputDebugString(strbuf);
 			}
 
 			if (!stat) {
@@ -1695,7 +1705,7 @@ static int send_mass_storage_command(libusb_device_handle *handle, uint8_t endpo
 
 	cdb_len = cdb_length[cdb[0]];
 	if ((cdb_len == 0) || (cdb_len > sizeof(cbw.CBWCB))) {
-		perr("send_mass_storage_command: don't know how to handle this command (%02X, length %d)\n",
+		perr("send_mass_storage_command: don't know how to handle this command (0x%02X, length %d)\n",
 			cdb[0], cdb_len);
 		return -1;
 	}
@@ -1756,12 +1766,12 @@ static int get_mass_storage_status(libusb_device_handle *handle, uint8_t endpoin
 		return -1;
 	}
 	if (csw.dCSWTag != expected_tag) {
-		perr("   get_mass_storage_status: mismatched tags (expected %08X, received %08X)\n",
+		perr("   get_mass_storage_status: mismatched tags (expected 0x%08X, received 0x%08X)\n",
 			expected_tag, csw.dCSWTag);
 		return -1;
 	}
 	// For this test, we ignore the dCSWSignature check for validity...
-	printf("   Mass Storage Status: %02X (%s)\n", csw.bCSWStatus, csw.bCSWStatus ? "FAILED" : "Success");
+	printf("   Mass Storage Status: 0x%02X (%s)\n", csw.bCSWStatus, csw.bCSWStatus ? "FAILED" : "Success");
 	if (csw.dCSWTag != expected_tag)
 		return -1;
 	if (csw.bCSWStatus) {
@@ -1807,7 +1817,7 @@ static void get_sense(libusb_device_handle *handle, uint8_t endpoint_in, uint8_t
 		perr("   ERROR No sense data\n");
 	}
 	else {
-		perr("   ERROR Sense: %02X %02X %02X\n", sense[2] & 0x0F, sense[12], sense[13]);
+		perr("   ERROR Sense: 0x%02X 0x%02X 0x%02X\n", sense[2] & 0x0F, sense[12], sense[13]);
 	}
 	// Strictly speaking, the get_mass_storage_status() call should come
 	// before these perr() lines.  If the status is nonzero then we must
@@ -1878,7 +1888,7 @@ static int test_mass_storage(libusb_device_handle *handle, uint8_t endpoint_in, 
 	max_lba = be_to_int32(&buffer[0]);
 	block_size = be_to_int32(&buffer[4]);
 	device_size = ((double)(max_lba + 1))*block_size / (1024 * 1024 * 1024);
-	printf("   Max LBA: %08X, Block Size: %08X (%.2f GB)\n", max_lba, block_size, device_size);
+	printf("   Max LBA: 0x%08X, Block Size: 0x%08X (%.2f GB)\n", max_lba, block_size, device_size);
 	if (get_mass_storage_status(handle, endpoint_in, expected_tag) == -2) {
 		get_sense(handle, endpoint_in, endpoint_out);
 	}
@@ -2060,7 +2070,7 @@ static int test_hid(libusb_device_handle *handle, uint8_t endpoint_in)
 		}
 
 		// Attempt a bulk read from endpoint 0 (this should just return a raw input report)
-		printf("\nTesting interrupt read using endpoint %02X...\n", endpoint_in);
+		printf("\nTesting interrupt read using endpoint 0x%02X...\n", endpoint_in);
 		r = libusb_interrupt_transfer(handle, endpoint_in, report_buffer, size, &size, 5000);
 		if (r >= 0) {
 			display_buffer_hex(report_buffer, size);
@@ -2100,7 +2110,7 @@ static void read_ms_winsub_feature_descriptors(libusb_device_handle *handle, uin
 		os_fd[1].recipient = LIBUSB_RECIPIENT_DEVICE;
 
 	for (i = 0; i<2; i++) {
-		printf("\nReading %s OS Feature Descriptor (wIndex = 0x%04d):\n", os_fd[i].desc, os_fd[i].index);
+		printf("\nReading %s OS Feature Descriptor (wIndex = %04d):\n", os_fd[i].desc, os_fd[i].index);
 
 		// Read the header part
 		r = libusb_control_transfer(handle, (uint8_t)(LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | os_fd[i].recipient),
@@ -2137,7 +2147,7 @@ static void print_device_cap(struct libusb_bos_dev_capability_descriptor *dev_ca
 		libusb_get_usb_2_0_extension_descriptor(NULL, dev_cap, &usb_2_0_ext);
 		if (usb_2_0_ext) {
 			printf("    USB 2.0 extension:\n");
-			printf("      attributes             : %02X\n", usb_2_0_ext->bmAttributes);
+			printf("      attributes             : 0x%02X\n", usb_2_0_ext->bmAttributes);
 			libusb_free_usb_2_0_extension_descriptor(usb_2_0_ext);
 		}
 	}
@@ -2149,9 +2159,9 @@ static void print_device_cap(struct libusb_bos_dev_capability_descriptor *dev_ca
 		libusb_get_ss_usb_device_capability_descriptor(NULL, dev_cap, &ss_usb_device_cap);
 		if (ss_usb_device_cap) {
 			printf("    USB 3.0 capabilities:\n");
-			printf("      attributes             : %02X\n", ss_usb_device_cap->bmAttributes);
-			printf("      supported speeds       : %04X\n", ss_usb_device_cap->wSpeedSupported);
-			printf("      supported functionality: %02X\n", ss_usb_device_cap->bFunctionalitySupport);
+			printf("      attributes             : 0x%02X\n", ss_usb_device_cap->bmAttributes);
+			printf("      supported speeds       : 0x%04X\n", ss_usb_device_cap->wSpeedSupported);
+			printf("      supported functionality: 0x%02X\n", ss_usb_device_cap->bFunctionalitySupport);
 			libusb_free_ss_usb_device_capability_descriptor(ss_usb_device_cap);
 		}
 	}
@@ -2169,7 +2179,7 @@ static void print_device_cap(struct libusb_bos_dev_capability_descriptor *dev_ca
 	break;
 
 	default:
-		printf("    Unknown BOS device capability %02x:\n", dev_cap->bDevCapabilityType);
+		printf("    Unknown BOS device capability 0x%02x:\n", dev_cap->bDevCapabilityType);
 	}
 }
 
@@ -2222,7 +2232,7 @@ static int test_device(uint16_t vid, uint16_t pid)
 	printf("      device class: %d\n", dev_desc.bDeviceClass);
 	printf("               S/N: %d\n", dev_desc.iSerialNumber);
 	printf("           VID:PID: %04X:%04X\n", dev_desc.idVendor, dev_desc.idProduct);
-	printf("         bcdDevice: %04X\n", dev_desc.bcdDevice);
+	printf("         bcdDevice: 0x%04X\n", dev_desc.bcdDevice);
 	printf("   iMan:iProd:iSer: %d:%d:%d\n", dev_desc.iManufacturer, dev_desc.iProduct, dev_desc.iSerialNumber);
 	printf("          nb confs: %d\n", dev_desc.bNumConfigurations);
 	// Copy the string descriptors for easier parsing
@@ -2267,7 +2277,7 @@ static int test_device(uint16_t vid, uint16_t pid)
 			for (k = 0; k<conf_desc->usb_interface[i].altsetting[j].bNumEndpoints; k++) {
 				struct libusb_ss_endpoint_companion_descriptor *ep_comp = NULL;
 				endpoint = &conf_desc->usb_interface[i].altsetting[j].endpoint[k];
-				printf("       endpoint[%d].address: %02X\n", k, endpoint->bEndpointAddress);
+				printf("       endpoint[%d].address: 0x%02X\n", k, endpoint->bEndpointAddress);
 				// Use the first interrupt or bulk IN/OUT endpoints as default for testing
 				if ((endpoint->bmAttributes & LIBUSB_TRANSFER_TYPE_MASK) & (LIBUSB_TRANSFER_TYPE_BULK | LIBUSB_TRANSFER_TYPE_INTERRUPT)) {
 					if (endpoint->bEndpointAddress & LIBUSB_ENDPOINT_IN) {
@@ -2279,12 +2289,12 @@ static int test_device(uint16_t vid, uint16_t pid)
 							endpoint_out = endpoint->bEndpointAddress;
 					}
 				}
-				printf("           max packet size: %04X\n", endpoint->wMaxPacketSize);
-				printf("          polling interval: %02X\n", endpoint->bInterval);
+				printf("           max packet size: 0x%04X\n", endpoint->wMaxPacketSize);
+				printf("          polling interval: 0x%02X\n", endpoint->bInterval);
 				libusb_get_ss_endpoint_companion_descriptor(NULL, endpoint, &ep_comp);
 				if (ep_comp) {
-					printf("                 max burst: %02X   (USB 3.0)\n", ep_comp->bMaxBurst);
-					printf("        bytes per interval: %04X (USB 3.0)\n", ep_comp->wBytesPerInterval);
+					printf("                 max burst: 0x%02X   (USB 3.0)\n", ep_comp->bMaxBurst);
+					printf("        bytes per interval: 0x%04X (USB 3.0)\n", ep_comp->wBytesPerInterval);
 					libusb_free_ss_endpoint_companion_descriptor(ep_comp);
 				}
 			}

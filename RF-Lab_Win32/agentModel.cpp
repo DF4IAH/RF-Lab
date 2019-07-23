@@ -1064,17 +1064,17 @@ void agentModel::fsLoadInstruments(const char* filename)
 				/* Connection to the Instrument */
 				le.linkType = attr.attrLinkType;
 
+				/* USB */
+				if (le.linkType & LINKTYPE_USB) {
+					le.linkUsb_dev_usb_idVendor = attr.attrUsbVendorID;
+					le.linkUsb_dev_usb_idProduct = attr.attrUsbProductID;
+				}
+
 				/* ETH */
 				if (le.linkType & LINKTYPE_ETH) {
 					le.linkEthHostname = attr.attrEthHostname;
 					le.linkEthMAC = attr.attrEthMAC;
 					le.linkEthPort = attr.attrEthPort;
-				}
-
-				/* USB */
-				if (le.linkType & LINKTYPE_USB) {
-					le.linkUsb_dev_usb_idVendor  = attr.attrUsbVendorID;
-					le.linkUsb_dev_usb_idProduct = attr.attrUsbProductID;
 				}
 
 				/* COM */

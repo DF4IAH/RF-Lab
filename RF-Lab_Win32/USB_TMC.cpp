@@ -238,6 +238,9 @@ void USB_TMC::run(void)
 					/* ERR response */
 					usbRspData.stat = C_USBRSP_ERR;
 				}
+
+				/* Current instrument state to be returned */
+				usbRspData.thisInst = usbReqData.thisInst;
 				send(pAgtUsbTmcRsp, usbRspData);
 
 				_runState = C_USB_TMC_RUNSTATES_RUN;

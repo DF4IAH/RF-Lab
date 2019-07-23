@@ -589,20 +589,21 @@ void agentModelPattern::run(void)
 					switch (it->listFunction) {
 					case INST_FUNC_GEN:
 					{
-						Instrument_t thisInst = *it;
+						//Instrument_t thisInst = *it;
 						char wrkBuf[256] = { 0 };
 
 						/* Send frequency in Hz */
-						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ %f Hz", it->txCurRfQrg);  // SMC100A
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ %fHz", it->txCurRfQrg);  // SMC100A
 						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
-						usbReqData.thisInst = thisInst;
+						usbReqData.thisInst = *it;
 						usbReqData.data1 = wrkBuf;
 
 						send(*pAgtUsbTmcReq, usbReqData);
 						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
 						/* Send power in dBm */
-						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW %f dBm", it->txCurRfPwr);  // SMC100A
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW %fdBm", it->txCurRfPwr);  // SMC100A
+						usbReqData.thisInst = usbRspData.thisInst;
 						usbReqData.data1 = wrkBuf;
 
 						send(*pAgtUsbTmcReq, usbReqData);
@@ -610,26 +611,48 @@ void agentModelPattern::run(void)
 
 						/* Send power On/Off */
 						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":OUTP %s", (it->txCurRfOn ? "ON" : "OFF"));  // SMC100A
+						usbReqData.thisInst = usbRspData.thisInst;
 						usbReqData.data1 = wrkBuf;
 
 						send(*pAgtUsbTmcReq, usbReqData);
 						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+
+						/* Copy back */
+						*it = usbRspData.thisInst;
 					}
 					break;
 
 					case INST_FUNC_SPEC:
 					{
-						Instrument_t thisInst = *it;
+						char wrkBuf[256] = { 0 };
 
-						/* Send frequency */
+						/* Send Span in Hz */
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ:SPAN %fHz", it->rxCurRfSpan);  // DSA875
 						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
-						usbReqData.thisInst = thisInst;
-						usbReqData.data1 = ":FREQuency:SPAN 1mhz";
-
-						// TODO: data setup needed here
+						usbReqData.thisInst = *it;
+						usbReqData.data1 = wrkBuf;
 
 						send(*pAgtUsbTmcReq, usbReqData);
 						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+
+						/* Send center frequency in Hz */
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ:CENT %fHz", it->rxCurRfQrg);  // DSA875
+						usbReqData.thisInst = usbRspData.thisInst;
+						usbReqData.data1 = wrkBuf;
+
+						send(*pAgtUsbTmcReq, usbReqData);
+						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+
+						/* Send max amplitude to adjust attenuator */
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW:ATT %d", (it->rxCurRfPwrHi > -10.0 ?  (10 + (int)it->rxCurRfPwrHi) : 0));  // DSA875
+						usbReqData.thisInst = usbRspData.thisInst;
+						usbReqData.data1 = wrkBuf;
+
+						send(*pAgtUsbTmcReq, usbReqData);
+						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+
+						/* Copy back */
+						*it = usbRspData.thisInst;
 					}
 					break;
 

@@ -214,9 +214,6 @@ private:
 
 public:
 	explicit				agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
-#ifdef OLD
-	ArrayOfInstruments_t*	getAIPtr(void);
-#endif
 	void					run(void);
 
 private:

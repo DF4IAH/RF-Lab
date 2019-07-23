@@ -589,11 +589,11 @@ void agentModelPattern::run(void)
 					switch (it->listFunction) {
 					case INST_FUNC_GEN:
 					{
-						//Instrument_t thisInst = *it;
 						char wrkBuf[256] = { 0 };
 
 						/* Send frequency in Hz */
-						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ %fHz", it->txCurRfQrg);  // SMC100A
+						txFrequency = it->txCurRfQrg;
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ %fHz", txFrequency);  // SMC100A
 						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
 						usbReqData.thisInst = *it;
 						usbReqData.data1 = wrkBuf;
@@ -602,7 +602,8 @@ void agentModelPattern::run(void)
 						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
 						/* Send power in dBm */
-						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW %fdBm", it->txCurRfPwr);  // SMC100A
+						txPower = it->txCurRfPwr;
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW %fdBm", txPower);  // SMC100A
 						usbReqData.thisInst = usbRspData.thisInst;
 						usbReqData.data1 = wrkBuf;
 
@@ -610,7 +611,8 @@ void agentModelPattern::run(void)
 						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
 						/* Send power On/Off */
-						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":OUTP %s", (it->txCurRfOn ? "ON" : "OFF"));  // SMC100A
+						txOn = it->txCurRfOn;
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":OUTP %s", (txOn ?  "ON" : "OFF"));  // SMC100A
 						usbReqData.thisInst = usbRspData.thisInst;
 						usbReqData.data1 = wrkBuf;
 
@@ -627,7 +629,8 @@ void agentModelPattern::run(void)
 						char wrkBuf[256] = { 0 };
 
 						/* Send Span in Hz */
-						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ:SPAN %fHz", it->rxCurRfSpan);  // DSA875
+						rxSpan = it->rxCurRfSpan;
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ:SPAN %fHz", rxSpan);  // DSA875
 						usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
 						usbReqData.thisInst = *it;
 						usbReqData.data1 = wrkBuf;
@@ -636,7 +639,8 @@ void agentModelPattern::run(void)
 						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
 						/* Send center frequency in Hz */
-						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ:CENT %fHz", it->rxCurRfQrg);  // DSA875
+						rxFrequency = it->rxCurRfQrg;
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ:CENT %fHz", rxFrequency);  // DSA875
 						usbReqData.thisInst = usbRspData.thisInst;
 						usbReqData.data1 = wrkBuf;
 
@@ -644,7 +648,8 @@ void agentModelPattern::run(void)
 						usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
 						/* Send max amplitude to adjust attenuator */
-						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW:ATT %d", (it->rxCurRfPwrHi > -10.0 ?  (10 + (int)it->rxCurRfPwrHi) : 0));  // DSA875
+						rxLevelMax = it->rxCurRfPwrHi;
+						_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW:ATT %d", (it->rxCurRfPwrHi > -10.0 ?  (10 + (int)rxLevelMax) : 0));  // DSA875
 						usbReqData.thisInst = usbRspData.thisInst;
 						usbReqData.data1 = wrkBuf;
 
@@ -2005,15 +2010,45 @@ void agentModelPattern::setTxOnState(bool checked)
 	if (txOn != checked) {
 		txOn = checked;
 
-		AgentComReq_t comReqData;
-		AgentComRsp_t comRspData;
-
 		try {
-			comReqData.cmd = C_COMREQ_COM_SEND;
-			comReqData.parm = checked ?  string(":OUTP ON\r\n") 
-									  :  string(":OUTP OFF\r\n");
-			send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-			comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			switch (pConInstruments[C_CONNECTED_TX]->actIfcType) {
+
+			case ACT_IFC_USB:
+			{
+				char wrkBuf[256] = { 0 };
+				_snprintf_s(wrkBuf, sizeof(wrkBuf), ":OUTP %s", (txOn ? "ON" : "OFF"));  // SMC100A
+
+				AgentUsbReq_t usbReqData;
+				usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
+				usbReqData.thisInst = *pConInstruments[C_CONNECTED_TX];
+				usbReqData.data1 = wrkBuf;
+
+				send(*pAgtUsbTmcReq, usbReqData);
+				AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+
+				/* Copy back */
+				*pConInstruments[C_CONNECTED_TX] = usbRspData.thisInst;
+			}
+			break;
+
+			case ACT_IFC_ETH:
+			{
+
+			}
+			break;
+
+			case ACT_IFC_COM:
+			{
+				AgentComReq_t comReqData;
+				comReqData.cmd = C_COMREQ_COM_SEND;
+				comReqData.parm = checked ?  string(":OUTP ON\r\n") : string(":OUTP OFF\r\n");
+				send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+
+				AgentComRsp_t comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			}
+			break;
+
+			};
 		}
 		catch (const Concurrency::operation_timed_out& e) {
 			(void)e;
@@ -2033,20 +2068,52 @@ bool agentModelPattern::getTxOnDefault(void)
 
 void agentModelPattern::setTxFrequencyValue(double value)
 {
-	if ((txFrequency != value) && 
-		((10e6 < value) && (value <= 100e9))) {
-		AgentComReq_t comReqData;
-		AgentComRsp_t comRspData;
-
+	if ((txFrequency != value) && ((10e6 < value) && (value <= 100e9))) {
 		txFrequency = value;
 
 		try {
-			comReqData.cmd = C_COMREQ_COM_SEND;
-			comReqData.parm = string(":SOUR:FREQ ");
-			comReqData.parm.append(agentCom::double2String(txFrequency));
-			comReqData.parm.append("\r\n");
-			send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-			comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			switch (pConInstruments[C_CONNECTED_TX]->actIfcType) {
+
+			case ACT_IFC_USB:
+			{
+				AgentUsbReq_t usbReqData;
+				char wrkBuf[256] = { 0 };
+
+				/* Send frequency in Hz */
+				_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ %fHz", txFrequency);  // SMC100A
+				usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
+				usbReqData.thisInst = *pConInstruments[C_CONNECTED_TX];
+				usbReqData.data1 = wrkBuf;
+
+				send(*pAgtUsbTmcReq, usbReqData);
+				AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+
+				/* Copy back */
+				*pConInstruments[C_CONNECTED_TX] = usbRspData.thisInst;
+			}
+			break;
+
+			case ACT_IFC_ETH:
+			{
+
+			}
+			break;
+
+			case ACT_IFC_COM:
+			{
+				AgentComReq_t comReqData;
+				AgentComRsp_t comRspData;
+
+				comReqData.cmd = C_COMREQ_COM_SEND;
+				comReqData.parm = string(":SOUR:FREQ ");
+				comReqData.parm.append(agentCom::double2String(txFrequency));
+				comReqData.parm.append("\r\n");
+				send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+				comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			}
+			break;
+
+			};
 		}
 		catch (const Concurrency::operation_timed_out& e) {
 			(void)e;
@@ -2067,20 +2134,52 @@ double agentModelPattern::getTxFrequencyDefault(void)
 
 void agentModelPattern::setTxPwrValue(double value)
 {
-	if ((txPower != value && 
-		(-40 <= value && value <= 20))) {
-		AgentComReq_t comReqData;
-		AgentComRsp_t comRspData;
-
+	if ((txPower != value && (-40 <= value && value <= 20))) {
 		txPower = value;
 
 		try {
-			comReqData.cmd = C_COMREQ_COM_SEND;
-			comReqData.parm = string("SOUR:POW ");
-			comReqData.parm.append(agentCom::double2String(txPower));
-			comReqData.parm.append("dBm\r\n");
-			send(*(pAgtComReq[C_COMINST_TX]), comReqData);
-			comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			switch (pConInstruments[C_CONNECTED_TX]->actIfcType) {
+
+			case ACT_IFC_USB:
+			{
+				AgentUsbReq_t usbReqData;
+				char wrkBuf[256] = { 0 };
+
+				/* Send power in dBm */
+				_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW %fdBm", txPower);  // SMC100A
+				usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
+				usbReqData.thisInst = *pConInstruments[C_CONNECTED_TX];
+				usbReqData.data1 = wrkBuf;
+
+				send(*pAgtUsbTmcReq, usbReqData);
+				AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+
+				/* Copy back */
+				*pConInstruments[C_CONNECTED_TX] = usbRspData.thisInst;
+			}
+			break;
+
+			case ACT_IFC_ETH:
+			{
+
+			}
+			break;
+
+			case ACT_IFC_COM:
+			{
+				AgentComReq_t comReqData;
+				AgentComRsp_t comRspData;
+
+				comReqData.cmd = C_COMREQ_COM_SEND;
+				comReqData.parm = string("SOUR:POW ");
+				comReqData.parm.append(agentCom::double2String(txPower));
+				comReqData.parm.append("dBm\r\n");
+				send(*(pAgtComReq[C_COMINST_TX]), comReqData);
+				comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			}
+			break;
+
+			};
 		}
 		catch (const Concurrency::operation_timed_out& e) {
 			(void)e;

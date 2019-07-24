@@ -618,6 +618,13 @@ void agentModelPattern::run(void)
 
 						/* Send max amplitude to adjust attenuator */
 						setRxLevelMaxValue(it->rxCurRfPwrHi);
+
+#if 1
+						double testX = 0.0;
+						double testY = 0.0;
+						getRxMarkerPeak(&testX, &testY);
+						__nop();
+#endif
 					}
 					break;
 
@@ -2064,6 +2071,7 @@ void agentModelPattern::setTxFrequencyValue(double value)
 				AgentComReq_t comReqData;
 				AgentComRsp_t comRspData;
 
+				/* Send frequency in Hz */
 				comReqData.cmd = C_COMREQ_COM_SEND;
 				comReqData.parm = string(":SOUR:FREQ ");
 				comReqData.parm.append(agentCom::double2String(txFrequency));
@@ -2352,8 +2360,8 @@ double agentModelPattern::getRxLevelMaxValue(void)
 
 bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 {
-	if (retX && retY && pAgtComReq[C_COMINST_RX]) {
-		*retX = *retY = 0.;
+	if (retX && retY) {
+		*retX = *retY = 0.0;
 
 		/* Following sequence does a level metering */
 		try {
@@ -2364,38 +2372,45 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 				AgentUsbReq_t usbReqData;
 				char wrkBuf[256] = { 0 };
 
-				if (string("R&S_FSEK20") == pConInstruments[C_CONNECTED_RX]->listEntryName) {
+				if (string("RIGOL_DSA875") == pConInstruments[C_CONNECTED_RX]->listEntryName) {
 					/* Stop running meassurments */
 					usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
 					usbReqData.thisInst = *pConInstruments[C_CONNECTED_RX];
-					usbReqData.data1 = ":INIT:CONT OFF";    // FSEK40
+					usbReqData.data1 = ":INIT:CONT OFF";    // DSA875
 					send(*pAgtUsbTmcReq, usbReqData);
 					AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
-					/* Restart insgtrument and wait until being ready */
-					usbReqData.thisInst = *pConInstruments[C_CONNECTED_RX];
-					usbReqData.data1 = ":INIT:IMM; *WAI";  // FSEK40
+					/* Start one shot meassurement and wait until being ready */
+					usbReqData.thisInst = usbRspData.thisInst;
+					usbReqData.data1 = ":INIT:IMM; *WAI";  // DSA875
 					send(*pAgtUsbTmcReq, usbReqData);
 					usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
-					/* Set marker to maximum and wait until ready */
-					usbReqData.thisInst = *pConInstruments[C_CONNECTED_RX];
-					usbReqData.data1 = ":CALC:MARKER ON; :CALC:MARKER:MAX; *WAI";  // FSEK40
+					/* Set Marker 1 as maximum marker */
+					usbReqData.thisInst = usbRspData.thisInst;
+					usbReqData.data1 = ":CALC:MARK1:PEAK:SEARCH:MODE MAX";  // DSA875
 					send(*pAgtUsbTmcReq, usbReqData);
 					usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+
+					/* Set Marker 1 to Maximum and wait until ready */
+					usbReqData.thisInst = usbRspData.thisInst;
+					usbReqData.data1 = ":CALC:MARK1:MAX:MAX";  // DSA875
+					send(*pAgtUsbTmcReq, usbReqData);
+					usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
+					Sleep(500);
 
 					/* Get frequency value of the marker */
 					usbReqData.cmd = C_USBREQ_USBTMC_SEND_AND_RECEIVE;
-					usbReqData.thisInst = *pConInstruments[C_CONNECTED_RX];
-					usbReqData.data1 = ":CALC:MARKER:X?";  // FSEK40
+					usbReqData.thisInst = usbRspData.thisInst;
+					usbReqData.data1 = ":CALC:MARK1:X?";  // DSA875
 					send(*pAgtUsbTmcReq, usbReqData);
 					usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 					string retStr = *(string*)usbRspData.data1;
 					sscanf_s(retStr.c_str(), "%lf", retX);
 
 					/* Get amplitude value of the marker */
-					usbReqData.thisInst = *pConInstruments[C_CONNECTED_RX];
-					usbReqData.data1 = ":CALC:MARKER:Y?";  // FSEK40
+					usbReqData.thisInst = usbRspData.thisInst;
+					usbReqData.data1 = ":CALC:MARK1:Y?";  // DSA875
 					send(*pAgtUsbTmcReq, usbReqData);
 					usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 					retStr = *(string*)usbRspData.data1;
@@ -2403,6 +2418,8 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 
 					/* Copy back */
 					*pConInstruments[C_CONNECTED_RX] = usbRspData.thisInst;
+
+					return FALSE;
 				}
 			}
 			break;
@@ -2415,39 +2432,41 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 
 			case ACT_IFC_COM:
 			{
-				AgentComReq_t comReqData;
-				AgentComRsp_t comRspData;
+				if (pAgtComReq[C_COMINST_RX]) {
+					AgentComReq_t comReqData;
+					AgentComRsp_t comRspData;
 
-				if (string("R&S_FSEK20") == pConInstruments[C_CONNECTED_RX]->listEntryName) {
-					/* Stop running meassurments */
-					comReqData.cmd = C_COMREQ_COM_SEND;
-					comReqData.parm = string(":INIT:CONT OFF\r\n");
-					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-					comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+					if (string("R&S_FSEK20") == pConInstruments[C_CONNECTED_RX]->listEntryName) {
+						/* Stop running meassurments */
+						comReqData.cmd = C_COMREQ_COM_SEND;
+						comReqData.parm = string(":INIT:CONT OFF\r\n");
+						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 
-					/* Restart insgtrument and wait until being ready */
-					comReqData.parm = string(":INIT:IMM; *WAI\r\n");
-					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-					comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+						/* Start one shot meassurement and wait until being ready */
+						comReqData.parm = string(":INIT:IMM; *WAI\r\n");
+						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 
-					/* Set marker to maximum and wait until ready */
-					comReqData.parm = string(":CALC:MARKER ON; :CALC:MARKER:MAX; *WAI\r\n");
-					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-					comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+						/* Set marker to maximum and wait until ready */
+						comReqData.parm = string(":CALC:MARKER ON; :CALC:MARKER:MAX; *WAI\r\n");
+						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 
-					/* Get frequency value of the marker */
-					comReqData.parm = string(":CALC:MARKER:X?\r\n");
-					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-					comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-					sscanf_s(comRspData.data1.c_str(), "%lf", retX);
+						/* Get frequency value of the marker */
+						comReqData.parm = string(":CALC:MARKER:X?\r\n");
+						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+						sscanf_s(comRspData.data1.c_str(), "%lf", retX);
 
-					/* Get amplitude value of the marker */
-					comReqData.parm = string(":CALC:MARKER:Y?\r\n");
-					send(*(pAgtComReq[C_COMINST_RX]), comReqData);
-					comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-					sscanf_s(comRspData.data1.c_str(), "%lf", retY);
+						/* Get amplitude value of the marker */
+						comReqData.parm = string(":CALC:MARKER:Y?\r\n");
+						send(*(pAgtComReq[C_COMINST_RX]), comReqData);
+						comRspData = receive(*(pAgtComRsp[C_COMINST_RX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+						sscanf_s(comRspData.data1.c_str(), "%lf", retY);
 
-					return FALSE;
+						return FALSE;
+					}
 				}
 			}
 			break;

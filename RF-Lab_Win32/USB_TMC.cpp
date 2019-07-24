@@ -2,16 +2,18 @@
 
 /* Agents Library */
 #include <agents.h>
-
 #include <process.h>
+
+#include <string>
 
 #include "agentCom.h"
 #include "agentModel.h"
 #include "agentModelPattern.h"
-
 #include "externals.h"
-
 #include "USB_TMC.h"
+
+
+using namespace std;
 
 
 #define DEBUG_USB 1
@@ -74,6 +76,8 @@ void USB_TMC::Release(void)
 
 void USB_TMC::run(void)
 {
+	string retStr;
+
 	/* Wait until agent is up */
 	while (!_isStarted) {
 		Sleep(10);
@@ -238,6 +242,51 @@ void USB_TMC::run(void)
 					/* ERR response */
 					usbRspData.stat = C_USBRSP_ERR;
 				}
+
+				/* Current instrument state to be returned */
+				usbRspData.thisInst = usbReqData.thisInst;
+				send(pAgtUsbTmcRsp, usbRspData);
+
+				_runState = C_USB_TMC_RUNSTATES_RUN;
+			}
+			break;
+
+			case C_USBREQ_USBTMC_SEND_AND_RECEIVE:
+			{
+				char retBuf[256] = { 0 };
+				AgentUsbRsp_t usbRspData;
+				usbRspData.data1 = nullptr;
+
+				if (usbReqData.thisInst.linkUsb_dev_usb_up == false) {
+					break;
+				}
+
+				/* Send SCPI-TMC string to the instrument
+				* data1: instrument, data2: chr[] string to send
+				*/
+				int ret = scpi_usbtmc_libusb_send(&usbReqData.thisInst, (const char*)usbReqData.data1);
+				if (ret == false) {
+					/* ERR response */
+					usbRspData.stat = C_USBRSP_ERR;
+
+					usbRspData.thisInst = usbReqData.thisInst;
+					send(pAgtUsbTmcRsp, usbRspData);
+
+					_runState = C_USB_TMC_RUNSTATES_RUN;
+					break;
+				}
+
+				/* Read returned data */
+				scpi_usbtmc_libusb_read_begin(&usbReqData.thisInst);
+				Sleep(250);
+				int retLen = scpi_usbtmc_libusb_read_data(&usbReqData.thisInst, retBuf, sizeof(retBuf));
+				retBuf[retLen] = 0;
+				usbTmcReadFlush(&usbReqData.thisInst);
+
+				/* Lives until new assignment is done */
+				retStr = string(retBuf);
+				usbRspData.data1 = &retStr;
+				usbRspData.stat = C_USBRSP_DATA;
 
 				/* Current instrument state to be returned */
 				usbRspData.thisInst = usbReqData.thisInst;

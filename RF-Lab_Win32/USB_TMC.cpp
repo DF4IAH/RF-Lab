@@ -278,7 +278,6 @@ void USB_TMC::run(void)
 
 				/* Read returned data */
 				scpi_usbtmc_libusb_read_begin(&usbReqData.thisInst);
-				Sleep(250);
 				int retLen = scpi_usbtmc_libusb_read_data(&usbReqData.thisInst, retBuf, sizeof(retBuf));
 				retBuf[retLen] = 0;
 				usbTmcReadFlush(&usbReqData.thisInst);

@@ -5,6 +5,7 @@
 #include "WinSrv.h"
 
 #include <string>
+#include <math.h>
 
 #include "agentModel.h"
 #include "externals.h"
@@ -593,8 +594,6 @@ void agentModelPattern::run(void)
 					switch (it->listFunction) {
 					case INST_FUNC_GEN:
 					{
-						char wrkBuf[256] = { 0 };
-
 						/* Send frequency in Hz */
 						setTxFrequencyValue(it->txCurRfQrg);
 
@@ -608,8 +607,6 @@ void agentModelPattern::run(void)
 
 					case INST_FUNC_SPEC:
 					{
-						char wrkBuf[256] = { 0 };
-
 						/* Send Span in Hz */
 						setRxSpanValue(it->rxCurRfSpan);
 
@@ -618,13 +615,6 @@ void agentModelPattern::run(void)
 
 						/* Send max amplitude to adjust attenuator */
 						setRxLevelMaxValue(it->rxCurRfPwrHi);
-
-#if 1
-						double testX = 0.0;
-						double testY = 0.0;
-						getRxMarkerPeak(&testX, &testY);
-						__nop();
-#endif
 					}
 					break;
 
@@ -1733,7 +1723,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				Sleep(calcTicks2Ms(posTicksNext - posTicksNow));
 			}
 
-			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for jobs", L"READY");
+			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for new jobs", L"READY");
 			m->o->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 		}
 		break;
@@ -2082,6 +2072,10 @@ void agentModelPattern::setTxFrequencyValue(double value)
 			break;
 
 			};
+
+			/* Update current values for the frequency */
+			pConInstruments[C_CONNECTED_TX]->txCurRfQrg = txFrequency;
+			pConInstruments[C_CONNECTED_RX]->rxCurRfQrg = txFrequency;    // Transmitter change does change (center) frequency of the SPEC, also! 
 		}
 		catch (const Concurrency::operation_timed_out& e) {
 			(void)e;
@@ -2218,6 +2212,9 @@ void agentModelPattern::setRxFrequencyValue(double value)
 			break;
 
 			};
+
+			/* Update current values for the frequency */
+			pConInstruments[C_CONNECTED_RX]->rxCurRfQrg = rxFrequency;
 		}
 		catch (const Concurrency::operation_timed_out& e) {
 			(void)e;
@@ -2488,9 +2485,12 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 	// TODO: max 3 seconds allowed - use own thread for running process
 	/* Set-up ROTOR */
 	long ticksNow = requestPos();
+
+	/* Go to start position */
 	long ticksNext = calcDeg2Ticks(degStartPos);
-	sendPos(ticksNext);										// Go to start position
+	sendPos(ticksNext);
 	Sleep(calcTicks2Ms(ticksNext - ticksNow));
+
 	if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 		return -1;
 	}
@@ -2499,16 +2499,47 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 	setStatusPosition(degStartPos);
 
 	/* Set-up TX */
+	{
+		/* Send frequency in Hz */
+		setTxFrequencyValue(pConInstruments[C_CONNECTED_TX]->txCurRfQrg);
+
+		/* Send power in dBm */
+		setTxPwrValue(pConInstruments[C_CONNECTED_TX]->txCurRfPwr);
+
+		/* Send power ON */
+		pConInstruments[C_CONNECTED_TX]->txCurRfOn = true;
+		setTxOnState(pConInstruments[C_CONNECTED_TX]->txCurRfOn);
+	}
 
 	/* Set-up RX */
+	{
+		/* Send Span in Hz */
+		setRxSpanValue(pConInstruments[C_CONNECTED_RX]->rxCurRfSpan);
+
+		/* Send center frequency in Hz */
+		setRxFrequencyValue(pConInstruments[C_CONNECTED_RX]->rxCurRfQrg);
+
+		/* Send max amplitude to adjust attenuator */
+		setRxLevelMaxValue(pConInstruments[C_CONNECTED_RX]->rxCurRfPwrHi);
+	}
 
 	/* Iteration of rotor steps */
 	double degPosIter = degStartPos;
 	while (true) {
 		/* Record data */
-		//measure();  // TODO
-		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
-			return -1;
+		{
+			wchar_t strbuf[256];
+
+			/* Resting RX: meassure */
+			double testX = 0.0;
+			double testY = 0.0;
+			getRxMarkerPeak(&testX, &testY);
+
+			swprintf_s(strbuf, sizeof(strbuf) / 2, L"> Pos = %03d°: f = %E Hz, \tP = %E dBm.\n", (int)degPosIter, testX, testY);
+			OutputDebugString(strbuf);
+
+			/* Store current data */
+			//xxx();  // TODO coding
 		}
 
 		/* advance to new position */
@@ -2517,32 +2548,46 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 			break;
 		}
 
-		ticksNow = requestPos();
+		ticksNow  = ticksNext;
 		ticksNext = calcDeg2Ticks(degPosIter);
 		sendPos(ticksNext);
-		Sleep(calcTicks2Ms(ticksNext - ticksNow));
-		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
-			return -1;
-		}
 
 		/* Inform about the current step position */
 		setStatusPosition(degPosIter);
+
+		Sleep(calcTicks2Ms(ticksNext - ticksNow));
+		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
+			/* Update current position value */
+			setLastTickPos(ticksNext);
+
+			goto ErrorOut_runningProcessPattern;
+		}
 	}
 
-	if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
-		return -1;
+	/* Send power OFF */
+	{
+		pConInstruments[C_CONNECTED_TX]->txCurRfOn = false;
+		setTxOnState(pConInstruments[C_CONNECTED_TX]->txCurRfOn);
 	}
 
 	/* Return ROTOR to center position */
 	if (!_noWinMsg) {
 		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"goto HOME position");
 	}
-	requestPos();
 	sendPos(0);
 	Sleep(calcDeg2Ms(degEndPos));
 
 	processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 	return 0;
+
+
+ErrorOut_runningProcessPattern:
+	/* Send power OFF */
+	{
+		pConInstruments[C_CONNECTED_TX]->txCurRfOn = false;
+		setTxOnState(pConInstruments[C_CONNECTED_TX]->txCurRfOn);
+	}
+	return -1;
 }
 
 inline double agentModelPattern::calcTicks2Deg(long ticks)

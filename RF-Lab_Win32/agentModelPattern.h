@@ -22,7 +22,7 @@ using namespace std;
 #define AGENT_PATTERN_ROT_TICKS_PER_DEGREE		   800
 
 /* ROTOR: Time in ms delay for turning 1° */
-#define AGENT_PATTERN_ROT_MS_PER_DEGREE				70
+#define AGENT_PATTERN_ROT_MS_PER_DEGREE				60
 
 /* ROTOR: Pattern 180° is measured between these to limits */
 #define AGENT_PATTERN_180_POS_DEGREE_START		 -90.0

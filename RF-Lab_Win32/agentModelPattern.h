@@ -30,8 +30,11 @@ using namespace std;
 #define AGENT_PATTERN_000_POS_DEGREE_STEP		   5.0
 
 /* ROTOR: Pattern 180° is measured between these to limits by 5° steps */
-#define AGENT_PATTERN_180_POS_DEGREE_START		 -90.0
-#define AGENT_PATTERN_180_POS_DEGREE_END		  90.0
+//#define AGENT_PATTERN_180_POS_DEGREE_START		 -90.0
+//#define AGENT_PATTERN_180_POS_DEGREE_END		  90.0
+// TODO: re-enable
+#define AGENT_PATTERN_180_POS_DEGREE_START		  -5.0
+#define AGENT_PATTERN_180_POS_DEGREE_END		   5.0
 #define AGENT_PATTERN_180_POS_DEGREE_STEP		   5.0
 
 /* ROTOR: Pattern 360° is measured between these to limits by 5° steps */

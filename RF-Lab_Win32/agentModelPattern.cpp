@@ -1745,14 +1745,14 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				Sleep(calcTicks2Ms(posTicksNext - posTicksNow));
 			}
 
-			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"ready for new jobs", L"READY");
+			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Ready for new jobs", L"READY");
 			m->o->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 		}
 		break;
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_000DEG:
 		{  /* Do a reference meassurement at current rotor position */
-			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: reference", L"RUN");
+			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Reference", L"RUN");
 
 			int ret = m->o->runningProcessPattern(
 				MEASDATA_SETUP__REFMEAS_GEN_SPEC,
@@ -1770,7 +1770,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG:
 		{  /* Run a 180° antenna pattern from left = -90° to the right = +90°, 5° steps */
-			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 180° pattern", L"goto START position");
+			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 180° Pattern", L"Goto START position");
 
 			int ret = m->o->runningProcessPattern(
 				MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC,
@@ -1788,7 +1788,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG:
 		{  /* Run a 360° antenna pattern from left = -180° to the right = +180°, 5° steps */
-			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 360° pattern", L"goto START position");
+			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 360° Pattern", L"Goto START position");
 
 			int ret = m->o->runningProcessPattern(
 				MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC,
@@ -1806,7 +1806,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_STOP:
 		{  /* end "STOP at once" signalling */
-			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"stopping current measurement", L"STOPPED");
+			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Stopping current measurement", L"STOPPED");
 			m->o->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 		}
 		break;

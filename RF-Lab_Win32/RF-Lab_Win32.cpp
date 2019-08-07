@@ -8,6 +8,9 @@
 
 // COM-style
 #include <shobjidl.h>
+#include <commdlg.h>
+//#include <Windows.h>
+
 
 // STL-enhancements
 //#include <atlbase.h>
@@ -186,96 +189,57 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				/* File handling features */
 				case ID_FILE_SAVE:
 				{
-					// see @ https://docs.microsoft.com/de-de/previous-versions/windows/desktop/legacy/bb776913(v=vs.85)
+					/* Get last filename from the environment */
+					// TODO
+					// L"C:\\Users\\Labor\\Downloads\\AntennaPattern.cvs";
 
-					//IFileSaveDialog();
-					// CoCreate the File Open Dialog object.
-					IFileDialog *pfd = NULL;
-					HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog,
-						NULL,
-						CLSCTX_INPROC_SERVER,
-						IID_PPV_ARGS(&pfd));
-					if (SUCCEEDED(hr))
-					{
-						// Create an event handling object, and hook it up to the dialog.
-						IFileDialogEvents *pfde = NULL;
-						hr = CDialogEventHandler_CreateInstance(IID_PPV_ARGS(&pfde));
-						if (SUCCEEDED(hr))
-						{
-							// Hook up the event handler.
-							DWORD dwCookie;
-							hr = pfd->Advise(pfde, &dwCookie);
-							if (SUCCEEDED(hr))
-							{
-								// Set the options on the dialog.
-								DWORD dwFlags;
+					/* Save the data */
 
-								// Before setting, always get the options first in order 
-								// not to override existing options.
-								hr = pfd->GetOptions(&dwFlags);
-								if (SUCCEEDED(hr))
-								{
-									// In this case, get shell items only for file system items.
-									hr = pfd->SetOptions(dwFlags | FOS_FORCEFILESYSTEM);
-									if (SUCCEEDED(hr))
-									{
-										// Set the file types to display only. 
-										// Notice that this is a 1-based array.
-										hr = pfd->SetFileTypes(ARRAYSIZE(c_rgSaveTypes), c_rgSaveTypes);
-										if (SUCCEEDED(hr))
-										{
-											// Set the selected file type index to Word Docs for this example.
-											hr = pfd->SetFileTypeIndex(INDEX_WORDDOC);
-											if (SUCCEEDED(hr))
-											{
-												// Set the default extension to be ".cvs" file.
-												hr = pfd->SetDefaultExtension(L"cvs");
-												if (SUCCEEDED(hr))
-												{
-													// Show the dialog
-													hr = pfd->Show(NULL);
-													if (SUCCEEDED(hr))
-													{
-														// Obtain the result once the user clicks 
-														// the 'Open' button.
-														// The result is an IShellItem object.
-														IShellItem *psiResult;
-														hr = pfd->GetResult(&psiResult);
-														if (SUCCEEDED(hr))
-														{
-															// We are just going to print out the 
-															// name of the file for sample sake.
-															PWSTR pszFilePath = NULL;
-															hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH,
-																&pszFilePath);
-															if (SUCCEEDED(hr))
-															{
-																TaskDialog(NULL,
-																	NULL,
-																	L"CommonFileDialogApp",
-																	pszFilePath,
-																	NULL,
-																	TDCBF_OK_BUTTON,
-																	TD_INFORMATION_ICON,
-																	NULL);
-																CoTaskMemFree(pszFilePath);
-															}
-															psiResult->Release();
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-								// Unhook the event handler.
-								pfd->Unadvise(dwCookie);
-							}
-							pfde->Release();
-						}
-						pfd->Release();
+				}
+				break;
+
+				case ID_DATEI_SPEICHERNALS:
+				{
+					/* See @ https://docs.microsoft.com/de-de/windows/win32/api/commdlg/nf-commdlg-getsavefilenamew
+					 *	   @ https://docs.microsoft.com/de-de/windows/win32/api/commdlg/ns-commdlg-openfilenamew
+					 *     @ http://na.support.keysight.com/plts/help/WebHelp/FilePrint/SnP_File_Format.htm
+					 *     @ https://de.wikipedia.org/wiki/CSV_(Dateiformat)
+					 */
+					static wchar_t filterBuf[6][32] = { L"Comma seperated list (CSV)", L".csv",
+													    L"Touchstone (S1P)",           L".s1p"  };
+					wchar_t fileBuf[MAX_PATH] = { 0 };
+					wcscpy_s(fileBuf, L"AntennaPattern.cvs");
+
+					OPENFILENAME ofn = { };
+					ofn.lStructSize = sizeof(OPENFILENAME);
+					ofn.hwndOwner = hWnd;
+					ofn.hInstance = NULL;
+					ofn.lpstrFilter = &filterBuf[0][0];
+					ofn.nMaxCustFilter = 4;
+					ofn.lpstrFile = fileBuf;
+					ofn.nMaxFile = sizeof(fileBuf);
+					ofn.lpstrFileTitle = NULL;
+					ofn.nMaxFileTitle = NULL;
+					ofn.lpstrInitialDir = L"C:\\Users\\Labor\\Downloads";
+					ofn.lpstrTitle = L"Save your valuable Data";
+					ofn.Flags = OFN_ENABLESIZING | OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
+					ofn.nFileOffset = NULL;
+					ofn.nFileExtension = NULL;
+					ofn.lpstrDefExt = L"csv";
+					ofn.lCustData = NULL;
+					ofn.lpfnHook = NULL;
+					ofn.lpTemplateName = NULL;
+
+					GetSaveFileNameW(&ofn);
+
+					if (ofn.nFileOffset) {
+						/* Save button pressed */
+
+						// ofn.lpstrFile;
+
+						/* Save the data */
+
 					}
-
 				}
 				break;
 					

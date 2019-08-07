@@ -181,10 +181,8 @@
     <ClCompile Include="agentModel.cpp" />
     <ClCompile Include="agentModelPattern.cpp" />
     <ClCompile Include="agentModelVariant.cpp" />
-    <ClCompile Include="CDialogEventHandler.cpp" />
     <ClCompile Include="instruments.cpp" />
     <ClCompile Include="RF-Lab_Win32.cpp" />
-    <ClCompile Include="SaveFileDialogCallback.cpp" />
     <ClCompile Include="USB_TMC.cpp" />
     <ClCompile Include="WinSrv.cpp" />
     <ClCompile Include="stdafx.cpp">

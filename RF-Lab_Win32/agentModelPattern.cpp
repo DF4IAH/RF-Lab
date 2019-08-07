@@ -2004,7 +2004,8 @@ void agentModelPattern::measDataFinalize(MeasData* md, MeasData* glob)
 		/* Enable Connect menu item */
 		HMENU hMenu = GetMenu(g_hWnd);
 		EnableMenuItem(hMenu, ID_FILE_SAVE, MF_BYCOMMAND);
-
+		EnableMenuItem(hMenu, ID_DATEI_SPEICHERNALS, MF_BYCOMMAND);
+		
 		/* Inform in Status Line */
 		if (!_noWinMsg) {
 			pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Your data file is ready to save.", L"--- READY to SAVE ---");

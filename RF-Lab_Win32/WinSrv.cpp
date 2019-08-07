@@ -925,6 +925,7 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 
 			/* Append ModelPattern specific items to the menu */
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_STOP,			L"Richtdiagramm: anhalten und beenden");
+			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_REF_START,    L"Referenzmessung ausführen");
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_180_START,	L"Richtdiagramm über 180° ausmessen");
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_360_START,	L"Richtdiagramm über 360° ausmessen");
 

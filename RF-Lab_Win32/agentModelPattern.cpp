@@ -1686,6 +1686,11 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
 			break;
 
+		case ID_MODEL_PATTERN_REF_START:
+			// Start recording of pattern
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_000DEG, 0);
+			break;
+
 		case ID_MODEL_PATTERN_180_START:
 			// Init display part
 			// xxx();
@@ -1920,9 +1925,7 @@ void agentModelPattern::setStatusPosition(double posDeg)
 
 MeasData agentModelPattern::measDataInit(MEASDATA_SETUP_ENUM measVar, std::list<double> initList)
 {
-	MeasData md;
-
-	md.measVar = measVar;
+	MeasData md = { measVar, 0.0, 1e-12, 0.0, 1e-12, 0.0, 0, nullptr, nullptr, nullptr };
 
 	switch (measVar)
 	{
@@ -1963,7 +1966,13 @@ void agentModelPattern::measDataAdd(MeasData* md, std::list<double> dataList)
 	{
 	case MEASDATA_SETUP__REFMEAS_GEN_SPEC:
 		{
-			md->rxRefPwr = *dataList.begin();
+			std::list<double>::iterator it = dataList.begin();
+			
+			/* Skip rotor postion */
+			it++;
+
+			/* Reference Power */
+			md->rxRefPwr = *(it++);
 		}
 		break;
 
@@ -1991,7 +2000,16 @@ void agentModelPattern::measDataFinalize(MeasData* md, MeasData* glob)
 	glob = md;
 
 	/* Enable Menu Item Save File */
+	{
+		/* Enable Connect menu item */
+		HMENU hMenu = GetMenu(g_hWnd);
+		EnableMenuItem(hMenu, ID_FILE_SAVE, MF_BYCOMMAND);
 
+		/* Inform in Status Line */
+		if (!_noWinMsg) {
+			pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Your data file is ready to save.", L"--- READY to SAVE ---");
+		}
+	}
 }
 
 
@@ -2604,10 +2622,14 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 	/* Set-up ROTOR */
 	long ticksNow = requestPos();
 
-	/* Go to start position */
+	/* Go to Start Position only on rotary meassurements */
 	long ticksNext = calcDeg2Ticks(degStartPos);
-	sendPos(ticksNext);
-	Sleep(calcTicks2Ms(ticksNext - ticksNow));
+	if (measVariant >= MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC &&
+		measVariant <= MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC) {
+		/* Send Home position and wait */
+		sendPos(ticksNext);
+		Sleep(calcTicks2Ms(ticksNext - ticksNow));
+	}
 
 	if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 		return -1;
@@ -2707,12 +2729,23 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 		setTxOnState(pConInstruments[C_CONNECTED_TX]->txCurRfOn);
 	}
 
-	/* Return ROTOR to center position */
-	if (!_noWinMsg) {
-		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"goto HOME position");
+	if (measVariant == MEASDATA_SETUP__REFMEAS_GEN_SPEC) {
+		/* Return ROTOR to center position */
+		if (!_noWinMsg) {
+			pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"REF done");
+		}
 	}
-	sendPos(0);
-	Sleep(calcDeg2Ms(degEndPos));
+
+	else
+	if (measVariant >= MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC &&
+		measVariant <= MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC) {
+		/* Return ROTOR to center position */
+		if (!_noWinMsg) {
+			pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"Goto HOME position");
+		}
+		sendPos(0);
+		Sleep(calcDeg2Ms(degEndPos));
+	}
 
 	processing_ID = C_MODELPATTERN_PROCESS_NOOP;
 

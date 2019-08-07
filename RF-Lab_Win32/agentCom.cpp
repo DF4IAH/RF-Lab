@@ -170,8 +170,8 @@ string agentCom::getZolixIdn(void)
 {
 	doComRequestResponse(string(C_ZOLIX_VERSION_REQ_STR1));
 	string resp = doComRequestResponse(string(C_ZOLIX_VERSION_REQ_STR2));
-	size_t pos = resp.find(C_ZOLIX_VERSION_VAL_STR, 0);
-	if (pos != string::npos) {
+	size_t posDeg = resp.find(C_ZOLIX_VERSION_VAL_STR, 0);
+	if (posDeg != string::npos) {
 		return trim(resp);
 	}
 	else {
@@ -188,8 +188,8 @@ void agentCom::iecPrepare(int iecAddr)
 
 		(void)        doComRequestResponse(iecSyncingStr);		// first request for sync purposes
 		string resp = doComRequestResponse(iecSyncingStr);
-		size_t pos = resp.find("version", 0);
-		if (pos == string::npos) {
+		size_t posDeg = resp.find("version", 0);
+		if (posDeg == string::npos) {
 			return;
 		}
 
@@ -202,8 +202,8 @@ void agentCom::iecPrepare(int iecAddr)
 		strRequest.append("\r\n");
 		doComRequestResponse(strRequest);
 		resp = doComRequestResponse(string("++addr\r\n"));
-		pos = resp.find(agentCom::int2String(iecAddr), 0);
-		if (pos == string::npos) {
+		posDeg = resp.find(agentCom::int2String(iecAddr), 0);
+		if (posDeg == string::npos) {
 			return;
 		}
 

@@ -109,16 +109,16 @@ struct list_head {
  *  member - the list_head element in "pos"
  *  type - the type of the first parameter
  */
-#define list_for_each_entry(pos, head, member, type)			\
-	for (pos = list_entry((head)->next, type, member);		\
-		 &pos->member != (head);				\
-		 pos = list_entry(pos->member.next, type, member))
+#define list_for_each_entry(posDeg, head, member, type)			\
+	for (posDeg = list_entry((head)->next, type, member);		\
+		 &posDeg->member != (head);				\
+		 posDeg = list_entry(posDeg->member.next, type, member))
 
-#define list_for_each_entry_safe(pos, n, head, member, type)		\
-	for (pos = list_entry((head)->next, type, member),		\
-		 n = list_entry(pos->member.next, type, member);	\
-		 &pos->member != (head);				\
-		 pos = n, n = list_entry(n->member.next, type, member))
+#define list_for_each_entry_safe(posDeg, n, head, member, type)		\
+	for (posDeg = list_entry((head)->next, type, member),		\
+		 n = list_entry(posDeg->member.next, type, member);	\
+		 &posDeg->member != (head);				\
+		 posDeg = n, n = list_entry(n->member.next, type, member))
 
 #define list_empty(entry) ((entry)->next == (entry))
 

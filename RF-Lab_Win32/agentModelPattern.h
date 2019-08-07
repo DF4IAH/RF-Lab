@@ -24,12 +24,17 @@ using namespace std;
 /* ROTOR: Time in ms delay for turning 1° */
 #define AGENT_PATTERN_ROT_MS_PER_DEGREE				60
 
-/* ROTOR: Pattern 180° is measured between these to limits */
+/* ROTOR: Reference meassurement on current position */
+#define AGENT_PATTERN_000_POS_DEGREE_START		   0.0
+#define AGENT_PATTERN_000_POS_DEGREE_END		   0.0
+#define AGENT_PATTERN_000_POS_DEGREE_STEP		   5.0
+
+/* ROTOR: Pattern 180° is measured between these to limits by 5° steps */
 #define AGENT_PATTERN_180_POS_DEGREE_START		 -90.0
 #define AGENT_PATTERN_180_POS_DEGREE_END		  90.0
 #define AGENT_PATTERN_180_POS_DEGREE_STEP		   5.0
 
-/* ROTOR: Pattern 360° is measured between these to limits */
+/* ROTOR: Pattern 360° is measured between these to limits by 5° steps */
 #define AGENT_PATTERN_360_POS_DEGREE_START		-180.0
 #define AGENT_PATTERN_360_POS_DEGREE_END		 180.0
 #define AGENT_PATTERN_360_POS_DEGREE_STEP		   5.0
@@ -156,10 +161,42 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 	C_MODELPATTERN_PROCESS_END,
 	C_MODELPATTERN_PROCESS_STOP,
 	C_MODELPATTERN_PROCESS_GOTO_X,
+	C_MODELPATTERN_PROCESS_RECORD_PATTERN_000DEG,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG,
 
 };
+
+
+enum MEASDATA_SETUP_ENUM {
+
+	MEASDATA_SETUP__NONE = 0,
+
+	MEASDATA_SETUP__REFMEAS_GEN_SPEC,
+	MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC,
+	MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC,
+
+};
+
+
+
+typedef struct {
+
+	MEASDATA_SETUP_ENUM					measVar;
+	
+	double								txQrg;
+	double								txPwr;
+	double								rxSpan;
+
+	double								rxRefPwr;
+
+	double								posStep;
+	int									entriesCount;
+	std::list<double>				   *posDeg;
+	std::list<double>				   *rxPwrMag;
+	std::list<double>				   *rxPwrPhase;
+
+} MeasData;
 
 
 
@@ -194,6 +231,8 @@ private:
 	unbounded_buffer<AgentUsbRsp_t>		*pAgtUsbTmcRsp;
 	HANDLE								 hThreadAgtUsbTmc;
 
+	MeasData							 measDataEntries;
+
 	volatile int						 processing_ID;
 	volatile int						 processing_arg1;
 	volatile int						 simuMode;
@@ -214,6 +253,7 @@ private:
 
 public:
 	explicit				agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, class agentModel *am, AGENT_ALL_SIMUMODE_t mode);
+						    ~agentModelPattern();
 	void					run(void);
 
 private:
@@ -236,6 +276,10 @@ private:
 
 	void					sendPos(long tickPos);
 
+	MeasData				measDataInit(MEASDATA_SETUP_ENUM measVar, std::list<double> initList);
+	void					measDataAdd(MeasData* md, std::list<double> dataList);
+	void					measDataFinalize(MeasData* md, MeasData* glob);
+
 
 public:
 	/* overwriting agentModel member functions() */
@@ -251,11 +295,11 @@ public:
 	void					runProcess(int processID, int arg);
 	void					connectDevices(void);
 	void					initDevices(void);
-	void					setStatusPosition(double pos);
+	void					setStatusPosition(double posDeg);
 
 	/* agentModelPattern - Rotor */
 	long					requestPos(void);
-	void					setLastTickPos(long pos);
+	void					setLastTickPos(long posDeg);
 	long					getLastTickPos(void);
 
 	/* agentModelPattern - TX */
@@ -280,7 +324,7 @@ public:
 	bool					getRxMarkerPeak(double* retX, double* retY);
 
 	/* Tools */
-	int						runningProcessPattern(double degStartPos, double degEndPos, double degResolution);
+	int						runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, double degStartPos, double degEndPos, double degResolution);
 	static double			calcTicks2Deg(long ticks);
 	static long				calcDeg2Ticks(double deg);
 	static DWORD			calcDeg2Ms(double deg);

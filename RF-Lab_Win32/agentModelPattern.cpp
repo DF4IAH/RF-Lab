@@ -4,6 +4,7 @@
 #include "resource.h"
 #include "WinSrv.h"
 
+#include <list>
 #include <string>
 #include <math.h>
 
@@ -55,6 +56,8 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 
 				 , pAgtUsbTmc(nullptr)
 
+				 , measDataEntries()
+
 				 , processing_ID(0)
 				 , simuMode(mode)
 
@@ -73,9 +76,23 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 {
 	/* Fast access to connected instruments */
 	pConInstruments[C_COMINST_ROT] = g_InstList.end();
-	pConInstruments[C_COMINST_TX] = g_InstList.end();
-	pConInstruments[C_COMINST_RX] = g_InstList.end();
+	pConInstruments[C_COMINST_TX]  = g_InstList.end();
+	pConInstruments[C_COMINST_RX]  = g_InstList.end();
+
+	/* Make sure pointer vars are being set-up */
+	measDataEntries.posDeg	   = nullptr;
+	measDataEntries.rxPwrMag   = nullptr;
+	measDataEntries.rxPwrPhase = nullptr;
 }
+
+agentModelPattern::~agentModelPattern()
+{
+	/* Free dynamic allocated lists */
+	SafeDelete(&measDataEntries.posDeg);
+	SafeDelete(&measDataEntries.rxPwrMag);
+	SafeDelete(&measDataEntries.rxPwrPhase);
+}
+
 
 inline bool agentModelPattern::isRunning(void)
 {
@@ -1728,11 +1745,30 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		}
 		break;
 
+		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_000DEG:
+		{  /* Do a reference meassurement at current rotor position */
+			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: reference", L"RUN");
+
+			int ret = m->o->runningProcessPattern(
+				MEASDATA_SETUP__REFMEAS_GEN_SPEC,
+				AGENT_PATTERN_000_POS_DEGREE_START,
+				AGENT_PATTERN_000_POS_DEGREE_END,
+				AGENT_PATTERN_000_POS_DEGREE_STEP
+			);
+			if (ret == -1) {
+				break; // process STOPPED
+			}
+
+			m->o->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
+		}
+		break;
+
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG:
-		{  /* Run a 180° antenna pattern from left = -90° to the right = +90° */
+		{  /* Run a 180° antenna pattern from left = -90° to the right = +90°, 5° steps */
 			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 180° pattern", L"goto START position");
 
 			int ret = m->o->runningProcessPattern(
+				MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC,
 				AGENT_PATTERN_180_POS_DEGREE_START,
 				AGENT_PATTERN_180_POS_DEGREE_END,
 				AGENT_PATTERN_180_POS_DEGREE_STEP
@@ -1746,10 +1782,11 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		break;
 
 		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG:
-		{  /* Run a 360° antenna pattern from left = -180° to the right = +180° */
+		{  /* Run a 360° antenna pattern from left = -180° to the right = +180°, 5° steps */
 			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"measure: running 360° pattern", L"goto START position");
 
 			int ret = m->o->runningProcessPattern(
+				MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC,
 				AGENT_PATTERN_360_POS_DEGREE_START,
 				AGENT_PATTERN_360_POS_DEGREE_END,
 				AGENT_PATTERN_360_POS_DEGREE_STEP
@@ -1861,7 +1898,7 @@ void agentModelPattern::runProcess(int processID, int arg)
 	}
 }
 
-void agentModelPattern::setStatusPosition(double pos)
+void agentModelPattern::setStatusPosition(double posDeg)
 {
 	/* Inform about the current state */
 	const int l_status_size = 256;
@@ -1869,7 +1906,7 @@ void agentModelPattern::setStatusPosition(double pos)
 	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
 
 	if (!_noWinMsg) {
-		swprintf_s(l_status3, l_status_size, L"position: %+03.0lf°", pos);
+		swprintf_s(l_status3, l_status_size, L"position: %+03.0lf°", posDeg);
 		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
 	}
 
@@ -1878,13 +1915,94 @@ void agentModelPattern::setStatusPosition(double pos)
 }
 
 
+
+/* Data collector section */
+
+MeasData agentModelPattern::measDataInit(MEASDATA_SETUP_ENUM measVar, std::list<double> initList)
+{
+	MeasData md;
+
+	md.measVar = measVar;
+
+	switch (measVar)
+	{
+	case MEASDATA_SETUP__REFMEAS_GEN_SPEC:
+		{
+			std::list<double>::iterator it = initList.begin();
+			md.txQrg			= *(it++);
+			md.txPwr			= *(it++);
+			md.rxSpan			= *it;
+
+			md.rxRefPwr			= 1e-12;
+		}
+		break;
+
+	case MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC:
+	case MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC:
+		{
+			std::list<double>::iterator it = initList.begin();
+			md.txQrg		= *(it++);
+			md.txPwr		= *(it++);
+			md.rxSpan		= *(it++);
+			md.posStep		= *it;
+
+			md.entriesCount	= 0;
+			md.posDeg		= new list<double>;
+			md.rxPwrMag		= new list<double>;
+			md.rxPwrPhase	= new list<double>;
+		}
+			break;
+	}
+
+	return md;
+}
+
+void agentModelPattern::measDataAdd(MeasData* md, std::list<double> dataList)
+{
+	switch (md->measVar)
+	{
+	case MEASDATA_SETUP__REFMEAS_GEN_SPEC:
+		{
+			md->rxRefPwr = *dataList.begin();
+		}
+		break;
+
+	case MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC:
+	case MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC:
+		{
+			std::list<double>::iterator it = dataList.begin();
+			md->posDeg->push_back(*(it++));
+			md->rxPwrMag->push_back(*(it++));
+			md->rxPwrPhase->push_back(*it);
+			md->entriesCount++;
+		}
+			break;
+	}
+}
+
+void agentModelPattern::measDataFinalize(MeasData* md, MeasData* glob)
+{
+	/* First free data */
+	SafeDelete(&glob->posDeg);
+	SafeDelete(&glob->rxPwrMag);
+	SafeDelete(&glob->rxPwrPhase);
+
+	/* There exists just a single entry, deep copy over */
+	glob = md;
+
+	/* Enable Menu Item Save File */
+
+}
+
+
+
 /* agentModelPattern - Rotor */
 
 long agentModelPattern::requestPos(void)
 {
 	AgentComReq_t comReqData;
 	AgentComRsp_t comRspData;
-	long pos = 0;
+	long posDeg = 0;
 
 	try {
 		/* Do sync COM */
@@ -1914,15 +2032,15 @@ long agentModelPattern::requestPos(void)
  		if (comRspData.stat == C_COMRSP_DATA) {
 			int posDiff = 0;
 
-			if (!agentModel::parseStr2Long(&pos, comRspData.data1.c_str(), "?X,%ld", '?')) {
-				agentModel::setLastTickPos(pos);
+			if (!agentModel::parseStr2Long(&posDeg, comRspData.data1.c_str(), "?X,%ld", '?')) {
+				agentModel::setLastTickPos(posDeg);
 			}
 		}
 	}
 	catch (const Concurrency::operation_timed_out& e) {
 		(void)e;
 	}
-	return pos;
+	return posDeg;
 }
 
 void agentModelPattern::sendPos(long ticksPos)
@@ -1949,9 +2067,9 @@ void agentModelPattern::sendPos(long ticksPos)
 	}
 }
 
-void agentModelPattern::setLastTickPos(long pos)
+void agentModelPattern::setLastTickPos(long posDeg)
 {
-	lastTickPos = pos;
+	lastTickPos = posDeg;
 }
 
 long agentModelPattern::getLastTickPos(void)
@@ -2480,7 +2598,7 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 
 /* TOOLS */
 
-int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPos, double degResolution)
+int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, double degStartPos, double degEndPos, double degResolution)
 {  // run a antenna pattern from left = degStartPos to the right = degEndPos
 	// TODO: max 3 seconds allowed - use own thread for running process
 	/* Set-up ROTOR */
@@ -2523,6 +2641,21 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 		setRxLevelMaxValue(pConInstruments[C_CONNECTED_RX]->rxCurRfPwrHi);
 	}
 
+	/* Set-up the Data container for this meassurement */
+	MeasData md;
+	{
+		std::list<double> init;
+		init.push_back(pConInstruments[C_CONNECTED_TX]->txCurRfQrg);
+		init.push_back(pConInstruments[C_CONNECTED_TX]->txCurRfPwr);
+		init.push_back(pConInstruments[C_CONNECTED_RX]->rxCurRfSpan);
+
+		if (measVariant >= MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC && 
+			measVariant <= MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC) {
+			init.push_back(degResolution);
+		}
+		md = measDataInit(measVariant, init);
+	}
+
 	/* Iteration of rotor steps */
 	double degPosIter = degStartPos;
 	while (true) {
@@ -2539,7 +2672,11 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 			OutputDebugString(strbuf);
 
 			/* Store current data */
-			//xxx();  // TODO coding
+			std::list<double> data;
+			data.push_back(degPosIter); // Position
+			data.push_back(testY);		// Power
+			data.push_back(0.0);		// Phase
+			measDataAdd(&md, data);
 		}
 
 		/* advance to new position */
@@ -2578,6 +2715,10 @@ int agentModelPattern::runningProcessPattern(double degStartPos, double degEndPo
 	Sleep(calcDeg2Ms(degEndPos));
 
 	processing_ID = C_MODELPATTERN_PROCESS_NOOP;
+
+	/* Move data to the global entries */
+	measDataFinalize(&md, &measDataEntries);
+
 	return 0;
 
 
@@ -2587,6 +2728,10 @@ ErrorOut_runningProcessPattern:
 		pConInstruments[C_CONNECTED_TX]->txCurRfOn = false;
 		setTxOnState(pConInstruments[C_CONNECTED_TX]->txCurRfOn);
 	}
+
+	/* Move data to the global entries */
+	measDataFinalize(&md, &measDataEntries);
+
 	return -1;
 }
 

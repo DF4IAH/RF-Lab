@@ -1,21 +1,27 @@
+/* Windows */
 #include "stdafx.h"
 #include "resource.h"
 
-// COM-style
+/* C headers */
+#include <stdio.h>
+#include <string.h>
+
+/* COM-style */
 #include <shobjidl.h>
 
-// STL-enhancements
+/* STL-enhancements */
 #include <atlbase.h>
 
-// D2Draw-style
+/* D2Draw-style */
 //#include <d2d1.h>
 #pragma comment(lib, "d2d1")
 
-// sub-module agents
+/* sub-module agents */
 #include "agentModel.h"
 #include "agentModelPattern.h"
 #include "agentCom.h"
 
+/* Application */
 #include "externals.h"
 
 #include "WinSrv.h"
@@ -71,6 +77,8 @@ WinSrv::WinSrv() : hWnd(nullptr)
 				 , pAgtModel(nullptr)
 				 , _winExitReceived(FALSE)
 				 , _ready(FALSE)
+				 , cLastFilePath(L"C:\\Users\\Labor\\Downloads")
+				 , cLastFileName(L"Antennenrichtdiagramm.cvs")
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr)) {
@@ -950,4 +958,46 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 		}
 	}
 	return FALSE;
+}
+
+
+/* Dataset handling */
+
+void WinSrv::saveCurrentDataset(void)
+{
+
+}
+
+
+
+/* Getters & Setters */
+wchar_t* WinSrv::getLastFilePath(void)
+{
+	if (g_instance && g_instance->isReady()) {
+		return g_instance->cLastFilePath;
+	}
+	else {
+		return L"";
+	}
+}
+
+wchar_t* WinSrv::getLastFileName(void)
+{
+	if (g_instance && g_instance->isReady()) {
+		return g_instance->cLastFileName;
+	}
+	else {
+		return L"";
+	}
+}
+
+void WinSrv::setLastFilePath(wchar_t* s)
+{
+	if (g_instance && g_instance->isReady() && s) {
+		if (lstrlenW(s)) {
+			wchar_t* pos = wcsrchr(s, L'\\');
+			StrCpyNW(g_instance->cLastFilePath, s, (int)(pos - s));
+			StrCpyNW(g_instance->cLastFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
+		}
+	}
 }

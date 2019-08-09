@@ -50,6 +50,9 @@ private:
 	bool								 _winExitReceived;
 	bool								 _ready;
 
+	wchar_t								 cLastFilePath[MAX_PATH];
+	wchar_t								 cLastFileName[MAX_PATH];
+
 
 public:
 					WinSrv();
@@ -89,5 +92,11 @@ public:
 	bool			instMenuGetItem(HMENU* hMenuSub, int* menuIdx, HMENU hMenuAnst, wchar_t* caption);
 	void			instUpdateConnectedInstruments(void);
 	void			instActivateMenuItem(UINT winID, bool uEnable);
+
+	static void		saveCurrentDataset(void);
+
+	static wchar_t*	getLastFilePath(void);
+	static wchar_t*	getLastFileName(void);
+	static void		setLastFilePath(wchar_t* s);
 
 };

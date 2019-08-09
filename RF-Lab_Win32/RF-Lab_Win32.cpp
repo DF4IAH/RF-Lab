@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 
+
 #include <list>
 
 
@@ -189,12 +190,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				/* File handling features */
 				case ID_FILE_SAVE:
 				{
-					/* Get last filename from the environment */
-					// TODO
-					// L"C:\\Users\\Labor\\Downloads\\AntennaPattern.cvs";
-
 					/* Save the data */
-
+					WinSrv::saveCurrentDataset();
 				}
 				break;
 
@@ -205,22 +202,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					 *     @ http://na.support.keysight.com/plts/help/WebHelp/FilePrint/SnP_File_Format.htm
 					 *     @ https://de.wikipedia.org/wiki/CSV_(Dateiformat)
 					 */
-					static wchar_t filterBuf[6][32] = { L"Comma seperated list (CSV)", L".csv",
-													    L"Touchstone (S1P)",           L".s1p"  };
 					wchar_t fileBuf[MAX_PATH] = { 0 };
-					wcscpy_s(fileBuf, L"AntennaPattern.cvs");
+#if 1
+					/* Get last file name without extension */
+					wcscpy_s(fileBuf, WinSrv::getLastFileName());
+					wchar_t* pos = wcsrchr(fileBuf, L'.');
+					fileBuf[pos - fileBuf] = L'\0';
+#else
+					wcscpy_s(fileBuf, WinSrv::getLastFilePath());
+#pragma warning(disable:4996)
+					wcscpy(fileBuf + lstrlenW(WinSrv::getLastFilePath()), L"\\");
+					wcscpy(fileBuf + lstrlenW(WinSrv::getLastFilePath()) + 1, WinSrv::getLastFileName());
+#pragma warning(default:4996)
+#endif
 
 					OPENFILENAME ofn = { };
 					ofn.lStructSize = sizeof(OPENFILENAME);
 					ofn.hwndOwner = hWnd;
 					ofn.hInstance = NULL;
-					ofn.lpstrFilter = &filterBuf[0][0];
+					ofn.lpstrFilter = L"Comma separated list (.csv)\0.csv\0Touchstone (.s1p)\0.s1p\0All files (*.*)\0*.*\0\0";
 					ofn.nMaxCustFilter = 4;
 					ofn.lpstrFile = fileBuf;
 					ofn.nMaxFile = sizeof(fileBuf);
 					ofn.lpstrFileTitle = NULL;
 					ofn.nMaxFileTitle = NULL;
-					ofn.lpstrInitialDir = L"C:\\Users\\Labor\\Downloads";
+					ofn.lpstrInitialDir = WinSrv::getLastFilePath();
 					ofn.lpstrTitle = L"Save your valuable Data";
 					ofn.Flags = OFN_ENABLESIZING | OFN_OVERWRITEPROMPT | OFN_PATHMUSTEXIST;
 					ofn.nFileOffset = NULL;
@@ -234,11 +240,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 					if (ofn.nFileOffset) {
 						/* Save button pressed */
-
-						// ofn.lpstrFile;
+						WinSrv::setLastFilePath(ofn.lpstrFile);
 
 						/* Save the data */
-
+						WinSrv::saveCurrentDataset();
 					}
 				}
 				break;

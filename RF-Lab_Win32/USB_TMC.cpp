@@ -371,14 +371,19 @@ void USB_TMC::shutdown_libusb(void)
 	}
 }
 
-void USB_TMC::print_devs_libusb(libusb_device **devs)
+void USB_TMC::print_devs_libusb(libusb_device **devAry)
 {
+	/* Sanity check */
+	if (!devAry) {
+		return;
+	}
+
 	libusb_device *pLinkUsb_dev;
 	int i = 0, j = 0;
 	uint8_t path[8];
 	wchar_t strbuf[256];
 
-	while ((pLinkUsb_dev = devs[i++]) != NULL) {
+	while ((pLinkUsb_dev = devAry[i++]) != NULL) {
 		struct libusb_device_descriptor desc;
 		int r = libusb_get_device_descriptor(pLinkUsb_dev, &desc);
 		if (r < 0) {
@@ -404,6 +409,11 @@ void USB_TMC::print_devs_libusb(libusb_device **devs)
 
 void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descriptor *dev_cap)
 {
+	/* Sanity check */
+	if (!dev_cap) {
+		return;
+	}
+
 	wchar_t strbuf[256];
 
 	switch (dev_cap->bDevCapabilityType) {
@@ -451,6 +461,11 @@ void USB_TMC::print_device_cap_libusb(struct libusb_bos_dev_capability_descripto
 
 wchar_t* USB_TMC::uuid_to_string_libusb(const uint8_t* uuid)
 {
+	/* Sanity check */
+	if (!uuid) {
+		return L"";
+	}
+
 	static wchar_t uuid_string[40];
 
 	if (!uuid)
@@ -499,6 +514,14 @@ int USB_TMC::usbtmc_bulk_in_header_read(uint8_t header[], uint8_t MsgID, uint8_t
 
 int USB_TMC::scpi_usbtmc_bulkout(Instrument_t *inst, uint8_t msg_id, const void *data1, int32_t size, uint8_t transfer_attributes)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+	if (!inst->pLinkUsb_dev_handle) {
+		return false;
+	}
+
 	//struct scpi_usbtmc_libusb *uscpi = inst->uscpi;
 	int		padded_size, r, transferred;
 	wchar_t	strbuf[256];
@@ -536,6 +559,11 @@ int USB_TMC::scpi_usbtmc_bulkout(Instrument_t *inst, uint8_t msg_id, const void 
 
 int USB_TMC::scpi_usbtmc_bulkin_start(Instrument_t *inst, uint8_t msg_id, uint8_t *data1, int32_t size, uint8_t *transfer_attributes)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	int r, transferred = 0;
 	uint32_t message_size = 0;
 	wchar_t	strbuf[256];
@@ -561,6 +589,11 @@ int USB_TMC::scpi_usbtmc_bulkin_start(Instrument_t *inst, uint8_t msg_id, uint8_
 
 int USB_TMC::scpi_usbtmc_bulkin_continue(Instrument_t *inst, uint8_t *data1, int size)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	int r, transferred = 0;
 	wchar_t	strbuf[256];
 
@@ -579,6 +612,11 @@ int USB_TMC::scpi_usbtmc_bulkin_continue(Instrument_t *inst, uint8_t *data1, int
 
 int USB_TMC::scpi_usbtmc_libusb_send(void *priv, const char *command)
 {
+	/* Sanity check */
+	if (!priv) {
+		return false;
+	}
+
 	Instrument_t *uscpi = (Instrument_t*)priv;
 	wchar_t	strbuf[256];
 
@@ -591,6 +629,11 @@ int USB_TMC::scpi_usbtmc_libusb_send(void *priv, const char *command)
 
 int USB_TMC::scpi_usbtmc_libusb_read_begin(void *priv)
 {
+	/* Sanity check */
+	if (!priv) {
+		return false;
+	}
+
 	Instrument_t *uscpi = (Instrument_t*)priv;
 
 	uscpi->linkUsb_remaining_length = 0;
@@ -606,6 +649,11 @@ int USB_TMC::scpi_usbtmc_libusb_read_begin(void *priv)
 
 int USB_TMC::scpi_usbtmc_libusb_read_data(void *priv, char *buf, int maxlen)
 {
+	/* Sanity check */
+	if (!priv) {
+		return false;
+	}
+
 	Instrument_t *uscpi = (Instrument_t*)priv;
 	int read_length;
 
@@ -634,6 +682,11 @@ int USB_TMC::scpi_usbtmc_libusb_read_data(void *priv, char *buf, int maxlen)
 
 int USB_TMC::scpi_usbtmc_libusb_read_complete(void *priv)
 {
+	/* Sanity check */
+	if (!priv) {
+		return false;
+	}
+
 	Instrument_t *uscpi = (Instrument_t*)priv;
 
 	return	(uscpi->linkUsb_response_bytes_read >= uscpi->linkUsb_response_length) && 
@@ -1006,11 +1059,17 @@ bool USB_TMC::openUsb(Instrument_t *inst)
 
 bool USB_TMC::closeUsb(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	int									r;
 	wchar_t								strbuf[256];
 
-	if (!inst->pLinkUsb_dev_handle)
+	if (!inst->pLinkUsb_dev_handle) {
 		return false;
+	}
 
 	tmcGoLocal(inst);
 
@@ -1037,6 +1096,11 @@ bool USB_TMC::closeUsb(Instrument_t *inst)
 
 bool USB_TMC::openTmc(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	/* Initiate communication */
 	//bool r1 = tmcInitiate(inst);
 
@@ -1050,6 +1114,11 @@ bool USB_TMC::openTmc(Instrument_t *inst)
 
 bool USB_TMC::tmcInitiate(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	int									 r;
 	uint8_t								 status;
 	wchar_t								 strbuf[256];
@@ -1075,6 +1144,11 @@ bool USB_TMC::tmcInitiate(Instrument_t *inst)
 
 bool USB_TMC::tmcGoRemote(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	uint8_t								 status;
 	int									 r;
 	wchar_t								 strbuf[256];
@@ -1144,8 +1218,9 @@ bool USB_TMC::tmcGoRemote(Instrument_t *inst)
 void USB_TMC::tmcGoLocal(Instrument_t *inst)
 {
 	/* Sanity check */
-	if (!inst)
+	if (!inst) {
 		return;
+	}
 
 	{
 		int								r;
@@ -1208,6 +1283,11 @@ INSTRUMENT_ENUM_t USB_TMC::checkIDTable(uint16_t idVendor, uint16_t idProduct)
 
 INSTRUMENT_ENUM_t USB_TMC::usbTmcCheck(int linkUsb_devs_idx, struct libusb_device_descriptor *desc, Instrument_t *outInst)
 {
+	/* Sanity check */
+	if (!desc || !outInst) {
+		return INSTRUMENT_NONE;
+	}
+
 	static int									nextFreeTxId = INSTRUMENT_TRANSMITTERS_USB__GENERIC;
 	static int									nextFreeRxId = INSTRUMENT_RECEIVERS_USB__GENERIC;
 	struct libusb_config_descriptor			   *confDes;
@@ -1261,6 +1341,11 @@ INSTRUMENT_ENUM_t USB_TMC::usbTmcCheck(int linkUsb_devs_idx, struct libusb_devic
 
 C_USB_TMC_INSTRUMENT_TYPE_t USB_TMC::usbTmcInstType(int linkUsb_devs_idx, Instrument_t *outInst)
 {
+	/* Sanity check */
+	if (!outInst) {
+		return C_USB_TMC_INSTRUMENT_NONE;
+	}
+
 	Instrument_t				   *inst = outInst;
 	int								r;
 	uint8_t							stat = 0;
@@ -1340,7 +1425,12 @@ C_USB_TMC_INSTRUMENT_TYPE_t USB_TMC::usbTmcInstType(int linkUsb_devs_idx, Instru
 
 bool USB_TMC::usbTmcReadLine(Instrument_t *inst, char* outLine, int len)
 {
-	if (outLine && len) {
+	/* Sanity check */
+	if (!inst || !outLine) {
+		return false;
+	}
+
+	if (len) {
 		char scpi_buf[256];
 
 		scpi_usbtmc_libusb_read_begin(inst);
@@ -1353,12 +1443,18 @@ bool USB_TMC::usbTmcReadLine(Instrument_t *inst, char* outLine, int len)
 
 		return true;
 	}
-	else
+	else {
 		return false;
+	}
 }
 
 void USB_TMC::usbTmcReadFlush(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return;
+	}
+
 	char scpi_buf[256];
 
 	/* Remove additional data */
@@ -1369,16 +1465,31 @@ void USB_TMC::usbTmcReadFlush(Instrument_t *inst)
 
 bool USB_TMC::usbTmcCmdRST(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	return 0 == scpi_usbtmc_libusb_send(inst, "*RST");
 }
 
 bool USB_TMC::usbTmcCmdCLS(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	return 0 == scpi_usbtmc_libusb_send(inst, "*CLS;*WAI");
 }
 
 bool USB_TMC::usbTmcCmdSRE(Instrument_t *inst, uint16_t bitmask)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	char scpi_buf[256];
 
 	sprintf_s(scpi_buf, sizeof(scpi_buf), "*SRE %d", bitmask);
@@ -1387,6 +1498,11 @@ bool USB_TMC::usbTmcCmdSRE(Instrument_t *inst, uint16_t bitmask)
 
 bool USB_TMC::usbTmcCmdESE(Instrument_t *inst, uint16_t bitmask)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	char scpi_buf[256];
 
 	sprintf_s(scpi_buf, sizeof(scpi_buf), "*ESE %d", bitmask);
@@ -1395,6 +1511,11 @@ bool USB_TMC::usbTmcCmdESE(Instrument_t *inst, uint16_t bitmask)
 
 int USB_TMC::usbTmcGetSTB(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	char scpi_buf[256];
 	int  ival = 0;
 
@@ -1409,13 +1530,19 @@ int USB_TMC::usbTmcGetSTB(Instrument_t *inst)
 
 bool USB_TMC::usbTmcGetIDN(Instrument_t *inst)
 {
+	/* Sanity check */
+	if (!inst) {
+		return false;
+	}
+
 	int r = scpi_usbtmc_libusb_send(inst, "*IDN?");
 	if (!r) {
 		usbTmcReadLine(inst, inst->linkUsb_idn, sizeof(inst->linkUsb_idn));
 		return true;
 	}
-	else
+	else {
 		return false;
+	}
 }
 
 
@@ -1604,137 +1731,6 @@ static char* uuid_to_string(const uint8_t* uuid)
 		uuid[0], uuid[1], uuid[2], uuid[3], uuid[4], uuid[5], uuid[6], uuid[7],
 		uuid[8], uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
 	return uuid_string;
-}
-
-// The PS3 Controller is really a HID device that got its HID Report Descriptors
-// removed by Sony
-static int display_ps3_status(libusb_device_handle *handle)
-{
-	int r;
-	uint8_t input_report[49];
-	uint8_t master_bt_address[8];
-	uint8_t device_bt_address[18];
-
-	// Get the controller's bluetooth address of its master device
-	CALL_CHECK(libusb_control_transfer(handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
-		HID_GET_REPORT, 0x03f5, 0, master_bt_address, sizeof(master_bt_address), 100));
-	printf("\nMaster's bluetooth address: %02X:%02X:%02X:%02X:%02X:%02X\n", master_bt_address[2], master_bt_address[3],
-		master_bt_address[4], master_bt_address[5], master_bt_address[6], master_bt_address[7]);
-
-	// Get the controller's bluetooth address
-	CALL_CHECK(libusb_control_transfer(handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
-		HID_GET_REPORT, 0x03f2, 0, device_bt_address, sizeof(device_bt_address), 100));
-	printf("\nMaster's bluetooth address: %02X:%02X:%02X:%02X:%02X:%02X\n", device_bt_address[4], device_bt_address[5],
-		device_bt_address[6], device_bt_address[7], device_bt_address[8], device_bt_address[9]);
-
-	// Get the status of the controller's buttons via its HID report
-	printf("\nReading PS3 Input Report...\n");
-	CALL_CHECK(libusb_control_transfer(handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
-		HID_GET_REPORT, (HID_REPORT_TYPE_INPUT << 8) | 0x01, 0, input_report, sizeof(input_report), 1000));
-	switch (input_report[2]) {	/** Direction pad plus start, select, and joystick buttons */
-	case 0x01:
-		printf("\tSELECT pressed\n");
-		break;
-	case 0x02:
-		printf("\tLEFT 3 pressed\n");
-		break;
-	case 0x04:
-		printf("\tRIGHT 3 pressed\n");
-		break;
-	case 0x08:
-		printf("\tSTART presed\n");
-		break;
-	case 0x10:
-		printf("\tUP pressed\n");
-		break;
-	case 0x20:
-		printf("\tRIGHT pressed\n");
-		break;
-	case 0x40:
-		printf("\tDOWN pressed\n");
-		break;
-	case 0x80:
-		printf("\tLEFT pressed\n");
-		break;
-	}
-	switch (input_report[3]) {	/** Shapes plus top right and left buttons */
-	case 0x01:
-		printf("\tLEFT 2 pressed\n");
-		break;
-	case 0x02:
-		printf("\tRIGHT 2 pressed\n");
-		break;
-	case 0x04:
-		printf("\tLEFT 1 pressed\n");
-		break;
-	case 0x08:
-		printf("\tRIGHT 1 presed\n");
-		break;
-	case 0x10:
-		printf("\tTRIANGLE pressed\n");
-		break;
-	case 0x20:
-		printf("\tCIRCLE pressed\n");
-		break;
-	case 0x40:
-		printf("\tCROSS pressed\n");
-		break;
-	case 0x80:
-		printf("\tSQUARE pressed\n");
-		break;
-	}
-	printf("\tPS button: %d\n", input_report[4]);
-	printf("\tLeft Analog (X,Y): (%d,%d)\n", input_report[6], input_report[7]);
-	printf("\tRight Analog (X,Y): (%d,%d)\n", input_report[8], input_report[9]);
-	printf("\tL2 Value: %d\tR2 Value: %d\n", input_report[18], input_report[19]);
-	printf("\tL1 Value: %d\tR1 Value: %d\n", input_report[20], input_report[21]);
-	printf("\tRoll (x axis): %d Yaw (y axis): %d Pitch (z axis) %d\n",
-		//(((input_report[42] + 128) % 256) - 128),
-		(int8_t)(input_report[42]),
-		(int8_t)(input_report[44]),
-		(int8_t)(input_report[46]));
-	printf("\tAcceleration: %d\n\n", (int8_t)(input_report[48]));
-	return 0;
-}
-// The XBOX Controller is really a HID device that got its HID Report Descriptors
-// removed by Microsoft.
-// Input/Output reports described at http://euc.jp/periphs/xbox-controller.ja.html
-static int display_xbox_status(libusb_device_handle *handle)
-{
-	int r;
-	uint8_t input_report[20];
-	printf("\nReading XBox Input Report...\n");
-	CALL_CHECK(libusb_control_transfer(handle, LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
-		HID_GET_REPORT, (HID_REPORT_TYPE_INPUT << 8) | 0x00, 0, input_report, 20, 1000));
-	printf("   D-pad: %02X\n", input_report[2] & 0x0F);
-	printf("   Start:%d, Back:%d, Left Stick Press:%d, Right Stick Press:%d\n", B(input_report[2] & 0x10), B(input_report[2] & 0x20),
-		B(input_report[2] & 0x40), B(input_report[2] & 0x80));
-	// A, B, X, Y, Black, White are pressure sensitive
-	printf("   A:%d, B:%d, X:%d, Y:%d, White:%d, Black:%d\n", input_report[4], input_report[5],
-		input_report[6], input_report[7], input_report[9], input_report[8]);
-	printf("   Left Trigger: %d, Right Trigger: %d\n", input_report[10], input_report[11]);
-	printf("   Left Analog (X,Y): (%d,%d)\n", (int16_t)((input_report[13] << 8) | input_report[12]),
-		(int16_t)((input_report[15] << 8) | input_report[14]));
-	printf("   Right Analog (X,Y): (%d,%d)\n", (int16_t)((input_report[17] << 8) | input_report[16]),
-		(int16_t)((input_report[19] << 8) | input_report[18]));
-	return 0;
-}
-
-static int set_xbox_actuators(libusb_device_handle *handle, uint8_t left, uint8_t right)
-{
-	int r;
-	uint8_t output_report[6];
-
-	printf("\nWriting XBox Controller Output Report...\n");
-
-	memset(output_report, 0, sizeof(output_report));
-	output_report[1] = sizeof(output_report);
-	output_report[3] = left;
-	output_report[5] = right;
-
-	CALL_CHECK(libusb_control_transfer(handle, LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
-		HID_SET_REPORT, (HID_REPORT_TYPE_OUTPUT << 8) | 0x00, 0, output_report, 06, 1000));
-	return 0;
 }
 
 static int send_mass_storage_command(libusb_device_handle *handle, uint8_t endpoint, uint8_t lun,
@@ -2382,15 +2378,6 @@ static int test_device(uint16_t vid, uint16_t pid)
 	}
 
 	switch (test_mode) {
-	case USE_PS3:
-		CALL_CHECK(display_ps3_status(handle));
-		break;
-	case USE_XBOX:
-		CALL_CHECK(display_xbox_status(handle));
-		CALL_CHECK(set_xbox_actuators(handle, 128, 222));
-		msleep(2000);
-		CALL_CHECK(set_xbox_actuators(handle, 0, 0));
-		break;
 	case USE_HID:
 		test_hid(handle, endpoint_in);
 		break;
@@ -2479,24 +2466,6 @@ int main(int argc, char** argv)
 					}
 					break;
 					// The following tests will force VID:PID if already provided
-				case 'p':
-					// Sony PS3 Controller - 1 interface
-					VID = 0x054C;
-					PID = 0x0268;
-					test_mode = USE_PS3;
-					break;
-				case 's':
-					// Microsoft Sidewinder Precision Pro Joystick - 1 HID interface
-					VID = 0x045E;
-					PID = 0x0008;
-					test_mode = USE_HID;
-					break;
-				case 'x':
-					// Microsoft XBox Controller Type S - 1 interface
-					VID = 0x045E;
-					PID = 0x0289;
-					test_mode = USE_XBOX;
-					break;
 				default:
 					show_help = true;
 					break;
@@ -2530,9 +2499,6 @@ int main(int argc, char** argv)
 		printf("   -j      : test composite FTDI based JTAG device\n");
 		printf("   -k      : test Mass Storage device\n");
 		printf("   -b file : dump Mass Storage data to file 'file'\n");
-		printf("   -p      : test Sony PS3 SixAxis controller\n");
-		printf("   -s      : test Microsoft Sidewinder Precision Pro (HID)\n");
-		printf("   -x      : test Microsoft XBox Controller Type S\n");
 		printf("   -l lang : language to report errors in (ISO 639-1)\n");
 		printf("   -w      : force the use of device requests when querying WCID descriptors\n");
 		printf("If only the vid:pid is provided, xusb attempts to run the most appropriate test\n");

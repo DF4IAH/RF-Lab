@@ -1057,8 +1057,6 @@ void WinSrv::saveCurrentDataset(void)
 
 				/* 2nd line */
 				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Antennen-Richtdiagramm\r\n");
-
-				/* Length in bytes */
 				len <<= 1;
 
 				/* Write header line */
@@ -1072,8 +1070,6 @@ void WinSrv::saveCurrentDataset(void)
 				/* 3rd line */
 				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Frequenz: %d.%03d %cHz\r\n",
 					measType.measTxFreqHz_int, measType.measTxFreqHz_frac3, measType.meastxFreqHz_exp);
-
-				/* Length in bytes */
 				len <<= 1;
 
 				/* Write header line */
@@ -1087,8 +1083,6 @@ void WinSrv::saveCurrentDataset(void)
 				/* 4th line */
 				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Leistung: %d.%03d dBm\r\n",
 					measType.measTxPowerDbm_int, measType.measTxPowerDbm_frac3);
-
-				/* Length in bytes */
 				len <<= 1;
 
 				/* Write header line */
@@ -1101,8 +1095,6 @@ void WinSrv::saveCurrentDataset(void)
 
 				/* 5th line */
 				len = swprintf_s(lineBuf, sizeof(lineBuf), L"Position, Empfangsleistung_mag, Empfangsleistung_phase\r\n");
-
-				/* Length in bytes */
 				len <<= 1;
 
 				/* Write header line */
@@ -1113,7 +1105,33 @@ void WinSrv::saveCurrentDataset(void)
 					NULL);
 
 				/* Iterate over all meassured data */
+				if (measType.measData->posDeg && measType.measData->rxPwrMag && measType.measData->rxPwrPhase) {
+					std::list<double>::const_iterator itPos			= measType.measData->posDeg->begin();
+					std::list<double>::const_iterator itPwrMag		= measType.measData->rxPwrMag->begin();
+					std::list<double>::const_iterator itPwrPhase	= measType.measData->rxPwrPhase->begin();
 
+					for (int lineNo = 1; lineNo <= measType.measData->entriesCount; lineNo++) {
+						const double pos		= *itPos;
+						const double pwrMag		= *itPwrMag;
+						const double pwrPhase	= *itPwrPhase;
+
+						len = swprintf_s(lineBuf, sizeof(lineBuf), L"%lf, %lf, %lf\r\n", pos, pwrMag, pwrPhase);
+						// TODO: Der Aufruf dieser print() Funktion zerstört die Iteratoren. Stack zu klein???
+						len <<= 1;
+
+						/* Write header line */
+						status = WriteFile(fh,				// Handle to the Serial port
+							lineBuf,						// Data to be written to the port
+							len,							// Number of bytes to write
+							&lenWritten,					// Bytes written
+							NULL);
+
+						// Goto next row
+						++itPos;
+						++itPwrMag;
+						++itPwrPhase;
+					}
+				}
 
 				/* Close file */
 				CloseHandle(fh);

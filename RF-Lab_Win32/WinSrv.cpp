@@ -78,7 +78,7 @@ WinSrv::WinSrv() : hWnd(nullptr)
 				 , _winExitReceived(FALSE)
 				 , _ready(FALSE)
 				 , cLastFilePath(L"C:\\Users\\Labor\\Downloads")
-				 , cLastFileName(L"Antennenrichtdiagramm.cvs")
+				 , cLastFileName(L"Ant-Richtdiagramm.csv")
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr)) {
@@ -963,9 +963,62 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 
 /* Dataset handling */
 
+FILETYPE_ENUM WinSrv::getFileType(wchar_t* filename)
+{
+	/* Sanity check */
+	if (!filename) {
+		return FILETYPE_UNKNOWN;
+	}
+
+	/* Cut out extension */
+	wchar_t wcFileExt[16];
+	wchar_t* pos = wcsrchr(filename, L'.');
+	StrCpyNW(wcFileExt, pos + 1, (int)(lstrlenW(filename) - (pos - filename)));
+
+	if (!StrCmpIW(wcFileExt, L"CSV")) {
+		return FILETYPE_CSV;
+	}
+	else if (!StrCmpIW(wcFileExt, L"S1P")) {
+		return FILETYPE_S1P;
+	}
+	else if (!StrCmpIW(wcFileExt, L"S2P")) {
+		return FILETYPE_S2P;
+	}
+	else if (!StrCmpIW(wcFileExt, L"S3P")) {
+		return FILETYPE_S3P;
+	}
+	else if (!StrCmpIW(wcFileExt, L"S4P")) {
+		return FILETYPE_S4P;
+	}
+	else if (!StrCmpIW(wcFileExt, L"TXT")) {
+		return FILETYPE_TXT;
+	}
+
+	/* File extension not known */
+	return FILETYPE_UNKNOWN;
+}
+
 void WinSrv::saveCurrentDataset(void)
 {
+	if (g_instance && g_instance->isReady()) {
+		FILETYPE_ENUM ft = getFileType(g_instance->cLastFileName);
 
+		switch (ft) {
+
+		case FILETYPE_CSV:
+		{
+
+		}
+		break;
+
+		case FILETYPE_S1P:
+		{
+
+		}
+		break;
+
+		}
+	}
 }
 
 

@@ -7,6 +7,19 @@
 #include "agentCom.h"
 
 
+enum FILETYPE_ENUM {
+
+	FILETYPE_UNKNOWN		= 0,
+	FILETYPE_TXT,
+	FILETYPE_CSV,
+	FILETYPE_S1P,
+	FILETYPE_S2P,
+	FILETYPE_S3P,
+	FILETYPE_S4P,
+
+};
+
+
 class WinSrv
 {
 public:
@@ -93,6 +106,7 @@ public:
 	void			instUpdateConnectedInstruments(void);
 	void			instActivateMenuItem(UINT winID, bool uEnable);
 
+	static FILETYPE_ENUM getFileType(wchar_t* filename);
 	static void		saveCurrentDataset(void);
 
 	static wchar_t*	getLastFilePath(void);

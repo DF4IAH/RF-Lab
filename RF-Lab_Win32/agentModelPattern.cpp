@@ -68,7 +68,7 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 
 				 , txOn(false)
 				 , txFrequency(0)
-				 , txPower(0)
+				 , txPower(0.0)
 
 				 , rxFrequency(0.0)
 				 , rxSpan(0.0)
@@ -1988,9 +1988,20 @@ void agentModelPattern::measDataAdd(MeasData* md, std::list<double> dataList)
 	case MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC:
 		{
 			std::list<double>::iterator it = dataList.begin();
-			md->posDeg->push_back(*(it++));
-			md->rxPwrMag->push_back(*(it++));
-			md->rxPwrPhase->push_back(*it);
+			const double pos = *(it++);
+			md->posDeg->push_back(pos);
+
+			const double power = *(it++);
+			md->rxPwrMag->push_back(power);
+
+			const double phase = *it;
+			md->rxPwrPhase->push_back(phase);
+
+			/* Reference Power when directing straight ahead */
+			if (-0.1 <= pos && pos <= +0.1) {
+				md->rxRefPwr = power;
+			}
+
 			md->entriesCount++;
 		}
 			break;
@@ -2005,7 +2016,7 @@ void agentModelPattern::measDataFinalize(MeasData* md, MeasData* glob)
 	SafeDelete(&glob->rxPwrPhase);
 
 	/* There exists just a single entry, deep copy over */
-	glob = md;
+	*glob = *md;
 
 	/* Enable Menu Item Save File */
 	{
@@ -2241,29 +2252,28 @@ double agentModelPattern::getTxFrequencyDefault(void)
 
 void agentModelPattern::setTxPwrValue(double value)
 {
-	if ((txPower != value && (-40 <= value && value <= 20))) {
+	if (txPower != value && -40.0 <= value && value <= 20.0) {
 		txPower = value;
 
 		try {
-			switch (pConInstruments[C_CONNECTED_RX]->actIfcType) {
+			switch (pConInstruments[C_CONNECTED_TX]->actIfcType) {
 
 			case ACT_IFC_USB:
 			{
 				AgentUsbReq_t usbReqData;
 				char wrkBuf[256] = { 0 };
 
-				/* Send center frequency in Hz */
-				rxFrequency = pConInstruments[C_CONNECTED_RX]->rxCurRfQrg;
-				_snprintf_s(wrkBuf, sizeof(wrkBuf), ":FREQ:CENT %fHz", rxFrequency);  // DSA875
+				/* Send TX power in dBm */
+				_snprintf_s(wrkBuf, sizeof(wrkBuf), ":POW %f", txPower);  // SMC100A
 				usbReqData.cmd = C_USBREQ_USBTMC_SEND_ONLY;
-				usbReqData.thisInst = *pConInstruments[C_CONNECTED_RX];
+				usbReqData.thisInst = *pConInstruments[C_CONNECTED_TX];
 				usbReqData.data1 = wrkBuf;
 
 				send(*pAgtUsbTmcReq, usbReqData);
 				AgentUsbRsp_t usbRspData = receive(*pAgtUsbTmcRsp /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 
 				/* Copy back */
-				*pConInstruments[C_CONNECTED_RX] = usbRspData.thisInst;
+				*pConInstruments[C_CONNECTED_TX] = usbRspData.thisInst;
 			}
 			break;
 

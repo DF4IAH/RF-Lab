@@ -131,19 +131,19 @@ enum MEASDATA_SETUP_ENUM {
 
 typedef struct {
 
-	MEASDATA_SETUP_ENUM					measVar;
+	volatile MEASDATA_SETUP_ENUM			measVar;
 
-	double								txQrg;
-	double								txPwr;
-	double								rxSpan;
+	volatile double							txQrg;
+	volatile double							txPwr;
+	volatile double							rxSpan;
 
-	double								rxRefPwr;
+	volatile double							rxRefPwr;
 
-	double								posStep;
-	int									entriesCount;
-	std::list<double>				   *posDeg;
-	std::list<double>				   *rxPwrMag;
-	std::list<double>				   *rxPwrPhase;
+	volatile double							posStep;
+	volatile int							entriesCount;
+	std::list<double>					   *posDeg;
+	std::list<double>					   *rxPwrMag;
+	std::list<double>					   *rxPwrPhase;
 
 } MeasData;
 

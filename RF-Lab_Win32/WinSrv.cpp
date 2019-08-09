@@ -1070,7 +1070,7 @@ void WinSrv::saveCurrentDataset(void)
 
 
 				/* 3rd line */
-				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Frequenz %d.%03d %cHz\r\n",
+				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Frequenz: %d.%03d %cHz\r\n",
 					measType.measTxFreqHz_int, measType.measTxFreqHz_frac3, measType.meastxFreqHz_exp);
 
 				/* Length in bytes */
@@ -1085,7 +1085,7 @@ void WinSrv::saveCurrentDataset(void)
 
 
 				/* 4th line */
-				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Leistung %d.%03d dBm\r\n",
+				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Leistung: %d.%03d dBm\r\n",
 					measType.measTxPowerDbm_int, measType.measTxPowerDbm_frac3);
 
 				/* Length in bytes */
@@ -1117,6 +1117,8 @@ void WinSrv::saveCurrentDataset(void)
 
 				/* Close file */
 				CloseHandle(fh);
+
+				__nop();
 			}
 		}
 		break;
@@ -1169,10 +1171,11 @@ void WinSrv::getMeasType(MEASTYPE* measType)
 {
 	if (g_instance && g_instance->isReady() && measType) {
 		/* Wipe out old data */
-		memset(measType, 0, sizeof(MEASTYPE));
+		memset((void*)measType, 0, sizeof(MEASTYPE));
 
 		/* Retrieve data */
-	  //measType->measSimuMode		= agentModel::getSimuMode();
+	  //measType->measSimuMode = agentModel::getSimuMode();
+		&measType->measData;
 		agentModel::getMeasData(&measType->measData);
 
 		/* Pretty print entities - Frequency */
@@ -1185,7 +1188,7 @@ void WinSrv::getMeasType(MEASTYPE* measType)
 		};
 
 		measType->measTxFreqHz_int = (int)frequency;
-		measType->measTxFreqHz_frac3 = (int)(frequency * 1000.0);
+		measType->measTxFreqHz_frac3 = ((int)(frequency * 1000.0)) % 1000;
 		switch (frequencyExp) {
 
 		default:
@@ -1198,11 +1201,11 @@ void WinSrv::getMeasType(MEASTYPE* measType)
 			break;
 
 		case 6:
-			measType->meastxFreqHz_exp = L'k';
+			measType->meastxFreqHz_exp = L'M';
 			break;
 
 		case 9:
-			measType->meastxFreqHz_exp = L'k';
+			measType->meastxFreqHz_exp = L'G';
 			break;
 
 		}

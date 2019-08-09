@@ -42,8 +42,9 @@ public:
 
 
 	/* agentModelPattern - GENERAL */
-	virtual void	setSimuMode(int simuMode);
-	virtual int		getSimuMode(void);
+	virtual void	setSimuMode(AGENT_ALL_SIMUMODE_t simuMode);
+	virtual AGENT_ALL_SIMUMODE_t getSimuMode(void);
+	virtual void	getMeasData(MeasData** md);
 	virtual void	runProcess(int processID, int arg);
 	virtual void	initDevices(void);
 

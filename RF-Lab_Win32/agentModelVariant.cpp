@@ -43,13 +43,17 @@ void agentModelVariant::wmCmd(int wmId, LPVOID arg)
 
 
 /* agentModelPattern - GENERAL */
-void agentModelVariant::setSimuMode(int simuMode)
+void agentModelVariant::setSimuMode(AGENT_ALL_SIMUMODE_t simuMode)
 {
 }
 
-int agentModelVariant::getSimuMode(void)
+AGENT_ALL_SIMUMODE_t agentModelVariant::getSimuMode(void)
 {
-	return 0;
+	return AGENT_ALL_SIMUMODE_NONE;
+}
+
+void agentModelVariant::getMeasData(MeasData** md)
+{
 }
 
 void agentModelVariant::runProcess(int processID, int arg)

@@ -221,20 +221,27 @@ unsigned int agentModel::getLineLength(const char* p, unsigned int len)
 
 /* agentModelPattern - GENERAL */
 
-void agentModel::setSimuMode(int simuMode)
+void agentModel::setSimuMode(AGENT_ALL_SIMUMODE_t simuMode)
 {
 	if (g_am && g_am->_curModel) {
 		g_am->_curModel->setSimuMode(simuMode);
 	}
 }
 
-int agentModel::getSimuMode(void)
+AGENT_ALL_SIMUMODE_t agentModel::getSimuMode(void)
 {
 	if (g_am && g_am->_curModel) {
 		return g_am->_curModel->getSimuMode();
 	}
 	else {
-		return 0;
+		return AGENT_ALL_SIMUMODE_NONE;
+	}
+}
+
+void agentModel::getMeasData(MeasData** md)
+{
+	if (g_am && g_am->_curModel) {
+		g_am->_curModel->getMeasData(md);
 	}
 }
 

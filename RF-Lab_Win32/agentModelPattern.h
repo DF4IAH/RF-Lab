@@ -171,37 +171,6 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 };
 
 
-enum MEASDATA_SETUP_ENUM {
-
-	MEASDATA_SETUP__NONE = 0,
-
-	MEASDATA_SETUP__REFMEAS_GEN_SPEC,
-	MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC,
-	MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC,
-
-};
-
-
-
-typedef struct {
-
-	MEASDATA_SETUP_ENUM					measVar;
-	
-	double								txQrg;
-	double								txPwr;
-	double								rxSpan;
-
-	double								rxRefPwr;
-
-	double								posStep;
-	int									entriesCount;
-	std::list<double>				   *posDeg;
-	std::list<double>				   *rxPwrMag;
-	std::list<double>				   *rxPwrPhase;
-
-} MeasData;
-
-
 
 class agentModelPattern;
 typedef struct threadDataAgentModelPattern_s {
@@ -238,7 +207,7 @@ private:
 
 	volatile int						 processing_ID;
 	volatile int						 processing_arg1;
-	volatile int						 simuMode;
+	volatile AGENT_ALL_SIMUMODE_t		 simuMode;
 
 	volatile int						 initState;
 	volatile bool						 guiPressedConnect;
@@ -293,8 +262,9 @@ public:
 	static void				procThreadProcessID(void* pContext);
 
 	/* agentModelPattern - GENERAL */
-	void					setSimuMode(int simuMode);
-	int						getSimuMode(void);
+	void					setSimuMode(AGENT_ALL_SIMUMODE_t simuMode);
+	AGENT_ALL_SIMUMODE_t	getSimuMode(void);
+	void					getMeasData(MeasData** md);
 	void					runProcess(int processID, int arg);
 	void					connectDevices(void);
 	void					initDevices(void);

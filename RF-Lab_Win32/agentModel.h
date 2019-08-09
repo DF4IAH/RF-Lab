@@ -118,6 +118,38 @@ typedef struct confAttributes
 
 
 
+
+enum MEASDATA_SETUP_ENUM {
+
+	MEASDATA_SETUP__NONE = 0,
+
+	MEASDATA_SETUP__REFMEAS_GEN_SPEC,
+	MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC,
+	MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC,
+
+};
+
+typedef struct {
+
+	MEASDATA_SETUP_ENUM					measVar;
+
+	double								txQrg;
+	double								txPwr;
+	double								rxSpan;
+
+	double								rxRefPwr;
+
+	double								posStep;
+	int									entriesCount;
+	std::list<double>				   *posDeg;
+	std::list<double>				   *rxPwrMag;
+	std::list<double>				   *rxPwrPhase;
+
+} MeasData;
+
+
+
+
 int	compare(void *pvlocale, const void *str1, const void *str2);
 
 
@@ -182,8 +214,9 @@ public:
 
 	/* agentModelPattern - GENERAL */
 	       void		setupInstrumentList(void);
-	static void		setSimuMode(int simuMode);
-	static int		getSimuMode(void);
+	static void		setSimuMode(AGENT_ALL_SIMUMODE_t simuMode);
+	static AGENT_ALL_SIMUMODE_t	getSimuMode(void);
+	static void     getMeasData(MeasData** md);
 	static void		sendModelStatus(LPVOID status1, LPVOID status2);
 	static void     initDevices(void);
 	static void		runProcess(int processID, int arg);

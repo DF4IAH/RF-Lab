@@ -1845,14 +1845,22 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 /* agentModelPattern - GENERAL */
 
-void agentModelPattern::setSimuMode(int mode)
+void agentModelPattern::setSimuMode(AGENT_ALL_SIMUMODE_t mode)
 {
 	simuMode = mode;
 }
 
-int agentModelPattern::getSimuMode(void)
+AGENT_ALL_SIMUMODE_t agentModelPattern::getSimuMode(void)
 {
 	return simuMode;
+}
+
+void agentModelPattern::getMeasData(MeasData** md)
+{
+	if (md) {
+		/* Set pointer to the Data list */
+		*md = &measDataEntries;
+	}
 }
 
 

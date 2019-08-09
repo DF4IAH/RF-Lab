@@ -1001,13 +1001,123 @@ FILETYPE_ENUM WinSrv::getFileType(wchar_t* filename)
 void WinSrv::saveCurrentDataset(void)
 {
 	if (g_instance && g_instance->isReady()) {
+		/* Create last path and file name */
+		wchar_t filePathName[MAX_PATH] = { 0 };
+		wchar_t* pos = filePathName + lstrlenW(g_instance->cLastFilePath);
+		StrCpyNW(filePathName, g_instance->cLastFilePath, sizeof(filePathName));
+		StrCpyNW(pos, L"\\", 2);
+		StrCpyNW(pos + 1, g_instance->cLastFileName, (int)(lstrlenW(g_instance->cLastFilePath) - (pos - g_instance->cLastFileName)));
+
+		/* Get local time */
+		SYSTEMTIME systemTime;
+		GetLocalTime(&systemTime);
+
+		/* Get type of meassuremnt */
+		MEASTYPE measType;
+		getMeasType(&measType);
+
+		/* Retrieve file type */
 		FILETYPE_ENUM ft = getFileType(g_instance->cLastFileName);
 
+		/* Decide which document type is chosen */
 		switch (ft) {
 
 		case FILETYPE_CSV:
 		{
+			/* Open or create new file */
+			HANDLE fh = CreateFile(filePathName,	// File name
+				GENERIC_READ | GENERIC_WRITE,		// Read/Write
+				0,									// No Sharing
+				NULL,								// No Security
+				CREATE_ALWAYS,					    // Wipe out old content of existing file, create new file when not exists
+				0 /*FILE_FLAG_OVERLAPPED*/,	        // Non Overlapped I/O
+				NULL);
 
+			if (fh != INVALID_HANDLE_VALUE) {
+				int status;
+				DWORD len;
+				DWORD lenWritten = 0;
+
+				/* 1st Line */
+				wchar_t lineBuf[MAX_PATH] = { 0 };
+				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Institut für Hochfrequenztechnik (HFT) - Zeitpunkt der Messung: %d-%02d-%02d  %02d:%02d:%02d\r\n", 
+					systemTime.wYear, systemTime.wMonth, systemTime.wDay,
+					systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
+
+				/* Length in bytes */
+				len <<= 1;
+
+				/* Write header line */
+				status = WriteFile(fh,				// Handle to the Serial port
+					lineBuf,						// Data to be written to the port
+					len,							// Number of bytes to write
+					&lenWritten,					// Bytes written
+					NULL);
+
+
+				/* 2nd line */
+				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Antennen-Richtdiagramm\r\n");
+
+				/* Length in bytes */
+				len <<= 1;
+
+				/* Write header line */
+				status = WriteFile(fh,				// Handle to the Serial port
+					lineBuf,						// Data to be written to the port
+					len,							// Number of bytes to write
+					&lenWritten,					// Bytes written
+					NULL);
+
+
+				/* 3rd line */
+				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Frequenz %d.%03d %cHz\r\n",
+					measType.measTxFreqHz_int, measType.measTxFreqHz_frac3, measType.meastxFreqHz_exp);
+
+				/* Length in bytes */
+				len <<= 1;
+
+				/* Write header line */
+				status = WriteFile(fh,				// Handle to the Serial port
+					lineBuf,						// Data to be written to the port
+					len,							// Number of bytes to write
+					&lenWritten,					// Bytes written
+					NULL);
+
+
+				/* 4th line */
+				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Leistung %d.%03d dBm\r\n",
+					measType.measTxPowerDbm_int, measType.measTxPowerDbm_frac3);
+
+				/* Length in bytes */
+				len <<= 1;
+
+				/* Write header line */
+				status = WriteFile(fh,				// Handle to the Serial port
+					lineBuf,						// Data to be written to the port
+					len,							// Number of bytes to write
+					&lenWritten,					// Bytes written
+					NULL);
+
+
+				/* 5th line */
+				len = swprintf_s(lineBuf, sizeof(lineBuf), L"Position, Empfangsleistung_mag, Empfangsleistung_phase\r\n");
+
+				/* Length in bytes */
+				len <<= 1;
+
+				/* Write header line */
+				status = WriteFile(fh,				// Handle to the Serial port
+					lineBuf,						// Data to be written to the port
+					len,							// Number of bytes to write
+					&lenWritten,					// Bytes written
+					NULL);
+
+				/* Iterate over all meassured data */
+
+
+				/* Close file */
+				CloseHandle(fh);
+			}
 		}
 		break;
 
@@ -1052,5 +1162,54 @@ void WinSrv::setLastFilePath(wchar_t* s)
 			StrCpyNW(g_instance->cLastFilePath, s, (int)(pos - s));
 			StrCpyNW(g_instance->cLastFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
 		}
+	}
+}
+
+void WinSrv::getMeasType(MEASTYPE* measType)
+{
+	if (g_instance && g_instance->isReady() && measType) {
+		/* Wipe out old data */
+		memset(measType, 0, sizeof(MEASTYPE));
+
+		/* Retrieve data */
+	  //measType->measSimuMode		= agentModel::getSimuMode();
+		agentModel::getMeasData(&measType->measData);
+
+		/* Pretty print entities - Frequency */
+		double frequency = measType->measData->txQrg;
+
+		int frequencyExp = 0;
+		while (frequency >= 1000.0) {
+			frequency /= 1000.0;
+			frequencyExp += 3;
+		};
+
+		measType->measTxFreqHz_int = (int)frequency;
+		measType->measTxFreqHz_frac3 = (int)(frequency * 1000.0);
+		switch (frequencyExp) {
+
+		default:
+		case 0:
+			measType->meastxFreqHz_exp = L' ';
+			break;
+
+		case 3:
+			measType->meastxFreqHz_exp = L'k';
+			break;
+
+		case 6:
+			measType->meastxFreqHz_exp = L'k';
+			break;
+
+		case 9:
+			measType->meastxFreqHz_exp = L'k';
+			break;
+
+		}
+
+		/* Pretty print entities - Power */
+		double power = measType->measData->txPwr;
+		measType->measTxPowerDbm_int = (int)power;
+		measType->measTxPowerDbm_frac3 = ((int)(power * 1000.0)) % 1000;
 	}
 }

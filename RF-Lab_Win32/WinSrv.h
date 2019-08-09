@@ -19,6 +19,22 @@ enum FILETYPE_ENUM {
 
 };
 
+typedef struct {
+
+  //AGENT_ALL_SIMUMODE_t				measSimuMode;
+	MeasData*							measData;
+
+	/* Pretty print entities - Frequency */
+	int									measTxFreqHz_int;
+	int									measTxFreqHz_frac3;
+	wchar_t								meastxFreqHz_exp;
+
+	/* Pretty print entities - Power */
+	int									measTxPowerDbm_int;
+	int									measTxPowerDbm_frac3;
+
+} MEASTYPE;
+
 
 class WinSrv
 {
@@ -112,5 +128,6 @@ public:
 	static wchar_t*	getLastFilePath(void);
 	static wchar_t*	getLastFileName(void);
 	static void		setLastFilePath(wchar_t* s);
+	static void     getMeasType(MEASTYPE* measType);
 
 };

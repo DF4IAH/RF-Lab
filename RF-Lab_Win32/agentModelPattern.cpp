@@ -1667,7 +1667,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 						PWCHAR l_status2 = (PWCHAR)LocalLock(l_status2_alloc);
 
 						if (!_noWinMsg) {
-							swprintf_s(l_status2, l_status_size, L"COM: 1 ~ rotor turns to  %+03d°  position", (*pi) / 1000);
+							swprintf(l_status2, l_status_size, L"COM: 1 ~ rotor turns to  %+03d°  position", (*pi) / 1000);
 							pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", l_status2, L"RUNNING ...");
 						}
 
@@ -1919,7 +1919,7 @@ void agentModelPattern::setStatusPosition(double posDeg)
 	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
 
 	if (!_noWinMsg) {
-		swprintf_s(l_status3, l_status_size, L"position: %+03.0lf°", posDeg);
+		swprintf(l_status3, l_status_size, L"position: %+03.0lf°", posDeg);
 		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
 	}
 
@@ -2709,7 +2709,7 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 			double testY = 0.0;
 			getRxMarkerPeak(&testX, &testY);
 
-			swprintf_s(strbuf, sizeof(strbuf) / 2, L"> Pos = %03d°: f = %E Hz, \tP = %E dBm.\n", (int)degPosIter, testX, testY);
+			swprintf(strbuf, sizeof(strbuf)>>1, L"> Pos = %03d°: f = %E Hz, \tP = %E dBm.\n", (int)degPosIter, testX, testY);
 			OutputDebugString(strbuf);
 
 			/* Store current data */

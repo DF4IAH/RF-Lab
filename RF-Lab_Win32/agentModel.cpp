@@ -1121,7 +1121,7 @@ _fsLoadInstruments_Error:
 	{
 		wchar_t errMsg[256] = { 0 };
 
-		swprintf_s(errMsg, sizeof(errMsg)>>1,  L"Error when reading config file\n\n%hs\n\n%hs\nLine: %ld\n", errMsgBuf, _fs_instrument_settings_filename, errLine);
+		swprintf(errMsg, sizeof(errMsg)>>1,  L"Error when reading config file\n\n%hs\n\n%hs\nLine: %ld\n", errMsgBuf, _fs_instrument_settings_filename, errLine);
 		MessageBoxW(_hWnd, errMsg, L"Configuration error", MB_ICONERROR);
 	}
 }

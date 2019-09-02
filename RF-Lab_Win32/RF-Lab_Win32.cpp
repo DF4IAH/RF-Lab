@@ -402,7 +402,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			g_iCbValue = 180;
 		}
 
-		swprintf_s(szIdcRotorPosXCurrent, L"%lld", g_iCbValue);
+		swprintf(szIdcRotorPosXCurrent, sizeof(szIdcRotorPosXCurrent)>>1, L"%lld", g_iCbValue);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_CURRENT_EDIT_RO, szIdcRotorPosXCurrent);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
 		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMIN, FALSE,   0);
@@ -424,7 +424,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			g_iCbValue = SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0) - 180;
 		}
 
-		swprintf_s(szIdcRotorPosXCurrent, L"%lld", g_iCbValue);
+		swprintf(szIdcRotorPosXCurrent, sizeof(szIdcRotorPosXCurrent)>>1, L"%lld", g_iCbValue);
 		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
 		break;
 
@@ -489,10 +489,10 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 	case WM_INITDIALOG:
 		CheckDlgButton(hWnd, IDC_TX_SETTINGS_ON_CHECK, agentModel::getTxOnState());
 
-		swprintf_s(szIdcTxSettingsFrequency, L"%.3f", agentModel::getTxFrequencyValue());
+		swprintf(szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency)>>1, L"%.3f", agentModel::getTxFrequencyValue());
 		SetDlgItemText(hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency);
 		
-		swprintf_s(szIdcTxSettingsPower, L"%.1f", agentModel::getTxPwrValue());
+		swprintf(szIdcTxSettingsPower, sizeof(szIdcTxSettingsPower)>>1, L"%.1f", agentModel::getTxPwrValue());
 		SetDlgItemText(hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower);
 
 		return (INT_PTR)TRUE;
@@ -552,10 +552,10 @@ BOOL CALLBACK AskRxSettings_CB(HWND hWnd,
 
 	switch (message) {
 	case WM_INITDIALOG:
-		swprintf_s(szIdcRxSettingsFrequency, L"%.3f", agentModel::getRxFrequencyValue());
+		swprintf(szIdcRxSettingsFrequency, sizeof(szIdcRxSettingsFrequency)>>1, L"%.3f", agentModel::getRxFrequencyValue());
 		SetDlgItemText(hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency);
 
-		swprintf_s(szIdcRxSettingsSpan, L"%.1f", agentModel::getRxSpanValue());
+		swprintf(szIdcRxSettingsSpan, sizeof(szIdcRxSettingsSpan)>>1, L"%.1f", agentModel::getRxSpanValue());
 		SetDlgItemText(hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan);
 
 		return (INT_PTR)TRUE;

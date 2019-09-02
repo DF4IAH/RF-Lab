@@ -623,7 +623,7 @@ int USB_TMC::scpi_usbtmc_libusb_send(void *priv, const char *command)
 	if (scpi_usbtmc_bulkout(uscpi, DEV_DEP_MSG_OUT, command, (int32_t) strlen(command), EOM) <= 0)
 		return false;
 
-	swprintf_s(strbuf, sizeof(strbuf) >> 1, L"Successfully sent SCPI command: '%hs'.\n", command);  OutputDebugString(strbuf);
+	swprintf(strbuf, sizeof(strbuf)>>1, L"Successfully sent SCPI command: '%hs'.\n", command);  OutputDebugString(strbuf);
 	return true;
 }
 

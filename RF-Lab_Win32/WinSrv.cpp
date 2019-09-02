@@ -81,6 +81,7 @@ WinSrv::WinSrv() : hWnd(nullptr)
 				 , cLastFileName(L"Ant-Richtdiagramm.csv")
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
 	if (SUCCEEDED(hr)) {
 		/* Start model */
 		threadsStart();
@@ -1001,10 +1002,12 @@ FILETYPE_ENUM WinSrv::getFileType(wchar_t* filename)
 void WinSrv::saveCurrentDataset(void)
 {
 	if (g_instance && g_instance->isReady()) {
+		MEASTYPE measType;
+
 		/* Create last path and file name */
-		wchar_t filePathName[MAX_PATH] = { 0 };
-		wchar_t* pos = filePathName + lstrlenW(g_instance->cLastFilePath);
-		StrCpyNW(filePathName, g_instance->cLastFilePath, sizeof(filePathName));
+		wchar_t lineBuf[MAX_PATH] = { 0 };
+		wchar_t* pos = lineBuf + lstrlenW(g_instance->cLastFilePath);
+		StrCpyNW(lineBuf, g_instance->cLastFilePath, sizeof(lineBuf));
 		StrCpyNW(pos, L"\\", 2);
 		StrCpyNW(pos + 1, g_instance->cLastFileName, (int)(lstrlenW(g_instance->cLastFilePath) - (pos - g_instance->cLastFileName)));
 
@@ -1013,7 +1016,6 @@ void WinSrv::saveCurrentDataset(void)
 		GetLocalTime(&systemTime);
 
 		/* Get type of meassuremnt */
-		MEASTYPE measType;
 		getMeasType(&measType);
 
 		/* Retrieve file type */
@@ -1025,7 +1027,7 @@ void WinSrv::saveCurrentDataset(void)
 		case FILETYPE_CSV:
 		{
 			/* Open or create new file */
-			HANDLE fh = CreateFile(filePathName,	// File name
+			HANDLE fh = CreateFile(lineBuf,			// File name
 				GENERIC_READ | GENERIC_WRITE,		// Read/Write
 				0,									// No Sharing
 				NULL,								// No Security
@@ -1039,8 +1041,7 @@ void WinSrv::saveCurrentDataset(void)
 				DWORD lenWritten = 0;
 
 				/* 1st Line */
-				wchar_t lineBuf[MAX_PATH] = { 0 };
-				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Institut für Hochfrequenztechnik (HFT) - Zeitpunkt der Messung: %d-%02d-%02d  %02d:%02d:%02d\r\n", 
+				len = swprintf(lineBuf, sizeof(lineBuf), L"# Institut für Hochfrequenztechnik (HFT) - Zeitpunkt der Messung: %d-%02d-%02d  %02d:%02d:%02d\r\n", 
 					systemTime.wYear, systemTime.wMonth, systemTime.wDay,
 					systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
 
@@ -1056,7 +1057,7 @@ void WinSrv::saveCurrentDataset(void)
 
 
 				/* 2nd line */
-				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Antennen-Richtdiagramm\r\n");
+				len = swprintf(lineBuf, sizeof(lineBuf), L"# Antennen-Richtdiagramm\r\n");
 				len <<= 1;
 
 				/* Write header line */
@@ -1068,7 +1069,7 @@ void WinSrv::saveCurrentDataset(void)
 
 
 				/* 3rd line */
-				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Frequenz: %d.%03d %cHz\r\n",
+				len = swprintf(lineBuf, sizeof(lineBuf), L"# Sende-Frequenz: %d.%03d %cHz\r\n",
 					measType.measTxFreqHz_int, measType.measTxFreqHz_frac3, measType.meastxFreqHz_exp);
 				len <<= 1;
 
@@ -1081,7 +1082,7 @@ void WinSrv::saveCurrentDataset(void)
 
 
 				/* 4th line */
-				len = swprintf_s(lineBuf, sizeof(lineBuf), L"# Sende-Leistung: %d.%03d dBm\r\n",
+				len = swprintf(lineBuf, sizeof(lineBuf), L"# Sende-Leistung: %d.%03d dBm\r\n",
 					measType.measTxPowerDbm_int, measType.measTxPowerDbm_frac3);
 				len <<= 1;
 
@@ -1094,7 +1095,7 @@ void WinSrv::saveCurrentDataset(void)
 
 
 				/* 5th line */
-				len = swprintf_s(lineBuf, sizeof(lineBuf), L"Position, Empfangsleistung_mag, Empfangsleistung_phase\r\n");
+				len = swprintf(lineBuf, sizeof(lineBuf), L"Position, Empfangsleistung_mag, Empfangsleistung_phase\r\n");
 				len <<= 1;
 
 				/* Write header line */
@@ -1111,11 +1112,7 @@ void WinSrv::saveCurrentDataset(void)
 					std::list<double>::const_iterator itPwrPhase	= measType.measData->rxPwrPhase->begin();
 
 					for (int lineNo = 1; lineNo <= measType.measData->entriesCount; lineNo++) {
-						const double pos		= *itPos;
-						const double pwrMag		= *itPwrMag;
-						const double pwrPhase	= *itPwrPhase;
-
-						len = swprintf_s(lineBuf, sizeof(lineBuf), L"%lf, %lf, %lf\r\n", pos, pwrMag, pwrPhase);
+						len = swprintf(lineBuf, sizeof(lineBuf), L"%lf, %lf, %lf\r\n", *itPos, *itPwrMag, *itPwrPhase);
 						// TODO: Der Aufruf dieser print() Funktion zerstört die Iteratoren. Stack zu klein???
 						len <<= 1;
 

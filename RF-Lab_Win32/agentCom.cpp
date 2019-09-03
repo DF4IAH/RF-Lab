@@ -215,16 +215,16 @@ void agentCom::iecPrepare(int iecAddr)
 /* Do an *IDN? request and return the response */
 string agentCom::getIdnResponse(void)
 {
-	string linkUsb_idn;
+	string idn;
 
 	for (int cnt = 5; cnt; cnt--) {
-		linkUsb_idn = doComRequestResponse((const string)string(C_IDN_REQ_STR));
-		if (linkUsb_idn.length() > 2) {
+		idn = doComRequestResponse((const string)string(C_IDN_REQ_STR));
+		if (idn.length() > 2) {
 			break;
 		}
 		Sleep(100L);
 	}
-	return trim(linkUsb_idn);
+	return trim(idn);
 }
 
 

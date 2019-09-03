@@ -1391,14 +1391,14 @@ bool agentModelPattern::instTryCom(InstList_t::iterator it)
 			int len = _snprintf_s(buf, C_BUF_SIZE,
 				C_OPENPARAMS_STR,
 				it->linkSerPort, it->linkSerBaud, it->linkSerBits, it->linkSerParity, it->linkSerStopbits,
-				C_SET_IEC_ADDR_INVALID);
+				(it->linkSerIecAddr ?  it->linkSerIecAddr : C_SET_IEC_ADDR_INVALID));
 			buf[len] = 0;
 
 			comReqData.cmd = C_COMREQ_OPEN_IDN;
 			comReqData.parm = string(buf);
 			send(*(pAgtComReq[agtComIdx]), comReqData);
 
-			AgentComRsp_t comRspData = receive(*(pAgtComRsp[agtComIdx]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			AgentComRsp_t comRspData = receive(*(pAgtComRsp[agtComIdx]) /*, AGENT_PATTERN_RECEIVE_TIMEOUT */);
 			if (comRspData.stat == C_COMRSP_DATA) {
 				string rspIdnStr = string(comRspData.data1);
 				/* IDN string */

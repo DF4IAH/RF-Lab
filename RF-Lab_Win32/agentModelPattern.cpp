@@ -657,7 +657,7 @@ void agentModelPattern::run(void)
 				}
 
 				initState = 0x40;
-				_runState = C_MODELPATTERN_RUNSTATES_INST_USB_INIT;				// next runstate default setting
+				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;					// next runstate default setting
 
 				/* COM: Rotor Init */
 				if (pAgtCom[C_COMINST_ROT]) {
@@ -986,8 +986,6 @@ void agentModelPattern::run(void)
 				if (!_noWinMsg) {
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Ready to run meassurements", L"--- SELECT NOW ---");
 				}
-
-				_runState = C_MODELPATTERN_RUNSTATES_RUNNING;
 			}
 			break;
 
@@ -1419,14 +1417,14 @@ bool agentModelPattern::instTryCom(InstList_t::iterator it)
 				if (it->listFunction == INST_FUNC_GEN) {
 					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: RF generator", L"... FOUND");
-						Sleep(500L);
+						Sleep(250L);
 					}
 				}
 
 				else if (it->listFunction == INST_FUNC_SPEC) {
 					if (!_noWinMsg) {
 						pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: Spectrum analyzer", L"... FOUND");
-						Sleep(500L);
+						Sleep(250L);
 					}
 				}
 			}
@@ -1436,6 +1434,7 @@ bool agentModelPattern::instTryCom(InstList_t::iterator it)
 				it->linkType &= ~(LINKTYPE_IEC_VIA_SER | LINKTYPE_COM);
 				it->actLink = false;
 				it->actSelected = false;
+				it->actIfcType = ACT_IFC_NONE;
 			}
 
 			/* Close connection again */

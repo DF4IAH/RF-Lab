@@ -24,6 +24,8 @@ using namespace std;
 #define C_ZOLIX_VERSION_REQ_STR2					"VE\r"
 #define C_ZOLIX_VERSION_VAL_STR						"SC300"
 #define C_SYNC_STR									"\r\n"
+#define C_PROLOGIX_RESET_STR						"++rst\r\n"
+#define C_RES_STR									"*RST\r\n"
 #define C_IDN_REQ_STR								"*IDN?\r\n"
 
 #define C_SET_IEC_ADDR_INVALID						-1

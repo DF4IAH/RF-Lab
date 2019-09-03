@@ -42,17 +42,17 @@ using namespace std;
 #define AGENT_PATTERN_360_POS_DEGREE_END		 180.0
 #define AGENT_PATTERN_360_POS_DEGREE_STEP		   5.0
 
-/* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter RF on/off */
+/* TX: RF on/off */
 #define AGENT_PATTERN_TX_ON_STATE_DEFAULT		TRUE
 
-/* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter frequency 24 GHz */
-#define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT		  24e9
+/* TX: Frequency 2.4 GHz */
+#define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT		  2.4e9
 
-/* RX: Rohde & Schwarz SMR40 (signal generator) - transmitter power -20 dBm */
+/* TX: Power -20 dBm */
 #define AGENT_PATTERN_TX_PWR_VALUE_DEFAULT		   -20
 
 
-/* RX: Rohde & Schwarz FSEK20 (spectrum analyzer) - frequency span 100 kHz */
+/* RX: Frequency span 100 kHz */
 #define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT		 100e3
 //#endif
 

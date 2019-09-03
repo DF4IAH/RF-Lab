@@ -736,7 +736,7 @@ void agentModelPattern::run(void)
 									_runState = C_MODELPATTERN_RUNSTATES_INIT_ERROR;
 									break;
 								}
-							} while (_strnicmp(&(comRspData.data1[0]), "ROHDE", 5));
+							} while (!memchr(comRspData.data1.c_str(), L',', comRspData.data1.length()));
 							initState = 0x54;
 
 							if (_runState != C_MODELPATTERN_RUNSTATES_INIT_ERROR) {
@@ -1257,7 +1257,7 @@ void agentModelPattern::checkInstruments(void)
 			instTryEth(it);
 		}
 
-		/* Try COM connection, even when IEC is interfaced to a COM port */
+		/* Try COM connection, also when GPIB is interfaced via a COM port */
 		if (linkType & LINKTYPE_COM) {
 			instTryCom(it);
 		}

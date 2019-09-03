@@ -1113,7 +1113,6 @@ void WinSrv::saveCurrentDataset(void)
 
 					for (int lineNo = 1; lineNo <= measType.measData->entriesCount; lineNo++) {
 						len = swprintf(lineBuf, sizeof(lineBuf), L"%lf, %lf, %lf\r\n", *itPos, *itPwrMag, *itPwrPhase);
-						// TODO: Der Aufruf dieser print() Funktion zerstört die Iteratoren. Stack zu klein???
 						len <<= 1;
 
 						/* Write header line */

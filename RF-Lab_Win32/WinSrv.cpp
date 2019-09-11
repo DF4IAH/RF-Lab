@@ -1108,6 +1108,13 @@ void WinSrv::saveCurrentDataset(void)
 				if (measType.measData->measVar == MEASDATA_SETUP__REFMEAS_GEN_SPEC) {
 					len = swprintf(lineBuf, sizeof(lineBuf), L"%lf, %lf, %lf\r\n", 0.0, measType.measData->rxRefPwr, 0.0);
 					len <<= 1;
+
+					/* Write header line */
+					status = WriteFile(fh,				// Handle to the Serial port
+						lineBuf,						// Data to be written to the port
+						len,							// Number of bytes to write
+						&lenWritten,					// Bytes written
+						NULL);
 				}
 				
 				else if ((measType.measData->measVar == MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC)  ||

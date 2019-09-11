@@ -1105,27 +1105,35 @@ void WinSrv::saveCurrentDataset(void)
 					&lenWritten,					// Bytes written
 					NULL);
 
-				/* Iterate over all meassured data */
-				if (measType.measData->posDeg && measType.measData->rxPwrMag && measType.measData->rxPwrPhase) {
-					std::list<double>::const_iterator itPos			= measType.measData->posDeg->begin();
-					std::list<double>::const_iterator itPwrMag		= measType.measData->rxPwrMag->begin();
-					std::list<double>::const_iterator itPwrPhase	= measType.measData->rxPwrPhase->begin();
+				if (measType.measData->measVar == MEASDATA_SETUP__REFMEAS_GEN_SPEC) {
+					len = swprintf(lineBuf, sizeof(lineBuf), L"%lf, %lf, %lf\r\n", 0.0, measType.measData->rxRefPwr, 0.0);
+					len <<= 1;
+				}
+				
+				else if ((measType.measData->measVar == MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC)  ||
+						 (measType.measData->measVar == MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC)) {
+					/* Iterate over all meassured data */
+					if (measType.measData->posDeg && measType.measData->rxPwrMag && measType.measData->rxPwrPhase) {
+						std::list<double>::const_iterator itPos			= measType.measData->posDeg->begin();
+						std::list<double>::const_iterator itPwrMag		= measType.measData->rxPwrMag->begin();
+						std::list<double>::const_iterator itPwrPhase	= measType.measData->rxPwrPhase->begin();
 
-					for (int lineNo = 1; lineNo <= measType.measData->entriesCount; lineNo++) {
-						len = swprintf(lineBuf, sizeof(lineBuf), L"%lf, %lf, %lf\r\n", *itPos, *itPwrMag, *itPwrPhase);
-						len <<= 1;
+						for (int lineNo = 1; lineNo <= measType.measData->entriesCount; lineNo++) {
+							len = swprintf(lineBuf, sizeof(lineBuf), L"%lf, %lf, %lf\r\n", *itPos, *itPwrMag, *itPwrPhase);
+							len <<= 1;
 
-						/* Write header line */
-						status = WriteFile(fh,				// Handle to the Serial port
-							lineBuf,						// Data to be written to the port
-							len,							// Number of bytes to write
-							&lenWritten,					// Bytes written
-							NULL);
+							/* Write header line */
+							status = WriteFile(fh,				// Handle to the Serial port
+								lineBuf,						// Data to be written to the port
+								len,							// Number of bytes to write
+								&lenWritten,					// Bytes written
+								NULL);
 
-						// Goto next row
-						++itPos;
-						++itPwrMag;
-						++itPwrPhase;
+							// Goto next row
+							++itPos;
+							++itPwrMag;
+							++itPwrPhase;
+						}
 					}
 				}
 
@@ -1188,8 +1196,7 @@ void WinSrv::getMeasType(MEASTYPE* measType)
 		memset((void*)measType, 0, sizeof(MEASTYPE));
 
 		/* Retrieve data */
-	  //measType->measSimuMode = agentModel::getSimuMode();
-		&measType->measData;
+		//measType->measSimuMode = agentModel::getSimuMode();
 		agentModel::getMeasData(&measType->measData);
 
 		/* Pretty print entities - Frequency */

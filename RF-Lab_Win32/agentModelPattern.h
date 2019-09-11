@@ -268,6 +268,7 @@ public:
 	void					runProcess(int processID, int arg);
 	void					connectDevices(void);
 	void					initDevices(void);
+	void					perfomInitValues(InstList_t::iterator it);
 	void					setStatusPosition(double posDeg);
 
 	/* agentModelPattern - Rotor */

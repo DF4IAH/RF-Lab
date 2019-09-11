@@ -62,8 +62,10 @@ public:
 	}
 };
 
+
 float DPIScale::scaleX = 1.0f;
 float DPIScale::scaleY = 1.0f;
+WinSrv* g_winSrv = nullptr;
 
 
 WinSrv::WinSrv() : hWnd(nullptr)
@@ -80,6 +82,8 @@ WinSrv::WinSrv() : hWnd(nullptr)
 				 , cLastFilePath(L"C:\\Users\\Labor\\Downloads")
 				 , cLastFileName(L"Ant-Richtdiagramm.csv")
 {
+	g_winSrv = this;
+
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 
 	if (SUCCEEDED(hr)) {
@@ -101,6 +105,8 @@ WinSrv::~WinSrv()
 
 	CloseHandle(g_InstListMutex);
 	g_InstListMutex = nullptr;
+
+	g_winSrv = nullptr;
 }
 
 
@@ -1147,7 +1153,10 @@ void WinSrv::saveCurrentDataset(void)
 				/* Close file */
 				CloseHandle(fh);
 
-				__nop();
+				if (g_winSrv) {
+					/* Inform in status line */
+					g_winSrv->reportStatus(L"Model: Pattern", L"Ready for new jobs", L"READY");
+				}
 			}
 		}
 		break;

@@ -941,6 +941,7 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 			/* Append ModelPattern specific items to the menu */
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_STOP,			L"Richtdiagramm: anhalten und beenden");
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_REF_START,    L"Referenzmessung ausführen");
+			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_010_START,	L"Richtdiagramm über 10° ausmessen");
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_180_START,	L"Richtdiagramm über 180° ausmessen");
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND | MF_STRING, ID_MODEL_PATTERN_360_START,	L"Richtdiagramm über 360° ausmessen");
 
@@ -955,6 +956,8 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 		if (_menuInfo.modelPatternAct) {
 			/* Remove menu items */
 			RemoveMenu(hMenu, ID_MODEL_PATTERN_STOP, MF_BYCOMMAND);
+			RemoveMenu(hMenu, ID_MODEL_PATTERN_REF_START, MF_BYCOMMAND);
+			RemoveMenu(hMenu, ID_MODEL_PATTERN_010_START, MF_BYCOMMAND);
 			RemoveMenu(hMenu, ID_MODEL_PATTERN_180_START, MF_BYCOMMAND);
 			RemoveMenu(hMenu, ID_MODEL_PATTERN_360_START, MF_BYCOMMAND);
 
@@ -1123,7 +1126,8 @@ void WinSrv::saveCurrentDataset(void)
 						NULL);
 				}
 				
-				else if ((measType.measData->measVar == MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC)  ||
+				else if ((measType.measData->measVar == MEASDATA_SETUP__ROT010_DEG5_GEN_SPEC)  ||
+						 (measType.measData->measVar == MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC)  ||
 						 (measType.measData->measVar == MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC)) {
 					/* Iterate over all meassured data */
 					if (measType.measData->posDeg && measType.measData->rxPwrMag && measType.measData->rxPwrPhase) {

@@ -29,19 +29,17 @@ using namespace std;
 #define AGENT_PATTERN_000_POS_DEGREE_END		   0.0
 #define AGENT_PATTERN_000_POS_DEGREE_STEP		   5.0
 
-/* ROTOR: Pattern 180° is measured between these to limits by 5° steps */
-// #define DEBUG_QUICK_RECORDING
-#ifdef DEBUG_QUICK_RECORDING
-#define AGENT_PATTERN_180_POS_DEGREE_START		  -5.0
-#define AGENT_PATTERN_180_POS_DEGREE_END		   5.0
-#define AGENT_PATTERN_180_POS_DEGREE_STEP		   5.0
-#else
+/* ROTOR: Pattern 10° is measured between these to their limits by 5° steps */
+#define AGENT_PATTERN_010_POS_DEGREE_START		  -5.0
+#define AGENT_PATTERN_010_POS_DEGREE_END		   5.0
+#define AGENT_PATTERN_010_POS_DEGREE_STEP		   5.0
+
+/* ROTOR: Pattern 180° is measured between these to their limits by 5° steps */
 #define AGENT_PATTERN_180_POS_DEGREE_START		 -90.0
 #define AGENT_PATTERN_180_POS_DEGREE_END		  90.0
 #define AGENT_PATTERN_180_POS_DEGREE_STEP		   5.0
-#endif
 
-/* ROTOR: Pattern 360° is measured between these to limits by 5° steps */
+/* ROTOR: Pattern 360° is measured between these to their limits by 5° steps */
 #define AGENT_PATTERN_360_POS_DEGREE_START		-180.0
 #define AGENT_PATTERN_360_POS_DEGREE_END		 180.0
 #define AGENT_PATTERN_360_POS_DEGREE_STEP		   5.0
@@ -169,6 +167,7 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 	C_MODELPATTERN_PROCESS_STOP,
 	C_MODELPATTERN_PROCESS_GOTO_X,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_000DEG,
+	C_MODELPATTERN_PROCESS_RECORD_PATTERN_010DEG,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_180DEG,
 	C_MODELPATTERN_PROCESS_RECORD_PATTERN_360DEG,
 

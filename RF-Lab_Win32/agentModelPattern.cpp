@@ -1582,6 +1582,14 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_000DEG, 0);
 			break;
 
+		case ID_MODEL_PATTERN_010_START:
+			// Init display part
+			// xxx();
+
+			// Start recording of pattern
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN_010DEG, 0);
+			break;
+
 		case ID_MODEL_PATTERN_180_START:
 			// Init display part
 			// xxx();
@@ -1650,6 +1658,24 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				AGENT_PATTERN_000_POS_DEGREE_START,
 				AGENT_PATTERN_000_POS_DEGREE_END,
 				AGENT_PATTERN_000_POS_DEGREE_STEP
+			);
+			if (ret == -1) {
+				break; // process STOPPED
+			}
+
+			m->o->processing_ID = C_MODELPATTERN_PROCESS_NOOP;
+		}
+		break;
+
+		case C_MODELPATTERN_PROCESS_RECORD_PATTERN_010DEG:
+		{  /* Run a 10° antenna pattern from left = -5° to the right = +5°, 5° steps */
+			m->o->pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 10° Pattern", L"Goto START position");
+
+			int ret = m->o->runningProcessPattern(
+				MEASDATA_SETUP__ROT010_DEG5_GEN_SPEC,
+				AGENT_PATTERN_010_POS_DEGREE_START,
+				AGENT_PATTERN_010_POS_DEGREE_END,
+				AGENT_PATTERN_010_POS_DEGREE_STEP
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -1877,6 +1903,7 @@ MeasData agentModelPattern::measDataInit(MEASDATA_SETUP_ENUM measVar, std::list<
 		}
 		break;
 
+	case MEASDATA_SETUP__ROT010_DEG5_GEN_SPEC:
 	case MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC:
 	case MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC:
 		{
@@ -1913,6 +1940,7 @@ void agentModelPattern::measDataAdd(MeasData* md, std::list<double> dataList)
 		}
 		break;
 
+	case MEASDATA_SETUP__ROT010_DEG5_GEN_SPEC:
 	case MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC:
 	case MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC:
 		{
@@ -2572,7 +2600,7 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 
 	/* Go to Start Position only on rotary meassurements */
 	long ticksNext = calcDeg2Ticks(degStartPos);
-	if (measVariant >= MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC &&
+	if (measVariant >= MEASDATA_SETUP__ROT010_DEG5_GEN_SPEC &&
 		measVariant <= MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC) {
 		/* Send Home position and wait */
 		sendPos(ticksNext);
@@ -2619,7 +2647,7 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 		init.push_back(pConInstruments[C_CONNECTED_TX]->txCurRfPwr);
 		init.push_back(pConInstruments[C_CONNECTED_RX]->rxCurRfSpan);
 
-		if (measVariant >= MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC && 
+		if (measVariant >= MEASDATA_SETUP__ROT010_DEG5_GEN_SPEC && 
 			measVariant <= MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC) {
 			init.push_back(degResolution);
 		}
@@ -2685,7 +2713,7 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 	}
 
 	else
-	if (measVariant >= MEASDATA_SETUP__ROT180_DEG5_GEN_SPEC &&
+	if (measVariant >= MEASDATA_SETUP__ROT010_DEG5_GEN_SPEC &&
 		measVariant <= MEASDATA_SETUP__ROT360_DEG5_GEN_SPEC) {
 		/* Return ROTOR to center position */
 		if (!_noWinMsg) {

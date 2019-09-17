@@ -263,6 +263,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				case ID_ROTOR_STOP:
 				case ID_MODEL_PATTERN_STOP:
 				case ID_MODEL_PATTERN_REF_START:
+				case ID_MODEL_PATTERN_010_START:
 				case ID_MODEL_PATTERN_180_START:
 				case ID_MODEL_PATTERN_360_START:
 					WinSrv::srvWmCmd(hWnd, wmId);

@@ -18,7 +18,8 @@
 
 
 
-const char C_FS_INSTRUMENTS_FILENAME_DEFAULT[] = "/Users/Labor/RF-Lab.cfg";
+const char C_FS_INSTRUMENTS_FILENAME_DEFAULT[] = "./RF-Lab.cfg";
+//const char C_FS_INSTRUMENTS_FILENAME_DEFAULT[] = "/Users/Labor/RF-Lab.cfg";
 
 
 

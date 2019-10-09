@@ -1018,8 +1018,8 @@ void WinSrv::saveCurrentDataset(void)
 		wchar_t* pos = lineBuf + lstrlenW(g_instance->cLastFilePath);
 		StrCpyNW(lineBuf, g_instance->cLastFilePath, sizeof(lineBuf));
 		StrCpyNW(pos, L"\\", 2);
-		StrCpyNW(pos + 1, g_instance->cLastFileName, (int)(lstrlenW(g_instance->cLastFilePath) - (pos - g_instance->cLastFileName)));
-
+		StrCpyNW(pos + 1, g_instance->cLastFileName, (int)(1 + lstrlenW(g_instance->cLastFileName)));
+		
 		/* Get local time */
 		SYSTEMTIME systemTime;
 		GetLocalTime(&systemTime);
@@ -1203,7 +1203,7 @@ void WinSrv::setLastFilePath(wchar_t* s)
 	if (g_instance && g_instance->isReady() && s) {
 		if (lstrlenW(s)) {
 			wchar_t* pos = wcsrchr(s, L'\\');
-			StrCpyNW(g_instance->cLastFilePath, s, (int)(pos - s));
+			StrCpyNW(g_instance->cLastFilePath, s, (int)(pos - s) + 1);
 			StrCpyNW(g_instance->cLastFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
 		}
 	}

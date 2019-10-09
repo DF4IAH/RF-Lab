@@ -302,7 +302,7 @@ void agentModelPattern::run(void)
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Please select instruments from the menu", L"--- SELECT NOW ---");
 				}
 
-#ifdef DEBUGGING_FILE_SAVE
+#ifndef DEBUGGING_FILE_SAVE
 				{
 					/* Enable Connect menu item */
 					HMENU hMenu = GetMenu(g_hWnd);

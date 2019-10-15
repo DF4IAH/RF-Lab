@@ -302,6 +302,8 @@ void agentModelPattern::run(void)
 					pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Please select instruments from the menu", L"--- SELECT NOW ---");
 				}
 
+//#define DEBUGGING_FILE_SAVE
+//#define DEBUGGING_ACTIONS
 #ifdef DEBUGGING_FILE_SAVE
 				{
 					/* Enable Connect menu item */
@@ -309,6 +311,15 @@ void agentModelPattern::run(void)
 					EnableMenuItem(hMenu, ID_FILE_SAVE, MF_BYCOMMAND);
 					EnableMenuItem(hMenu, ID_DATEI_SPEICHERNALS, MF_BYCOMMAND);
 				}
+
+# ifdef DEBUGGING_ACTIONS
+				{
+					/* Enable the menu items */
+					pAgtMod->getWinSrv()->instActivateMenuItem(ID_AKTOR_ITEM0_, true);
+					pAgtMod->getWinSrv()->instActivateMenuItem(ID_GENERATOR_ITEM0_, true);
+					pAgtMod->getWinSrv()->instActivateMenuItem(ID_SPEK_ITEM0_, true);
+				}
+# endif
 #endif
 			}
 			break;

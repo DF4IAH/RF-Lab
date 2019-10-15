@@ -2138,25 +2138,28 @@ long agentModelPattern::requestPos(void)
 
 void agentModelPattern::sendPos(long ticksPos)
 {
-	AgentComReq_t comReqData;
-	AgentComRsp_t comRspData;
-	long posDiff = ticksPos - getLastTickPos();
-	char cbuf[C_BUF_SIZE];
+	const long posDiff = ticksPos - getLastTickPos();
+	if (posDiff) {
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
+		char cbuf[C_BUF_SIZE];
 
-	try {
-		/* Send rotation command */
-		_snprintf_s(cbuf, C_BUF_SIZE - 1, "%cX,%ld\r", (posDiff > 0 ? '+' : '-'), abs(posDiff));
-		comReqData.cmd = C_COMREQ_COM_SEND;
-		comReqData.parm = string(cbuf);
-		send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
-
-		/* Update current position value */
+		/* Update new position value */
 		setLastTickPos(ticksPos);
 
-		comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
-	}
-	catch (const Concurrency::operation_timed_out& e) {
-		(void)e;
+		try {
+			/* Send rotation command */
+			_snprintf_s(cbuf, C_BUF_SIZE - 1, "%cX,%ld\r", (posDiff >= 0 ? '+' : '-'), abs(posDiff));
+			comReqData.cmd = C_COMREQ_COM_SEND;
+			comReqData.parm = string(cbuf);
+			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
+
+			/* Wait for end of rotation */
+			comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+		}
+		catch (const Concurrency::operation_timed_out& e) {
+			(void)e;
+		}
 	}
 }
 
@@ -2789,13 +2792,15 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 		setStatusPosition(degPosIter);
 
 		Sleep(calcTicks2Ms(ticksNext - ticksNow));
+
+		/* In case the STOP button is being pressed */
 		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
 			/* Update current position value */
 			setLastTickPos(ticksNext);
 
 			goto ErrorOut_runningProcessPattern;
 		}
-	}
+	}  // while (true)
 
 	/* Send power OFF */
 	{
@@ -2818,6 +2823,10 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 			pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"Goto HOME position");
 		}
 		sendPos(0);
+
+		/* Inform about the current step position */
+		setStatusPosition(0);
+
 		Sleep(calcDeg2Ms(degEndPos));
 	}
 

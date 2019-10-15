@@ -2811,7 +2811,7 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 	}
 
 	else
-	if (measVariant >= MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC &&
+	if (measVariant >= MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC &&
 		measVariant <= MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC) {
 		/* Return ROTOR to center position */
 		if (!_noWinMsg) {

@@ -24,28 +24,28 @@ using namespace std;
 /* ROTOR: Time in ms delay for turning 1° */
 #define AGENT_PATTERN_ROT_MS_PER_DEGREE				60
 
+
 /* ROTOR: Reference meassurement on current position */
 #define AGENT_PATTERN_000_POS_DEGREE_START		   0.0
 #define AGENT_PATTERN_000_POS_DEGREE_END		   0.0
-#define AGENT_PATTERN_000_POS_DEGREE_STEP		   1.0
 
 /* ROTOR: Pattern 10° is measured between these to their limits by 5° steps */
 #define AGENT_PATTERN_010_POS_DEGREE_START		  -5.0
 #define AGENT_PATTERN_010_POS_DEGREE_END		   5.0
-#define AGENT_PATTERN_010_POS_DEGREE_STEP001	   1.0
-#define AGENT_PATTERN_010_POS_DEGREE_STEP005	   5.0
 
 /* ROTOR: Pattern 180° is measured between these to their limits by 5° steps */
 #define AGENT_PATTERN_180_POS_DEGREE_START		 -90.0
 #define AGENT_PATTERN_180_POS_DEGREE_END		  90.0
-#define AGENT_PATTERN_180_POS_DEGREE_STEP001	   1.0
-#define AGENT_PATTERN_180_POS_DEGREE_STEP005	   5.0
 
 /* ROTOR: Pattern 360° is measured between these to their limits by 5° steps */
 #define AGENT_PATTERN_360_POS_DEGREE_START		-180.0
 #define AGENT_PATTERN_360_POS_DEGREE_END		 180.0
-#define AGENT_PATTERN_360_POS_DEGREE_STEP001	   1.0
-#define AGENT_PATTERN_360_POS_DEGREE_STEP005	   5.0
+
+
+/* ROTOR: Step increments in degrees */
+#define AGENT_PATTERN_STEP_001					   1.0
+#define AGENT_PATTERN_STEP_005					   5.0
+
 
 /* TX: RF on/off */
 #define AGENT_PATTERN_TX_ON_STATE_DEFAULT		TRUE

@@ -1701,7 +1701,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				MEASDATA_SETUP__REFMEAS_GEN_SPEC,
 				AGENT_PATTERN_000_POS_DEGREE_START,
 				AGENT_PATTERN_000_POS_DEGREE_END,
-				AGENT_PATTERN_000_POS_DEGREE_STEP
+				AGENT_PATTERN_STEP_001
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -1719,7 +1719,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC,
 				AGENT_PATTERN_010_POS_DEGREE_START,
 				AGENT_PATTERN_010_POS_DEGREE_END,
-				AGENT_PATTERN_010_POS_DEGREE_STEP001
+				AGENT_PATTERN_STEP_001
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -1737,7 +1737,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC,
 				AGENT_PATTERN_010_POS_DEGREE_START,
 				AGENT_PATTERN_010_POS_DEGREE_END,
-				AGENT_PATTERN_010_POS_DEGREE_STEP005
+				AGENT_PATTERN_STEP_005
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -1755,7 +1755,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				MEASDATA_SETUP__PATTERN180_STEP001_GEN_SPEC,
 				AGENT_PATTERN_180_POS_DEGREE_START,
 				AGENT_PATTERN_180_POS_DEGREE_END,
-				AGENT_PATTERN_180_POS_DEGREE_STEP001
+				AGENT_PATTERN_STEP_001
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -1773,7 +1773,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				MEASDATA_SETUP__PATTERN180_STEP005_GEN_SPEC,
 				AGENT_PATTERN_180_POS_DEGREE_START,
 				AGENT_PATTERN_180_POS_DEGREE_END,
-				AGENT_PATTERN_180_POS_DEGREE_STEP005
+				AGENT_PATTERN_STEP_005
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -1791,7 +1791,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				MEASDATA_SETUP__PATTERN360_STEP001_GEN_SPEC,
 				AGENT_PATTERN_360_POS_DEGREE_START,
 				AGENT_PATTERN_360_POS_DEGREE_END,
-				AGENT_PATTERN_360_POS_DEGREE_STEP001
+				AGENT_PATTERN_STEP_001
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -1809,7 +1809,7 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 				MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC,
 				AGENT_PATTERN_360_POS_DEGREE_START,
 				AGENT_PATTERN_360_POS_DEGREE_END,
-				AGENT_PATTERN_360_POS_DEGREE_STEP005
+				AGENT_PATTERN_STEP_005
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -2038,10 +2038,13 @@ void agentModelPattern::measDataAdd(MeasData* md, std::list<double> dataList)
 		}
 		break;
 
+	case MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC:
 	case MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC:
+	case MEASDATA_SETUP__PATTERN180_STEP001_GEN_SPEC:
 	case MEASDATA_SETUP__PATTERN180_STEP005_GEN_SPEC:
+	case MEASDATA_SETUP__PATTERN360_STEP001_GEN_SPEC:
 	case MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC:
-		{
+	{
 			std::list<double>::iterator it = dataList.begin();
 			const double pos = *(it++);
 			md->posDeg->push_back(pos);
@@ -2136,16 +2139,16 @@ long agentModelPattern::requestPos(void)
 	return posDeg;
 }
 
-void agentModelPattern::sendPos(long ticksPos)
+void agentModelPattern::sendPos(long tickPos)
 {
-	const long posDiff = ticksPos - getLastTickPos();
+	const long posDiff = tickPos - getLastTickPos();
 	if (posDiff) {
 		AgentComReq_t comReqData;
 		AgentComRsp_t comRspData;
 		char cbuf[C_BUF_SIZE];
 
 		/* Update new position value */
-		setLastTickPos(ticksPos);
+		setLastTickPos(tickPos);
 
 		try {
 			/* Send rotation command */

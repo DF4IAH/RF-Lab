@@ -1150,9 +1150,7 @@ void WinSrv::saveCurrentDataset(void)
 						NULL);
 				}
 				
-				else if ((measType.measData->measVar == MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC)  ||
-						 (measType.measData->measVar == MEASDATA_SETUP__PATTERN180_STEP005_GEN_SPEC)  ||
-						 (measType.measData->measVar == MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC)) {
+				else if (measType.measData->measVar >  MEASDATA_SETUP__REFMEAS_GEN_SPEC) {
 					/* Iterate over all meassured data */
 					if (measType.measData->posDeg && measType.measData->rxPwrMag && measType.measData->rxPwrPhase) {
 						std::list<double>::const_iterator itPos			= measType.measData->posDeg->begin();

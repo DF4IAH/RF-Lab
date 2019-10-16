@@ -47,21 +47,6 @@ using namespace std;
 #define AGENT_PATTERN_STEP_005					   5.0
 
 
-/* TX: RF on/off */
-#define AGENT_PATTERN_TX_ON_STATE_DEFAULT		TRUE
-
-/* TX: Frequency 2.4 GHz */
-#define AGENT_PATTERN_TX_FREQ_VALUE_DEFAULT		 2.4e9
-
-/* TX: Power 0 dBm */
-#define AGENT_PATTERN_TX_PWR_VALUE_DEFAULT		 0
-
-
-/* RX: Frequency span 100 kHz */
-#define AGENT_PATTERN_RX_SPAN_VALUE_DEFAULT		 100e3
-//#endif
-
-
 #ifdef OLD_CODE
 
 /* Serial communication parameters, as long as they are not stored non-volatile */
@@ -222,14 +207,6 @@ private:
 	volatile bool						 guiPressedConnect;
 
 	volatile long						 lastTickPos;
-
-	volatile bool						 txOn;
-	volatile double						 txFrequency;
-	volatile double						 txPower;
-
-	volatile double						 rxFrequency;
-	volatile double						 rxSpan;
-	volatile double						 rxLevelMax;
 
 
 public:

@@ -2001,10 +2001,13 @@ MeasData agentModelPattern::measDataInit(MEASDATA_SETUP_ENUM measVar, std::list<
 		}
 		break;
 
+	case MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC:
 	case MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC:
+	case MEASDATA_SETUP__PATTERN180_STEP001_GEN_SPEC:
 	case MEASDATA_SETUP__PATTERN180_STEP005_GEN_SPEC:
+	case MEASDATA_SETUP__PATTERN360_STEP001_GEN_SPEC:
 	case MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC:
-		{
+	{
 			std::list<double>::iterator it = initList.begin();
 			md.txQrg		= *(it++);
 			md.txPwr		= *(it++);

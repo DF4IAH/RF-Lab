@@ -945,17 +945,17 @@ bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_SEPARATOR, ID_MODEL_PATTERN_SEP_01, 0);
 
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN010_STEP001_START, L"Richtdiagramm über 10° mit 1° Schritten ausmessen");
-			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN010_STEP005_START, L"Richtdiagramm über 10° mit 5° Schritten ausmessen ausmessen");
+			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN010_STEP005_START, L"Richtdiagramm über 10° mit 5° Schritten ausmessen");
 
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_SEPARATOR, ID_MODEL_PATTERN_SEP_02, 0);
 
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN180_STEP001_START, L"Richtdiagramm über 180° mit 1° Schritten ausmessen");
-			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN180_STEP005_START, L"Richtdiagramm über 180° mit 5° Schritten ausmessen ausmessen");
+			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN180_STEP005_START, L"Richtdiagramm über 180° mit 5° Schritten ausmessen");
 
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_SEPARATOR, ID_MODEL_PATTERN_SEP_03, 0);
 
 			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN360_STEP001_START, L"Richtdiagramm über 360° mit 1° Schritten ausmessen");
-			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN360_STEP005_START, L"Richtdiagramm über 360° mit 5° Schritten ausmessen ausmessen");
+			InsertMenu(hMenuAnst, ID_ANSTEUERUNG_, MF_BYCOMMAND  | MF_STRING, ID_MODEL_PATTERN360_STEP005_START, L"Richtdiagramm über 360° mit 5° Schritten ausmessen");
 
 			/* Remove place holder */
 			RemoveMenu(hMenu, ID_ANSTEUERUNG_, MF_BYCOMMAND);

@@ -2770,6 +2770,14 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 			measDataAdd(&md, data);
 		}
 
+		/* In case the STOP button is being pressed */
+		if (processing_ID == C_MODELPATTERN_PROCESS_STOP) {
+			/* Update current position value */
+			setLastTickPos(ticksNext);
+
+			goto ErrorOut_runningProcessPattern;
+		}
+
 		/* advance to new position */
 		degPosIter += degResolution;
 		if (degPosIter > degEndPos) {
@@ -2784,14 +2792,6 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 		setStatusPosition(degPosIter);
 
 		Sleep(calcTicks2Ms(ticksNext - ticksNow));
-
-		/* In case the STOP button is being pressed */
-		if (processing_ID <= C_MODELPATTERN_PROCESS_STOP) {
-			/* Update current position value */
-			setLastTickPos(ticksNext);
-
-			goto ErrorOut_runningProcessPattern;
-		}
 	}  // while (true)
 
 	/* Send power OFF */

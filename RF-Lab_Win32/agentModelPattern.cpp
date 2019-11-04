@@ -1964,7 +1964,7 @@ void agentModelPattern::setStatusPosition(double posDeg)
 	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
 
 	if (!_noWinMsg) {
-		swprintf(l_status3, l_status_size, L"Current rotor azimuth: %+03.0lf°", posDeg);
+		swprintf(l_status3, l_status_size, L"Current rotor azimuth: %+03.0lf °", posDeg);
 		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
 	}
 

@@ -491,11 +491,15 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 
 	switch (message) {
 	case WM_INITDIALOG:
+		/* Init values for the TX settings dialog */
+
 		CheckDlgButton(hWnd, IDC_TX_SETTINGS_ON_CHECK, agentModel::getTxOnState());
 
-		swprintf(szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency)>>1, L"%.3f", agentModel::getTxFrequencyValue());
+		/* Show TX frequency in GHz */
+		swprintf(szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency)>>1, L"%.3f", agentModel::getTxFrequencyValue() / 1e9);
 		SetDlgItemText(hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency);
 		
+		/* Show TX power in dBm */
 		swprintf(szIdcTxSettingsPower, sizeof(szIdcTxSettingsPower)>>1, L"%.1f", agentModel::getTxPwrValue());
 		SetDlgItemText(hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower);
 
@@ -508,14 +512,15 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 			agentModel::setTxOnState(BST_CHECKED == IsDlgButtonChecked(hWnd, IDC_TX_SETTINGS_ON_CHECK));
 
 			if (GetDlgItemText(hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency) - 1)) {
-				// Process input
+				// Process input (GHz)
 				swscanf_s(szIdcTxSettingsFrequency, L"%lf", &lfIdcTxSettingsFrequency);
+				lfIdcTxSettingsFrequency *= 1e9;
 				agentModel::setTxFrequencyValue(lfIdcTxSettingsFrequency);
 				agentModel::setRxFrequencyValue(lfIdcTxSettingsFrequency);
 			}
 
 			if (GetDlgItemText(hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower, sizeof(szIdcTxSettingsPower) - 1)) {
-				// Process input
+				// Process input (dBm)
 				swscanf_s(szIdcTxSettingsPower, L"%lf", &lfIdcTxSettingsPower);
 				agentModel::setTxPwrValue(lfIdcTxSettingsPower);
 				agentModel::setRxLevelMaxValue(lfIdcTxSettingsPower);
@@ -556,10 +561,14 @@ BOOL CALLBACK AskRxSettings_CB(HWND hWnd,
 
 	switch (message) {
 	case WM_INITDIALOG:
-		swprintf(szIdcRxSettingsFrequency, sizeof(szIdcRxSettingsFrequency)>>1, L"%.3f", agentModel::getRxFrequencyValue());
+		/* Init values for the RX settings dialog */
+
+		/* Show RX frequency in GHz */
+		swprintf(szIdcRxSettingsFrequency, sizeof(szIdcRxSettingsFrequency)>>1, L"%.3f", agentModel::getRxFrequencyValue() / 1e9);
 		SetDlgItemText(hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency);
 
-		swprintf(szIdcRxSettingsSpan, sizeof(szIdcRxSettingsSpan)>>1, L"%.1f", agentModel::getRxSpanValue());
+		/* Show RX span in GHz */
+		swprintf(szIdcRxSettingsSpan, sizeof(szIdcRxSettingsSpan)>>1, L"%.1f", agentModel::getRxSpanValue() / 1e9);
 		SetDlgItemText(hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan);
 
 		return (INT_PTR)TRUE;
@@ -569,14 +578,16 @@ BOOL CALLBACK AskRxSettings_CB(HWND hWnd,
 		switch (LOWORD(wParam)) {
 		case IDOK:
 			if (GetDlgItemText(hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency, sizeof(szIdcRxSettingsFrequency) - 1)) {
-				// Process input
+				// Process input (GHz)
 				swscanf_s(szIdcRxSettingsFrequency, L"%lf", &lfIdcRxSettingsFrequency);
+				lfIdcRxSettingsFrequency *= 1e9;
 				agentModel::setRxFrequencyValue(lfIdcRxSettingsFrequency);
 			}
 
 			if (GetDlgItemText(hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan, sizeof(szIdcRxSettingsSpan) - 1)) {
-				// Process input
+				// Process input (GHz)
 				swscanf_s(szIdcRxSettingsSpan, L"%lf", &lfIdcRxSettingsSpan);
+				lfIdcRxSettingsSpan *= 1e9;
 				agentModel::setRxSpanValue(lfIdcRxSettingsSpan);
 			}
 			// Fall-through.

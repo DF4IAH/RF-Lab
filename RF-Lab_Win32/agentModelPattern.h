@@ -256,6 +256,7 @@ public:
 	void					initDevices(void);
 	void					perfomInitValues(InstList_t::iterator it);
 	void					setStatusPosition(double posDeg);
+	void					setStatusRxPower_dBm(double rxPwr);
 
 	/* agentModelPattern - Rotor */
 	long					requestPos(void);

@@ -1964,7 +1964,23 @@ void agentModelPattern::setStatusPosition(double posDeg)
 	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
 
 	if (!_noWinMsg) {
-		swprintf(l_status3, l_status_size, L"position: %+03.0lf°", posDeg);
+		swprintf(l_status3, l_status_size, L"Current rotor azimuth: %+03.0lf°", posDeg);
+		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
+	}
+
+	LocalUnlock(l_status3_alloc);
+	LocalFree(l_status3_alloc);
+}
+
+void agentModelPattern::setStatusRxPower_dBm(double rxPwr)
+{
+	/* Inform about the current state */
+	const int l_status_size = 256;
+	HLOCAL l_status3_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
+	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
+
+	if (!_noWinMsg) {
+		swprintf(l_status3, l_status_size, L"Current RX power:       %+02.2lf dBm", rxPwr);
 		pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
 	}
 
@@ -2091,11 +2107,13 @@ void agentModelPattern::measDataFinalize(MeasData* md, MeasData* glob)
 
 long agentModelPattern::requestPos(void)
 {
-	AgentComReq_t comReqData;
-	AgentComRsp_t comRspData;
-	long posDeg = 0;
+	/* Fall-back value in case the communication does not work */
+	long posDeg = getLastTickPos();
 
 	try {
+		AgentComReq_t comReqData;
+		AgentComRsp_t comRspData;
+
 		/* Do sync COM */
 		comReqData.cmd = C_COMREQ_COM_SEND;
 		comReqData.parm = string("\r");
@@ -2105,7 +2123,7 @@ long agentModelPattern::requestPos(void)
 			if (!strncmp(comRspData.data1.c_str(), "OK", 2)) {
 				break;
 			}
-			Sleep(10L);
+			Sleep(100);
 		}
 
 		/* Try to receive the position */
@@ -2117,12 +2135,10 @@ long agentModelPattern::requestPos(void)
 			if (!strncmp(comRspData.data1.c_str(), "?X", 2)) {
 				break;
 			}
-			Sleep(10L);
+			Sleep(100);
 		}
 
  		if (comRspData.stat == C_COMRSP_DATA) {
-			int posDiff = 0;
-
 			if (!agentModel::parseStr2Long(&posDeg, comRspData.data1.c_str(), "?X,%ld", '?')) {
 				agentModel::setLastTickPos(posDeg);
 			}
@@ -2131,19 +2147,22 @@ long agentModelPattern::requestPos(void)
 	catch (const Concurrency::operation_timed_out& e) {
 		(void)e;
 	}
+
+	/* Update with current position */
+	setLastTickPos(posDeg);
+
 	return posDeg;
 }
 
 void agentModelPattern::sendPos(long tickPos)
 {
+	/* Calculate steps to turn */
 	const long posDiff = tickPos - getLastTickPos();
+	
+	/* When turning is required send positioning command */
 	if (posDiff) {
 		AgentComReq_t comReqData;
-		AgentComRsp_t comRspData;
 		char cbuf[C_BUF_SIZE];
-
-		/* Update new position value */
-		setLastTickPos(tickPos);
 
 		try {
 			/* Send rotation command */
@@ -2152,8 +2171,11 @@ void agentModelPattern::sendPos(long tickPos)
 			comReqData.parm = string(cbuf);
 			send(*(pAgtComReq[C_COMINST_ROT]), comReqData);
 
-			/* Wait for end of rotation */
-			comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			/* Wait for end of communication */
+			AgentComRsp_t comRspData = receive(*(pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+
+			/* Update new position value */
+			setLastTickPos(tickPos);
 		}
 		catch (const Concurrency::operation_timed_out& e) {
 			(void)e;
@@ -2768,6 +2790,9 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 			data.push_back(testY);		// Power
 			data.push_back(0.0);		// Phase
 			measDataAdd(&md, data);
+
+			/* Inform about the current RX power */
+			setStatusRxPower_dBm(testY);
 		}
 
 		/* In case the STOP button is being pressed */

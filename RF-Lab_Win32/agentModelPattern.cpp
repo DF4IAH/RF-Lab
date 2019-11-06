@@ -1962,16 +1962,16 @@ void agentModelPattern::setStatusPosition(double posDeg)
 {
 	/* Inform about the current state */
 	const int l_status_size = 256;
-	HLOCAL l_status3_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
-	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
+	HLOCAL l_status2_alloc = LocalAlloc(LHND, sizeof(wchar_t) * l_status_size);
+	PWCHAR l_status2 = (PWCHAR)LocalLock(l_status2_alloc);
 
 	if (!_noWinMsg) {
-		swprintf(l_status3, l_status_size, L"Current rotor azimuth: %+03.0lf °", posDeg);
-		_pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
+		swprintf(l_status2, l_status_size, L"Current rotor azimuth: %+04.0lf °", posDeg);
+		_pAgtMod->getWinSrv()->reportStatus(NULL, l_status2, NULL);
 	}
 
-	LocalUnlock(l_status3_alloc);
-	LocalFree(l_status3_alloc);
+	LocalUnlock(l_status2_alloc);
+	LocalFree(l_status2_alloc);
 }
 
 void agentModelPattern::setStatusRxPower_dBm(double rxPwr)
@@ -1982,7 +1982,7 @@ void agentModelPattern::setStatusRxPower_dBm(double rxPwr)
 	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
 
 	if (!_noWinMsg) {
-		swprintf(l_status3, l_status_size, L"Current RX power:       %+02.2lf dBm", rxPwr);
+		swprintf(l_status3, l_status_size, L"Current RX power:       %+3.2lf dBm", rxPwr);
 		_pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
 	}
 
@@ -2125,7 +2125,7 @@ void agentModelPattern::sendPosTicksAbs(long newPosTicksAbs)
 			send(*(_pAgtComReq[C_COMINST_ROT]), comReqData);
 
 			/* Wait for end of communication */
-			AgentComRsp_t comRspData = receive(*(_pAgtComRsp[C_COMINST_TX]), AGENT_PATTERN_RECEIVE_TIMEOUT);
+			AgentComRsp_t comRspData = receive(*(_pAgtComRsp[C_COMINST_ROT]), AGENT_PATTERN_RECEIVE_TIMEOUT);
 
 			/* Update new position value */
 			setCurPosTicksAbs(newPosTicksAbs);
@@ -2830,14 +2830,14 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 		long prevPosTicksAbs = getCurPosTicksAbs();
 		long nextPosTicksAbs = calcDeg2Ticks(degPosIter);
 
-		/* Inform about the current step position */
-		setStatusPosition(degPosIter);
-
 		/* Send new position desired */
 		sendPosTicksAbs(nextPosTicksAbs);
 
 		/* Delay abt. the time the rotor needs to position */
 		Sleep(calcTicks2Ms(nextPosTicksAbs - prevPosTicksAbs));
+
+		/* Inform about the current step position */
+		setStatusPosition(degPosIter);
 	}  // while (true)
 
 	/* Send power OFF */

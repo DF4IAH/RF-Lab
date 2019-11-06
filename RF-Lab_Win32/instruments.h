@@ -161,7 +161,7 @@ typedef struct {
 	int									linkUsb_response_bytes_read;
 	int									linkUsb_remaining_length;
 
-	struct sr_context				   *pLinkUsb_sr_ctx;					// SCPI USB-TMC code
+	struct sr_context				   *_pLinkUsb_sr_ctx;					// SCPI USB-TMC code
 	struct sr_usb_dev_inst			   *pLinkUsb_sr_devInst;				// SCPI USB-TMC code
 	int									linkUsb_is_detached_kernel_driver;	// SCPI USB-TMC code
 

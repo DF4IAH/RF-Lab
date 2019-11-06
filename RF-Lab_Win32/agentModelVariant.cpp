@@ -43,7 +43,7 @@ void agentModelVariant::wmCmd(int wmId, LPVOID arg)
 
 
 /* agentModelPattern - GENERAL */
-void agentModelVariant::setSimuMode(AGENT_ALL_SIMUMODE_t simuMode)
+void agentModelVariant::setSimuMode(AGENT_ALL_SIMUMODE_t _simuMode)
 {
 }
 
@@ -67,16 +67,16 @@ void agentModelVariant::initDevices(void)
 
 /* agentModelPattern - Rotor */
 
-long agentModelVariant::requestPos(void)
+long agentModelVariant::receivePosTicksAbs(void)
 {
 	return 0;
 }
 
-void agentModelVariant::setLastTickPos(long tickPos)
+void agentModelVariant::setCurPosTicksAbs(long tickPos)
 {
 }
 
-long agentModelVariant::getLastTickPos(void)
+long agentModelVariant::getCurPosTicksAbs(void)
 {
 	return 0;
 }

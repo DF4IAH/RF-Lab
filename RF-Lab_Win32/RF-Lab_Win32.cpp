@@ -49,9 +49,9 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-static int			AskRotorPosX(HINSTANCE g_hInst, HWND hWnd);
-static int			AskTxSettings(HINSTANCE g_hInst, HWND hWnd);
-static int			AskRxSettings(HINSTANCE g_hInst, HWND hWnd);
+static int			AskRotorPosX(HINSTANCE g_hInst, HWND _hWnd);
+static int			AskTxSettings(HINSTANCE g_hInst, HWND _hWnd);
+static int			AskRxSettings(HINSTANCE g_hInst, HWND _hWnd);
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -138,20 +138,20 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 
-   HWND hWnd = CreateWindowW(g_szWindowClass, g_szTitle, WS_OVERLAPPEDWINDOW,
+   HWND _hWnd = CreateWindowW(g_szWindowClass, g_szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
    /* Instanzenhandle und Windowhandle in globalen Variablen speichern */
    g_hInst = hInstance;
-   g_hWnd  = hWnd;
+   g_hWnd  = _hWnd;
 
-   if (!hWnd)
+   if (!_hWnd)
    {
       return FALSE;
    }
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+   ShowWindow(_hWnd, nCmdShow);
+   UpdateWindow(_hWnd);
 
    return TRUE;
 }
@@ -167,7 +167,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - Ausgeben einer Beendenmeldung und zurückkehren
 //
 //
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND _hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static int argInt = 0;
 	
@@ -179,7 +179,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			/* Instrument settings for AKTOR, HF-GENERATOR and SPEK */
 			if (wmId >= ID_AKTOR_ITEM0_ && wmId < (ID_SPEK_ITEM0_ + 255)) {
-				WinSrv::srvWmCmd(hWnd, wmId);
+				WinSrv::srvWmCmd(_hWnd, wmId);
 			}
 
 			else {
@@ -218,7 +218,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 					OPENFILENAME ofn = { };
 					ofn.lStructSize = sizeof(OPENFILENAME);
-					ofn.hwndOwner = hWnd;
+					ofn.hwndOwner = _hWnd;
 					ofn.hInstance = NULL;
 					ofn.lpstrFilter = L"Comma separated list (.csv)\0.csv\0Touchstone (.s1p)\0.s1p\0All files (*.*)\0*.*\0\0";
 					ofn.nMaxCustFilter = 4;
@@ -251,9 +251,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				/* Rotor features */
 
 				case ID_ROTOR_GOTO_X:
-					argInt = AskRotorPosX(g_hInst, hWnd);
+					argInt = AskRotorPosX(g_hInst, _hWnd);
 					if (argInt != MAXINT16) {  // Position nur verändern, wenn gültiger Wert vorliegt
-						WinSrv::srvWmCmd(hWnd, wmId, &argInt);
+						WinSrv::srvWmCmd(_hWnd, wmId, &argInt);
 					}
 					break;
 
@@ -269,7 +269,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				case ID_MODEL_PATTERN180_STEP005_START:
 				case ID_MODEL_PATTERN360_STEP001_START:
 				case ID_MODEL_PATTERN360_STEP005_START:
-					WinSrv::srvWmCmd(hWnd, wmId);
+					WinSrv::srvWmCmd(_hWnd, wmId);
 					break;
 
 
@@ -277,44 +277,44 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				case ID_HFAUSGABE_EIN:
 				{
-					CheckMenuItem(GetMenu(hWnd), ID_HFAUSGABE_EIN, MF_BYCOMMAND | MF_CHECKED);
-					CheckMenuItem(GetMenu(hWnd), ID_HFAUSGABE_AUS, MF_BYCOMMAND | MF_UNCHECKED);
+					CheckMenuItem(GetMenu(_hWnd), ID_HFAUSGABE_EIN, MF_BYCOMMAND | MF_CHECKED);
+					CheckMenuItem(GetMenu(_hWnd), ID_HFAUSGABE_AUS, MF_BYCOMMAND | MF_UNCHECKED);
 					agentModel::setTxOnState(true);
 				}
 				break;
 
 				case ID_HFAUSGABE_AUS:
 				{
-					CheckMenuItem(GetMenu(hWnd), ID_HFAUSGABE_EIN, MF_BYCOMMAND | MF_UNCHECKED);
-					CheckMenuItem(GetMenu(hWnd), ID_HFAUSGABE_AUS, MF_BYCOMMAND | MF_CHECKED);
+					CheckMenuItem(GetMenu(_hWnd), ID_HFAUSGABE_EIN, MF_BYCOMMAND | MF_UNCHECKED);
+					CheckMenuItem(GetMenu(_hWnd), ID_HFAUSGABE_AUS, MF_BYCOMMAND | MF_CHECKED);
 					agentModel::setTxOnState(false);
 				}
 				break;
 
 				case ID_TX_SETTINGS:
-					AskTxSettings(g_hInst, hWnd);
+					AskTxSettings(g_hInst, _hWnd);
 					break;
 
 
 				/* Spek features */
 
 				case ID_RX_SETTINGS:
-					AskRxSettings(g_hInst, hWnd);  // TODO: coding needed here
+					AskRxSettings(g_hInst, _hWnd);  // TODO: coding needed here
 					break;
 
 
 				/* Win */
 
 				case IDM_ABOUT:
-					DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+					DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), _hWnd, About);
 					break;
 
 				case IDM_EXIT:
-					DestroyWindow(hWnd);
+					DestroyWindow(_hWnd);
 					break;
 
 				default:
-					return DefWindowProc(hWnd, message, wParam, lParam);
+					return DefWindowProc(_hWnd, message, wParam, lParam);
 				}
 			}
         }
@@ -330,7 +330,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_CREATE:
-		return WinSrv::srvSetWindow(hWnd);
+		return WinSrv::srvSetWindow(_hWnd);
 
 	case WM_DESTROY:
 		// Windows - Kommunikationsserver abmelden
@@ -341,7 +341,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 
 	default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        return DefWindowProc(_hWnd, message, wParam, lParam);
     }
     return 0;
 }
@@ -370,15 +370,15 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 // Dialog for Rotor Position to go to
 // returns milli-degrees
-static int AskRotorPosX(HINSTANCE g_hInst, HWND hWnd)
+static int AskRotorPosX(HINSTANCE g_hInst, HWND _hWnd)
 {
-	int lastPos = agentModel::getLastTickPos() / AGENT_PATTERN_ROT_TICKS_PER_DEGREE;
+	int lastPos = agentModel::getCurPosTicksAbs() / AGENT_PATTERN_ROT_TICKS_PER_DEGREE;
 	g_iCbValue = lastPos;
 
 	// MessageBox(NULL, L"Rotor postition to go to: ° ?\n", L"Rotor position\n", MB_ICONQUESTION);
 	if (IDOK == DialogBox(g_hInst,
 							MAKEINTRESOURCE(IDD_ROTOR_POS_X),
-							hWnd,
+							_hWnd,
 							(DLGPROC) RotorPosX_CB)) {
 		if (g_iCbValue != MAXINT16) {
 			return (int) (g_iCbValue * 1000LL);
@@ -389,7 +389,7 @@ static int AskRotorPosX(HINSTANCE g_hInst, HWND hWnd)
 	return MAXINT16;
 }
 
-BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
+BOOL CALLBACK RotorPosX_CB(	HWND   _hWnd,
 							UINT   message,
 							WPARAM wParam,
 							LPARAM lParam)
@@ -407,14 +407,14 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 		}
 
 		swprintf(szIdcRotorPosXCurrent, sizeof(szIdcRotorPosXCurrent)>>1, L"%lld", g_iCbValue);
-		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_CURRENT_EDIT_RO, szIdcRotorPosXCurrent);
-		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
-		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMIN, FALSE,   0);
-		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMAX, FALSE, 360);
-		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETTICFREQ,     45,   0);
-		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETLINESIZE,     0,   1);
-		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPAGESIZE,     0,  45);
-		SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS,       TRUE, 180 + g_iCbValue);
+		SetDlgItemText(_hWnd, IDC_ROTOR_POS_X_CURRENT_EDIT_RO, szIdcRotorPosXCurrent);
+		SetDlgItemText(_hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
+		SendMessage(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMIN, FALSE,   0);
+		SendMessage(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETRANGEMAX, FALSE, 360);
+		SendMessage(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETTICFREQ,     45,   0);
+		SendMessage(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETLINESIZE,     0,   1);
+		SendMessage(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPAGESIZE,     0,  45);
+		SendMessage(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS,       TRUE, 180 + g_iCbValue);
 		return (INT_PTR)TRUE;
 		break;
 
@@ -425,20 +425,20 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			break;
 
 		default:
-			g_iCbValue = SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0) - 180;
+			g_iCbValue = SendMessage(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_GETPOS, 0, 0) - 180;
 		}
 
 		swprintf(szIdcRotorPosXCurrent, sizeof(szIdcRotorPosXCurrent)>>1, L"%lld", g_iCbValue);
-		SetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
+		SetDlgItemText(_hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent);
 		break;
 
 	case WM_KEYDOWN:
-		if (!GetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent, sizeof(szIdcRotorPosXCurrent) - 1)) {
+		if (!GetDlgItemText(_hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXCurrent, sizeof(szIdcRotorPosXCurrent) - 1)) {
 			g_iCbValue = MAXINT16;
 		} else {
 			// Process input
 			if (swscanf_s(szIdcRotorPosXNew, L"%lld", &g_iCbValue)) {
-				SendMessage(GetDlgItem(hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS, TRUE, 180 + g_iCbValue);
+				SendMessage(GetDlgItem(_hWnd, IDC_ROTOR_POS_X_NEW_SLIDER), TBM_SETPOS, TRUE, 180 + g_iCbValue);
 			}
 		}
 		break;
@@ -446,7 +446,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDOK:
-			if (!GetDlgItemText(hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXNew, C_BUFSIZE - 1))
+			if (!GetDlgItemText(_hWnd, IDC_ROTOR_POS_X_NEW_EDIT, szIdcRotorPosXNew, C_BUFSIZE - 1))
 			{
 				*szIdcRotorPosXNew = 0;
 				g_iCbValue = MAXINT16;
@@ -457,7 +457,7 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 			}
 			// Fall-through.
 		case IDCANCEL:
-			EndDialog(hWnd, wParam);
+			EndDialog(_hWnd, wParam);
 			return TRUE;
 			break;
 		}
@@ -468,18 +468,18 @@ BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
 
 
 /* Dialog for TX settings */
-static int AskTxSettings(HINSTANCE g_hInst, HWND hWnd)
+static int AskTxSettings(HINSTANCE g_hInst, HWND _hWnd)
 {
 	if (IDOK == DialogBox(g_hInst,
 		MAKEINTRESOURCE(IDD_TX_SETTINGS),
-		hWnd,
+		_hWnd,
 		(DLGPROC)AskTxSettings_CB)) {
 
 	}
 	return (int)g_iCbValue;
 }
 
-BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
+BOOL CALLBACK AskTxSettings_CB(HWND _hWnd,
 	UINT   message,
 	WPARAM wParam,
 	LPARAM lParam)
@@ -493,15 +493,15 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 	case WM_INITDIALOG:
 		/* Init values for the TX settings dialog */
 
-		CheckDlgButton(hWnd, IDC_TX_SETTINGS_ON_CHECK, agentModel::getTxOnState());
+		CheckDlgButton(_hWnd, IDC_TX_SETTINGS_ON_CHECK, agentModel::getTxOnState());
 
 		/* Show TX frequency in GHz */
 		swprintf(szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency)>>1, L"%.3f", agentModel::getTxFrequencyValue() / 1e9);
-		SetDlgItemText(hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency);
+		SetDlgItemText(_hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency);
 		
 		/* Show TX power in dBm */
 		swprintf(szIdcTxSettingsPower, sizeof(szIdcTxSettingsPower)>>1, L"%.1f", agentModel::getTxPwrValue());
-		SetDlgItemText(hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower);
+		SetDlgItemText(_hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower);
 
 		return (INT_PTR)TRUE;
 		break;
@@ -509,9 +509,9 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDOK:
-			agentModel::setTxOnState(BST_CHECKED == IsDlgButtonChecked(hWnd, IDC_TX_SETTINGS_ON_CHECK));
+			agentModel::setTxOnState(BST_CHECKED == IsDlgButtonChecked(_hWnd, IDC_TX_SETTINGS_ON_CHECK));
 
-			if (GetDlgItemText(hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency) - 1)) {
+			if (GetDlgItemText(_hWnd, IDC_TX_SETTINGS_F_EDIT, szIdcTxSettingsFrequency, sizeof(szIdcTxSettingsFrequency) - 1)) {
 				// Process input (GHz)
 				swscanf_s(szIdcTxSettingsFrequency, L"%lf", &lfIdcTxSettingsFrequency);
 				lfIdcTxSettingsFrequency *= 1e9;
@@ -519,7 +519,7 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 				agentModel::setRxFrequencyValue(lfIdcTxSettingsFrequency);
 			}
 
-			if (GetDlgItemText(hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower, sizeof(szIdcTxSettingsPower) - 1)) {
+			if (GetDlgItemText(_hWnd, IDC_TX_SETTINGS_PWR_EDIT, szIdcTxSettingsPower, sizeof(szIdcTxSettingsPower) - 1)) {
 				// Process input (dBm)
 				swscanf_s(szIdcTxSettingsPower, L"%lf", &lfIdcTxSettingsPower);
 				agentModel::setTxPwrValue(lfIdcTxSettingsPower);
@@ -527,7 +527,7 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 			}
 			// Fall-through.
 		case IDCANCEL:
-			EndDialog(hWnd, wParam);
+			EndDialog(_hWnd, wParam);
 			return TRUE;
 			break;
 		}
@@ -538,18 +538,18 @@ BOOL CALLBACK AskTxSettings_CB(HWND hWnd,
 
 
 /* Dialog for RX settings */
-static int AskRxSettings(HINSTANCE g_hInst, HWND hWnd)
+static int AskRxSettings(HINSTANCE g_hInst, HWND _hWnd)
 {
 	if (IDOK == DialogBox(g_hInst,
 		MAKEINTRESOURCE(IDD_RX_SETTINGS),
-		hWnd,
+		_hWnd,
 		(DLGPROC)AskRxSettings_CB)) {
 
 	}
 	return (int)g_iCbValue;
 }
 
-BOOL CALLBACK AskRxSettings_CB(HWND hWnd,
+BOOL CALLBACK AskRxSettings_CB(HWND _hWnd,
 	UINT   message,
 	WPARAM wParam,
 	LPARAM lParam)
@@ -565,11 +565,11 @@ BOOL CALLBACK AskRxSettings_CB(HWND hWnd,
 
 		/* Show RX frequency in GHz */
 		swprintf(szIdcRxSettingsFrequency, sizeof(szIdcRxSettingsFrequency)>>1, L"%.3f", agentModel::getRxFrequencyValue() / 1e9);
-		SetDlgItemText(hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency);
+		SetDlgItemText(_hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency);
 
 		/* Show RX span in GHz */
 		swprintf(szIdcRxSettingsSpan, sizeof(szIdcRxSettingsSpan)>>1, L"%.1f", agentModel::getRxSpanValue() / 1e9);
-		SetDlgItemText(hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan);
+		SetDlgItemText(_hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan);
 
 		return (INT_PTR)TRUE;
 		break;
@@ -577,14 +577,14 @@ BOOL CALLBACK AskRxSettings_CB(HWND hWnd,
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDOK:
-			if (GetDlgItemText(hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency, sizeof(szIdcRxSettingsFrequency) - 1)) {
+			if (GetDlgItemText(_hWnd, IDC_RX_SETTINGS_F_EDIT, szIdcRxSettingsFrequency, sizeof(szIdcRxSettingsFrequency) - 1)) {
 				// Process input (GHz)
 				swscanf_s(szIdcRxSettingsFrequency, L"%lf", &lfIdcRxSettingsFrequency);
 				lfIdcRxSettingsFrequency *= 1e9;
 				agentModel::setRxFrequencyValue(lfIdcRxSettingsFrequency);
 			}
 
-			if (GetDlgItemText(hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan, sizeof(szIdcRxSettingsSpan) - 1)) {
+			if (GetDlgItemText(_hWnd, IDC_RX_SETTINGS_SPAN_EDIT, szIdcRxSettingsSpan, sizeof(szIdcRxSettingsSpan) - 1)) {
 				// Process input (GHz)
 				swscanf_s(szIdcRxSettingsSpan, L"%lf", &lfIdcRxSettingsSpan);
 				lfIdcRxSettingsSpan *= 1e9;
@@ -592,7 +592,7 @@ BOOL CALLBACK AskRxSettings_CB(HWND hWnd,
 			}
 			// Fall-through.
 		case IDCANCEL:
-			EndDialog(hWnd, wParam);
+			EndDialog(_hWnd, wParam);
 			return TRUE;
 			break;
 		}

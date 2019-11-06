@@ -32,16 +32,16 @@ class USB_TMC : public agent
 private:
 	/* Attributes */
 
-	HANDLE								 hThreadAgtUsbTmc;
-	threadDataUsbTmc_t					 sThreadDataUsbTmc;
+	HANDLE								 _hThreadAgtUsbTmc;
+	threadDataUsbTmc_t					 _sThreadDataUsbTmc;
 
-	const struct libusb_version			*version;
-	libusb_context						*pLinkUsb_sr_ctx;
-	libusb_device					   **devs;
+	const struct libusb_version			*_version;
+	libusb_context						*_pLinkUsb_sr_ctx;
+	libusb_device					   **_devs;
 
 	/* Server connection */
-	unbounded_buffer<AgentUsbReq_t>		*pAgtUsbTmcReq;
-	unbounded_buffer<AgentUsbRsp_t>		*pAgtUsbTmcRsp;
+	unbounded_buffer<AgentUsbReq_t>		*_pAgtUsbTmcReq;
+	unbounded_buffer<AgentUsbRsp_t>		*_pAgtUsbTmcRsp;
 
 	bool								 _isStarted;
 	bool								 _running;
@@ -52,7 +52,7 @@ private:
 
 	/* Methods */
 public:
-	USB_TMC(unbounded_buffer<AgentUsbReq_t>* pAgtUsbTmcReq, unbounded_buffer<AgentUsbRsp_t>* pAgtUsbTmcRsp);
+	USB_TMC(unbounded_buffer<AgentUsbReq_t>* _pAgtUsbTmcReq, unbounded_buffer<AgentUsbRsp_t>* _pAgtUsbTmcRsp);
 	virtual ~USB_TMC();
 
 #if 0
@@ -71,7 +71,7 @@ private:
 //	void threadsStop(void);
 
 	int init_libusb(bool show);
-	void print_devs_libusb(libusb_device **devs);
+	void print_devs_libusb(libusb_device **_devs);
 	void print_device_cap_libusb(struct libusb_bos_dev_capability_descriptor *dev_cap);
 	wchar_t* uuid_to_string_libusb(const uint8_t* uuid);
 	void shutdown_libusb(void);

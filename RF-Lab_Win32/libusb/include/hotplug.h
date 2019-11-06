@@ -90,10 +90,10 @@ struct libusb_hotplug_message {
 	struct list_head list;
 };
 
-void usbi_hotplug_deregister(struct libusb_context *pLinkUsb_sr_ctx, int forced);
-void usbi_hotplug_match(struct libusb_context *pLinkUsb_sr_ctx, struct libusb_device *pLinkUsb_dev,
+void usbi_hotplug_deregister(struct libusb_context *_pLinkUsb_sr_ctx, int forced);
+void usbi_hotplug_match(struct libusb_context *_pLinkUsb_sr_ctx, struct libusb_device *pLinkUsb_dev,
 			libusb_hotplug_event event);
-void usbi_hotplug_notification(struct libusb_context *pLinkUsb_sr_ctx, struct libusb_device *pLinkUsb_dev,
+void usbi_hotplug_notification(struct libusb_context *_pLinkUsb_sr_ctx, struct libusb_device *pLinkUsb_dev,
 			libusb_hotplug_event event);
 
 #endif

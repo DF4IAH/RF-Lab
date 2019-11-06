@@ -183,30 +183,30 @@ private:
 	LPVOID								 _arg;
 
 	class WinSrv						*_winSrv;
-	class agentModel					*pAgtMod;
-	threadDataAgentModelPattern_t		 sThreadDataAgentModelPattern;
+	class agentModel					*_pAgtMod;
+	threadDataAgentModelPattern_t		 _sThreadDataAgentModelPattern;
 
-	InstList_t::iterator				 pConInstruments[C_CONNECTED__COUNT];
+	InstList_t::iterator				 _pConInstruments[C_CONNECTED__COUNT];
 
-	agentCom							*pAgtCom[C_COMINST__COUNT];
-	unbounded_buffer<AgentComReq_t>		*pAgtComReq[C_COMINST__COUNT];
-	unbounded_buffer<AgentComRsp_t>		*pAgtComRsp[C_COMINST__COUNT];
+	agentCom							*_pAgtCom[C_COMINST__COUNT];
+	unbounded_buffer<AgentComReq_t>		*_pAgtComReq[C_COMINST__COUNT];
+	unbounded_buffer<AgentComRsp_t>		*_pAgtComRsp[C_COMINST__COUNT];
 
-	USB_TMC								*pAgtUsbTmc;
-	unbounded_buffer<AgentUsbReq_t>		*pAgtUsbTmcReq;
-	unbounded_buffer<AgentUsbRsp_t>		*pAgtUsbTmcRsp;
-	HANDLE								 hThreadAgtUsbTmc;
+	USB_TMC								*_pAgtUsbTmc;
+	unbounded_buffer<AgentUsbReq_t>		*_pAgtUsbTmcReq;
+	unbounded_buffer<AgentUsbRsp_t>		*_pAgtUsbTmcRsp;
+	HANDLE								 _hThreadAgtUsbTmc;
 
-	MeasData							 measDataEntries;
+	MeasData							 _measDataEntries;
 
-	volatile int						 processing_ID;
-	volatile int						 processing_arg1;
-	volatile AGENT_ALL_SIMUMODE_t		 simuMode;
+	volatile int						 _processing_ID;
+	volatile int						 _processing_arg1;
+	volatile AGENT_ALL_SIMUMODE_t		 _simuMode;
 
-	volatile int						 initState;
-	volatile bool						 guiPressedConnect;
+	volatile int						 _initState;
+	volatile bool						 _guiPressedConnect;
 
-	volatile long						 lastTickPos;
+	volatile long						 _curPosTicksAbs;
 
 
 public:
@@ -232,7 +232,7 @@ private:
 								string idn);
 #endif
 
-	void					sendPos(long tickPos);
+	void					sendPosTicksAbs(long tickPos);
 
 	MeasData				measDataInit(MEASDATA_SETUP_ENUM measVar, std::list<double> initList);
 	void					measDataAdd(MeasData* md, std::list<double> dataList);
@@ -248,7 +248,7 @@ public:
 	static void				procThreadProcessID(void* pContext);
 
 	/* agentModelPattern - GENERAL */
-	void					setSimuMode(AGENT_ALL_SIMUMODE_t simuMode);
+	void					setSimuMode(AGENT_ALL_SIMUMODE_t _simuMode);
 	AGENT_ALL_SIMUMODE_t	getSimuMode(void);
 	void					getMeasData(MeasData** md);
 	void					runProcess(int processID, int arg);
@@ -259,9 +259,9 @@ public:
 	void					setStatusRxPower_dBm(double rxPwr);
 
 	/* agentModelPattern - Rotor */
-	long					requestPos(void);
-	void					setLastTickPos(long posDeg);
-	long					getLastTickPos(void);
+	long					receivePosTicksAbs(void);
+	void					setCurPosTicksAbs(long newPosTicksAbs);
+	long					getCurPosTicksAbs(void);
 
 	/* agentModelPattern - TX */
 	void					setTxOnState(bool checked);

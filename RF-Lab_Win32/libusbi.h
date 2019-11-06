@@ -175,25 +175,25 @@ static inline void *usbi_reallocf(void *ptr, size_t size)
 	} while (0)
 #endif
 
-void usbi_log(struct libusb_context *pLinkUsb_sr_ctx, enum libusb_log_level level,
+void usbi_log(struct libusb_context *_pLinkUsb_sr_ctx, enum libusb_log_level level,
 	const char *function, const char *format, ...);
 
-void usbi_log_v(struct libusb_context *pLinkUsb_sr_ctx, enum libusb_log_level level,
+void usbi_log_v(struct libusb_context *_pLinkUsb_sr_ctx, enum libusb_log_level level,
 	const char *function, const char *format, va_list args);
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1400
 
 #ifdef ENABLE_LOGGING
-#define _usbi_log(pLinkUsb_sr_ctx, level, ...) usbi_log(pLinkUsb_sr_ctx, level, __FUNCTION__, __VA_ARGS__)
+#define _usbi_log(_pLinkUsb_sr_ctx, level, ...) usbi_log(_pLinkUsb_sr_ctx, level, __FUNCTION__, __VA_ARGS__)
 #define usbi_dbg(...) _usbi_log(NULL, LIBUSB_LOG_LEVEL_DEBUG, __VA_ARGS__)
 #else
-#define _usbi_log(pLinkUsb_sr_ctx, level, ...) do { (void)(pLinkUsb_sr_ctx); } while(0)
+#define _usbi_log(_pLinkUsb_sr_ctx, level, ...) do { (void)(_pLinkUsb_sr_ctx); } while(0)
 #define usbi_dbg(...) do {} while(0)
 #endif
 
-#define usbi_info(pLinkUsb_sr_ctx, ...) _usbi_log(pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_INFO, __VA_ARGS__)
-#define usbi_warn(pLinkUsb_sr_ctx, ...) _usbi_log(pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_WARNING, __VA_ARGS__)
-#define usbi_err(pLinkUsb_sr_ctx, ...) _usbi_log(pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_ERROR, __VA_ARGS__)
+#define usbi_info(_pLinkUsb_sr_ctx, ...) _usbi_log(_pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_INFO, __VA_ARGS__)
+#define usbi_warn(_pLinkUsb_sr_ctx, ...) _usbi_log(_pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_WARNING, __VA_ARGS__)
+#define usbi_err(_pLinkUsb_sr_ctx, ...) _usbi_log(_pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_ERROR, __VA_ARGS__)
 
 #else /* !defined(_MSC_VER) || _MSC_VER >= 1400 */
 
@@ -212,25 +212,25 @@ void usbi_log_v(struct libusb_context *pLinkUsb_sr_ctx, enum libusb_log_level le
 }
 #endif
 
-static inline void usbi_info(struct libusb_context *pLinkUsb_sr_ctx, const char *format, ...)
-	LOG_BODY(pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_INFO)
-static inline void usbi_warn(struct libusb_context *pLinkUsb_sr_ctx, const char *format, ...)
-	LOG_BODY(pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_WARNING)
-static inline void usbi_err(struct libusb_context *pLinkUsb_sr_ctx, const char *format, ...)
-	LOG_BODY(pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_ERROR)
+static inline void usbi_info(struct libusb_context *_pLinkUsb_sr_ctx, const char *format, ...)
+	LOG_BODY(_pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_INFO)
+static inline void usbi_warn(struct libusb_context *_pLinkUsb_sr_ctx, const char *format, ...)
+	LOG_BODY(_pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_WARNING)
+static inline void usbi_err(struct libusb_context *_pLinkUsb_sr_ctx, const char *format, ...)
+	LOG_BODY(_pLinkUsb_sr_ctx, LIBUSB_LOG_LEVEL_ERROR)
 
 static inline void usbi_dbg(const char *format, ...)
 	LOG_BODY(NULL, LIBUSB_LOG_LEVEL_DEBUG)
 
 #endif /* !defined(_MSC_VER) || _MSC_VER >= 1400 */
 
-#define USBI_GET_CONTEXT(pLinkUsb_sr_ctx)				\
+#define USBI_GET_CONTEXT(_pLinkUsb_sr_ctx)				\
 	do {						\
-		if (!(pLinkUsb_sr_ctx))				\
-			(pLinkUsb_sr_ctx) = usbi_default_context;	\
+		if (!(_pLinkUsb_sr_ctx))				\
+			(_pLinkUsb_sr_ctx) = usbi_default_context;	\
 	} while(0)
 
-#define DEVICE_CTX(pLinkUsb_dev)		((pLinkUsb_dev)->pLinkUsb_sr_ctx)
+#define DEVICE_CTX(pLinkUsb_dev)		((pLinkUsb_dev)->_pLinkUsb_sr_ctx)
 #define HANDLE_CTX(handle)	(DEVICE_CTX((handle)->pLinkUsb_dev))
 #define TRANSFER_CTX(transfer)	(HANDLE_CTX((transfer)->pLinkUsb_dev_handle))
 #define ITRANSFER_CTX(transfer) \
@@ -342,24 +342,24 @@ enum usbi_event_flags {
 };
 
 /* Macros for managing event handling state */
-#define usbi_handling_events(pLinkUsb_sr_ctx) \
-	(usbi_tls_key_get((pLinkUsb_sr_ctx)->event_handling_key) != NULL)
+#define usbi_handling_events(_pLinkUsb_sr_ctx) \
+	(usbi_tls_key_get((_pLinkUsb_sr_ctx)->event_handling_key) != NULL)
 
-#define usbi_start_event_handling(pLinkUsb_sr_ctx) \
-	usbi_tls_key_set((pLinkUsb_sr_ctx)->event_handling_key, pLinkUsb_sr_ctx)
+#define usbi_start_event_handling(_pLinkUsb_sr_ctx) \
+	usbi_tls_key_set((_pLinkUsb_sr_ctx)->event_handling_key, _pLinkUsb_sr_ctx)
 
-#define usbi_end_event_handling(pLinkUsb_sr_ctx) \
-	usbi_tls_key_set((pLinkUsb_sr_ctx)->event_handling_key, NULL)
+#define usbi_end_event_handling(_pLinkUsb_sr_ctx) \
+	usbi_tls_key_set((_pLinkUsb_sr_ctx)->event_handling_key, NULL)
 
 /* Update the following macro if new event sources are added */
-#define usbi_pending_events(pLinkUsb_sr_ctx) \
-	((pLinkUsb_sr_ctx)->event_flags || (pLinkUsb_sr_ctx)->device_close \
-	 || !list_empty(&(pLinkUsb_sr_ctx)->hotplug_msgs) || !list_empty(&(pLinkUsb_sr_ctx)->completed_transfers))
+#define usbi_pending_events(_pLinkUsb_sr_ctx) \
+	((_pLinkUsb_sr_ctx)->event_flags || (_pLinkUsb_sr_ctx)->device_close \
+	 || !list_empty(&(_pLinkUsb_sr_ctx)->hotplug_msgs) || !list_empty(&(_pLinkUsb_sr_ctx)->completed_transfers))
 
 #ifdef USBI_TIMERFD_AVAILABLE
 #define usbi_using_timerfd(ctx) ((ctx)->timerfd >= 0)
 #else
-#define usbi_using_timerfd(pLinkUsb_sr_ctx) (0)
+#define usbi_using_timerfd(_pLinkUsb_sr_ctx) (0)
 #endif
 
 struct libusb_device {
@@ -368,7 +368,7 @@ struct libusb_device {
 	usbi_mutex_t lock;
 	int refcnt;
 
-	struct libusb_context *pLinkUsb_sr_ctx;
+	struct libusb_context *_pLinkUsb_sr_ctx;
 
 	uint8_t bus_number;
 	uint8_t port_number;
@@ -504,12 +504,12 @@ struct usb_descriptor_header {
 
 /* shared data and functions */
 
-int usbi_io_init(struct libusb_context *pLinkUsb_sr_ctx);
-void usbi_io_exit(struct libusb_context *pLinkUsb_sr_ctx);
+int usbi_io_init(struct libusb_context *_pLinkUsb_sr_ctx);
+void usbi_io_exit(struct libusb_context *_pLinkUsb_sr_ctx);
 
-struct libusb_device *usbi_alloc_device(struct libusb_context *pLinkUsb_sr_ctx,
+struct libusb_device *usbi_alloc_device(struct libusb_context *_pLinkUsb_sr_ctx,
 	unsigned long session_id);
-struct libusb_device *usbi_get_device_by_session_id(struct libusb_context *pLinkUsb_sr_ctx,
+struct libusb_device *usbi_get_device_by_session_id(struct libusb_context *_pLinkUsb_sr_ctx,
 	unsigned long session_id);
 int usbi_sanitize_device(struct libusb_device *pLinkUsb_dev);
 void usbi_handle_disconnect(struct libusb_device_handle *pLinkUsb_dev_handle);
@@ -528,8 +528,8 @@ int usbi_get_config_index_by_value(struct libusb_device *pLinkUsb_dev,
 void usbi_connect_device (struct libusb_device *pLinkUsb_dev);
 void usbi_disconnect_device (struct libusb_device *pLinkUsb_dev);
 
-int usbi_signal_event(struct libusb_context *pLinkUsb_sr_ctx);
-int usbi_clear_event(struct libusb_context *pLinkUsb_sr_ctx);
+int usbi_signal_event(struct libusb_context *_pLinkUsb_sr_ctx);
+int usbi_clear_event(struct libusb_context *_pLinkUsb_sr_ctx);
 
 /* Internal abstraction for poll (needs struct usbi_transfer on Windows) */
 #if defined(OS_LINUX) || defined(OS_DARWIN) || defined(OS_OPENBSD) || defined(OS_NETBSD) ||\
@@ -560,8 +560,8 @@ struct usbi_pollfd {
 	struct list_head list;
 };
 
-int usbi_add_pollfd(struct libusb_context *pLinkUsb_sr_ctx, int fd, short events);
-void usbi_remove_pollfd(struct libusb_context *pLinkUsb_sr_ctx, int fd);
+int usbi_add_pollfd(struct libusb_context *_pLinkUsb_sr_ctx, int fd, short events);
+void usbi_remove_pollfd(struct libusb_context *_pLinkUsb_sr_ctx, int fd);
 
 /* device discovery */
 
@@ -605,7 +605,7 @@ struct usbi_os_backend {
 	 *
 	 * Return 0 on success, or a LIBUSB_ERROR code on failure.
 	 */
-	int (*init)(struct libusb_context *pLinkUsb_sr_ctx);
+	int (*init)(struct libusb_context *_pLinkUsb_sr_ctx);
 
 	/* Deinitialization. Optional. This function should destroy anything
 	 * that was set up by init.
@@ -665,7 +665,7 @@ struct usbi_os_backend {
 	 *
 	 * Return 0 on success, or a LIBUSB_ERROR code on failure.
 	 */
-	int (*get_device_list)(struct libusb_context *pLinkUsb_sr_ctx,
+	int (*get_device_list)(struct libusb_context *_pLinkUsb_sr_ctx,
 		struct discovered_devs **discdevs);
 
 	/* Apps which were written before hotplug support, may listen for
@@ -1072,7 +1072,7 @@ struct usbi_os_backend {
 	 *
 	 * Return 0 on success, or a LIBUSB_ERROR code on failure.
 	 */
-	int (*handle_events)(struct libusb_context *pLinkUsb_sr_ctx,
+	int (*handle_events)(struct libusb_context *_pLinkUsb_sr_ctx,
 		struct pollfd *fds, POLL_NFDS_TYPE nfds, int num_ready);
 
 	/* Handle transfer completion. Optional.

@@ -47,10 +47,10 @@ class DPIScale
 	static float scaleY;
 
 public:
-	static void Initialize(ID2D1Factory *pFactory)
+	static void Initialize(ID2D1Factory *_pFactory)
 	{
 		FLOAT dpiX, dpiY;
-		pFactory->GetDesktopDpi(&dpiX, &dpiY);
+		_pFactory->GetDesktopDpi(&dpiX, &dpiY);
 		scaleX = dpiX / 96.0f;
 		scaleY = dpiY / 96.0f;
 	}
@@ -68,19 +68,19 @@ float DPIScale::scaleY = 1.0f;
 WinSrv* g_winSrv = nullptr;
 
 
-WinSrv::WinSrv() : hWnd(nullptr)
-				 , hWndStatus(nullptr)
-				 , pFactory(nullptr)
-				 , pRenderTarget(nullptr)
-				 , pBrush(nullptr)
+WinSrv::WinSrv() : _hWnd(nullptr)
+				 , _hWndStatus(nullptr)
+				 , _pFactory(nullptr)
+				 , _pRenderTarget(nullptr)
+				 , _pBrush(nullptr)
 				 , _size(D2D1_SIZE_F())
 				 , _PD({ 0 })
 				 , _menuInfo({ FALSE, FALSE, FALSE })
-				 , pAgtModel(nullptr)
+				 , _pAgtModel(nullptr)
 				 , _winExitReceived(FALSE)
 				 , _ready(FALSE)
-				 , cLastFilePath(L"C:\\Users\\Labor\\Downloads")
-				 , cLastFileName(L"Ant-Richtdiagramm.csv")
+				 , _cLastFilePath(L"C:\\Users\\Labor\\Downloads")
+				 , _cLastFileName(L"Ant-Richtdiagramm.csv")
 {
 	g_winSrv = this;
 
@@ -97,9 +97,9 @@ WinSrv::~WinSrv()
 {
 	//SafeRelease(&hwndStatus);
 
-	SafeReleaseDelete(&pBrush);
-	SafeReleaseDelete(&pRenderTarget);
-	SafeReleaseDelete(&pFactory);
+	SafeReleaseDelete(&_pBrush);
+	SafeReleaseDelete(&_pRenderTarget);
+	SafeReleaseDelete(&_pFactory);
 
 	CoUninitialize();
 
@@ -113,11 +113,11 @@ WinSrv::~WinSrv()
 void WinSrv::threadsStart()
 {
 	// start the master model with the antenna pattern model variant
-	pAgtModel  = new agentModel(
+	_pAgtModel  = new agentModel(
 		&_ub_agtModel_req,
 		&_ob_agtModel_rsp,
 		this,
-		hWnd,
+		_hWnd,
 		agentModel::AGENT_MODEL_PATTERN,
 //		(AGENT_ALL_SIMUMODE_t) (AGENT_ALL_SIMUMODE_NO_RX | AGENT_ALL_SIMUMODE_NO_TX | AGENT_ALL_SIMUMODE_RUN_BARGRAPH)
 //		(AGENT_ALL_SIMUMODE_t) (AGENT_ALL_SIMUMODE_NO_TX | AGENT_ALL_SIMUMODE_RUN_BARGRAPH)
@@ -125,13 +125,13 @@ void WinSrv::threadsStart()
 	);
 
 	// starting agent --> Execution follows: AgentModel::run() (Line 87) --> AgentModelPattern::run() (Line 179)
-	pAgtModel->start();
+	_pAgtModel->start();
 }
 
 void WinSrv::threadsStop()
 {
 	/* Shutdown the model */
-	SafeReleaseDelete(&pAgtModel);
+	SafeReleaseDelete(&_pAgtModel);
 }
 
 
@@ -150,28 +150,28 @@ bool WinSrv::isReady()
 }
 
 
-LRESULT WinSrv::setWindow(HWND hWnd)
+LRESULT WinSrv::setWindow(HWND _hWnd)
 {
 	_ready = FALSE;
 
-	this->hWnd = hWnd;
-	if (this->hWnd) {
-		if (SUCCEEDED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
+	this->_hWnd = _hWnd;
+	if (this->_hWnd) {
+		if (SUCCEEDED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &_pFactory)))
 		{
 			if (SUCCEEDED(createGraphicsResources())) {
 				RECT rc;
 
 				/* Get initial window size */
-				GetClientRect(hWnd, &rc);
+				GetClientRect(_hWnd, &rc);
 
 				/* Expand to max size due to a StatusBar problem */
-				ShowWindow(hWnd, SW_MAXIMIZE);
+				ShowWindow(_hWnd, SW_MAXIMIZE);
 
 				/* Create the status bar with 3 equal spaced separations */
-				this->hWndStatus = DoCreateStatusBar(this->hWnd, (HMENU)63, g_hInst, StatusBarParts);
-				if (this->hWndStatus) {
+				this->_hWndStatus = DoCreateStatusBar(this->_hWnd, (HMENU)63, g_hInst, _StatusBarParts);
+				if (this->_hWndStatus) {
 					/* Resize back to the size before */
-					SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, rc.right, rc.bottom, 0);
+					SetWindowPos(_hWnd, HWND_NOTOPMOST, 0, 0, rc.right, rc.bottom, 0);
 
 					_ready = TRUE;
 					return 0;
@@ -191,7 +191,7 @@ void WinSrv::paint()
 	if (SUCCEEDED(hr))
 	{
 		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hWnd, &ps);
+		HDC hdc = BeginPaint(_hWnd, &ps);
 
 		// COM-style
 		//FillRect(hdc, &ps->rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
@@ -201,48 +201,48 @@ void WinSrv::paint()
 		//hr = pFileOpen.CoCreateInstance(__uuidof(FileOpenDialog));
 
 		// D2Draw-style
-		pRenderTarget->BeginDraw();
+		_pRenderTarget->BeginDraw();
 
-		pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Wheat));
+		_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Wheat));
 		//pRenderTarget->DrawLine(D2D1::Point2F(0, 0), D2D1::Point2F(_size.width, _size.height), pBrush);
 		//ClientToScreen(hWnd, &pt);
 
 		//pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 		//pRenderTarget->DrawTextW(L"RF-Lab", 6, xxx, D2D1::RectF(0, 0, 100, 100), pBrush);
 
-		hr = pRenderTarget->EndDraw();
+		hr = _pRenderTarget->EndDraw();
 		if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
 		{
 			discardGraphicsResources();
 		}
 
-		EndPaint(hWnd, &ps);
+		EndPaint(_hWnd, &ps);
 	}
 }
 
 
 void WinSrv::resize()
 {
-	if (pRenderTarget != NULL)
+	if (_pRenderTarget != NULL)
 	{
 		RECT rc;
-		GetClientRect(hWnd, &rc);
+		GetClientRect(_hWnd, &rc);
 
 		D2D1_SIZE_U size = D2D1::SizeU(rc.right, rc.bottom);
 
-		pRenderTarget->Resize(size);
-		OnStatusbarSize(this->hWndStatus, StatusBarParts, &rc);
+		_pRenderTarget->Resize(size);
+		OnStatusbarSize(this->_hWndStatus, _StatusBarParts, &rc);
 		calculateLayout();
-		InvalidateRect(hWnd, NULL, FALSE);
+		InvalidateRect(_hWnd, NULL, FALSE);
 	}
 }
 
 
 void WinSrv::calculateLayout()
 {
-	if (pRenderTarget != NULL)
+	if (_pRenderTarget != NULL)
 	{
-		_size = D2D1_SIZE_F(pRenderTarget->GetSize());
+		_size = D2D1_SIZE_F(_pRenderTarget->GetSize());
 		//const float x = size.width / 2;
 		//const float y = size.height / 2;
 		//const float radius = min(x, y);
@@ -255,21 +255,21 @@ HRESULT WinSrv::createGraphicsResources()
 {
 	HRESULT hr = S_OK;
 
-	if (!pRenderTarget)
+	if (!_pRenderTarget)
 	{
 		RECT rc;
-		GetClientRect(hWnd, &rc);
+		GetClientRect(_hWnd, &rc);
 
 		D2D1_SIZE_U size = D2D1::SizeU(rc.right, rc.bottom);
 
-		hr = pFactory->CreateHwndRenderTarget(
+		hr = _pFactory->CreateHwndRenderTarget(
 			D2D1::RenderTargetProperties(),
-			D2D1::HwndRenderTargetProperties(hWnd, size),
-			&pRenderTarget);
+			D2D1::HwndRenderTargetProperties(_hWnd, size),
+			&_pRenderTarget);
 		if (SUCCEEDED(hr))
 		{
 			const D2D1_COLOR_F color = D2D1::ColorF(1.0f, 1.0f, 0);
-			hr = pRenderTarget->CreateSolidColorBrush(color, &pBrush);
+			hr = _pRenderTarget->CreateSolidColorBrush(color, &_pBrush);
 			if (SUCCEEDED(hr))
 			{
 				calculateLayout();
@@ -282,11 +282,11 @@ HRESULT WinSrv::createGraphicsResources()
 
 void WinSrv::discardGraphicsResources()
 {
-	SafeReleaseDelete(&pBrush);
-	SafeReleaseDelete(&pRenderTarget);
+	SafeReleaseDelete(&_pBrush);
+	SafeReleaseDelete(&_pRenderTarget);
 }
 
-void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
+void WinSrv::wmCmd(HWND _hWnd, int wmId, LPVOID arg)
 {
 	/* Clear hints about selected device types */
 	if (wmId == ID_INSTRUMENTEN_DISCONNECT) {
@@ -295,8 +295,8 @@ void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
 		_menuInfo.specEnabled = false;
 	}
 
-	if (pAgtModel) {
-		pAgtModel->wmCmd(wmId, arg);
+	if (_pAgtModel) {
+		_pAgtModel->wmCmd(wmId, arg);
 	}
 }
 
@@ -313,7 +313,7 @@ void WinSrv::wmCmd(HWND hWnd, int wmId, LPVOID arg)
 //
 HWND WinSrv::DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst, int cParts)
 {
-	HWND hWndStatus;
+	HWND _hWndStatus;
 	RECT rcClient;
 	HLOCAL hloc;
 	PINT paParts;
@@ -323,7 +323,7 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst,
 	//InitCommonControls();
 
 	/* Create the status bar. */
-	hWndStatus = CreateWindowEx(
+	_hWndStatus = CreateWindowEx(
 		0,                       // no extended styles
 		STATUSCLASSNAME,         // name of status bar class
 		(PCTSTR)NULL,            // no text when first created
@@ -353,20 +353,20 @@ HWND WinSrv::DoCreateStatusBar(HWND hwndParent, HMENU idStatus, HINSTANCE	hinst,
 	}
 
 	/* Tell the status bar to create the window parts. */
-	SendMessage(hWndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
+	SendMessage(_hWndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
 
 	/* Status line information */
-	SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)L"Status 1");
-	SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)L"Status 2");
-	SendMessage(hWndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)L"Status 3");
+	SendMessage(_hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)L"Status 1");
+	SendMessage(_hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)L"Status 2");
+	SendMessage(_hWndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)L"Status 3");
 
 	/* Free the array, and return. */
 	LocalUnlock(hloc);
 	LocalFree(hloc);
-	return hWndStatus;
+	return _hWndStatus;
 }
 
-void WinSrv::OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size)
+void WinSrv::OnStatusbarSize(HWND _hWndStatus, int cParts, RECT* size)
 {
 	HLOCAL hloc;
 	PINT paParts;
@@ -386,8 +386,8 @@ void WinSrv::OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size)
 	}
 
 	// Tell the status bar to create the window parts.
-	SendMessage(hWndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
-	SendMessage(hWndStatus, WM_SIZE, 0, 0);
+	SendMessage(_hWndStatus, SB_SETPARTS, (WPARAM)cParts, (LPARAM)paParts);
+	SendMessage(_hWndStatus, WM_SIZE, 0, 0);
 
 	// Free the array, and return.
 	LocalUnlock(hloc);
@@ -397,7 +397,7 @@ void WinSrv::OnStatusbarSize(HWND hWndStatus, int cParts, RECT* size)
 // Ist wahr sobald WinSrv vollständig betriebsbereit ist
 bool WinSrv::ready()
 {
-	if (hWnd && hWndStatus) {
+	if (_hWnd && _hWndStatus) {
 		return true;
 	}
 	return false;
@@ -426,10 +426,10 @@ void WinSrv::srvStop()
 }
 
 // Aktualisiert Window-Instanzenhandle
-LRESULT WinSrv::srvSetWindow(HWND hWnd)
+LRESULT WinSrv::srvSetWindow(HWND _hWnd)
 {
 	if (g_instance) {
-		return g_instance->setWindow(hWnd);
+		return g_instance->setWindow(_hWnd);
 	}
 
 	return -1;  // non-valid invocation
@@ -462,25 +462,25 @@ void WinSrv::srvResize()
 }
 
 // WM-Command verarbeiten
-void WinSrv::srvWmCmd(HWND hWnd, int wmId, LPVOID arg)
+void WinSrv::srvWmCmd(HWND _hWnd, int wmId, LPVOID arg)
 {
 	if (g_instance && g_instance->isReady()) {
-		g_instance->wmCmd(hWnd, wmId, arg);
+		g_instance->wmCmd(_hWnd, wmId, arg);
 	}
 }
 
 void WinSrv::reportStatus(LPVOID modelVariant, LPVOID modelStatus, LPVOID modelInfo)
 {
 	if (modelVariant) {
-		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)modelVariant);
+		SendMessage(this->_hWndStatus, SB_SETTEXT, (WPARAM)0x0000, (LPARAM)modelVariant);
 	}
 
 	if (modelStatus) {
-		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)modelStatus);
+		SendMessage(this->_hWndStatus, SB_SETTEXT, (WPARAM)0x0001, (LPARAM)modelStatus);
 	}
 
 	if (modelInfo) {
-		SendMessage(this->hWndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)modelInfo);
+		SendMessage(this->_hWndStatus, SB_SETTEXT, (WPARAM)0x0002, (LPARAM)modelInfo);
 	}
 }
 
@@ -566,7 +566,7 @@ void WinSrv::instUpdateConnectedInstruments(void)
 #if 1
 	/* Reload from ressource file */
 	HMENU hMenu = LoadMenu(g_hInst, MAKEINTRESOURCEW(IDC_RFLAB_WIN32));
-	SetMenu(hWnd, hMenu);
+	SetMenu(_hWnd, hMenu);
 #else
 	/* Get menu class */
 	HMENU hMenu = GetMenu(this->hWnd);
@@ -813,13 +813,13 @@ void WinSrv::instUpdateConnectedInstruments(void)
 		EnableMenuItem(hMenu, ID_INSTRUMENTEN_CONNECT, MF_BYCOMMAND);
 	}
 
-	DrawMenuBar(this->hWnd);
+	DrawMenuBar(this->_hWnd);
 }
 
 void WinSrv::instActivateMenuItem(UINT winID, bool uEnable)
 {
 	/* Get menu structure */
-	HMENU hMenuBar = GetMenu(this->hWnd);
+	HMENU hMenuBar = GetMenu(this->_hWnd);
 
 	int   menuAnstIdx = 0;
 	HMENU hMenuAnst = NULL;
@@ -925,12 +925,12 @@ void WinSrv::instActivateMenuItem(UINT winID, bool uEnable)
 		// TODO: add code here
 	}
 
-	DrawMenuBar(this->hWnd);
+	DrawMenuBar(this->_hWnd);
 }
 
 bool WinSrv::checkForModelPattern(HMENU hMenuAnst)
 {
-	HMENU hMenu = GetMenu(this->hWnd);
+	HMENU hMenu = GetMenu(this->_hWnd);
 
 	/* When every type is connected activate Pattern Model */
 	if (_menuInfo.rotorEnabled && _menuInfo.rfGenEnabled && _menuInfo.specEnabled) {
@@ -1039,10 +1039,10 @@ void WinSrv::saveCurrentDataset(void)
 
 		/* Create last path and file name */
 		wchar_t lineBuf[MAX_PATH] = { 0 };
-		wchar_t* pos = lineBuf + lstrlenW(g_instance->cLastFilePath);
-		StrCpyNW(lineBuf, g_instance->cLastFilePath, sizeof(lineBuf));
+		wchar_t* pos = lineBuf + lstrlenW(g_instance->_cLastFilePath);
+		StrCpyNW(lineBuf, g_instance->_cLastFilePath, sizeof(lineBuf));
 		StrCpyNW(pos, L"\\", 2);
-		StrCpyNW(pos + 1, g_instance->cLastFileName, (int)(1 + lstrlenW(g_instance->cLastFileName)));
+		StrCpyNW(pos + 1, g_instance->_cLastFileName, (int)(1 + lstrlenW(g_instance->_cLastFileName)));
 		
 		/* Get local time */
 		SYSTEMTIME systemTime;
@@ -1052,7 +1052,7 @@ void WinSrv::saveCurrentDataset(void)
 		getMeasType(&measType);
 
 		/* Retrieve file type */
-		FILETYPE_ENUM ft = getFileType(g_instance->cLastFileName);
+		FILETYPE_ENUM ft = getFileType(g_instance->_cLastFileName);
 
 		/* Decide which document type is chosen */
 		switch (ft) {
@@ -1203,7 +1203,7 @@ void WinSrv::saveCurrentDataset(void)
 wchar_t* WinSrv::getLastFilePath(void)
 {
 	if (g_instance && g_instance->isReady()) {
-		return g_instance->cLastFilePath;
+		return g_instance->_cLastFilePath;
 	}
 	else {
 		return L"";
@@ -1213,7 +1213,7 @@ wchar_t* WinSrv::getLastFilePath(void)
 wchar_t* WinSrv::getLastFileName(void)
 {
 	if (g_instance && g_instance->isReady()) {
-		return g_instance->cLastFileName;
+		return g_instance->_cLastFileName;
 	}
 	else {
 		return L"";
@@ -1225,8 +1225,8 @@ void WinSrv::setLastFilePath(wchar_t* s)
 	if (g_instance && g_instance->isReady() && s) {
 		if (lstrlenW(s)) {
 			wchar_t* pos = wcsrchr(s, L'\\');
-			StrCpyNW(g_instance->cLastFilePath, s, (int)(pos - s) + 1);
-			StrCpyNW(g_instance->cLastFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
+			StrCpyNW(g_instance->_cLastFilePath, s, (int)(pos - s) + 1);
+			StrCpyNW(g_instance->_cLastFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
 		}
 	}
 }

@@ -48,11 +48,11 @@ int compare(void *pvlocale, const void *str1, const void *str2)
 
 
 
-agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, HWND hWnd, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode)
+agentModel::agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, HWND _hWnd, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode)
 				 : _src(src)
 				 , _tgt(tgt)
 				 , _winSrv(winSrv)
-				 , _hWnd(hWnd)
+				 , _hWnd(_hWnd)
 				 , _am_variant(am_variant)
 				 , _simuMode(mode)
 {
@@ -222,10 +222,10 @@ unsigned int agentModel::getLineLength(const char* p, unsigned int len)
 
 /* agentModelPattern - GENERAL */
 
-void agentModel::setSimuMode(AGENT_ALL_SIMUMODE_t simuMode)
+void agentModel::setSimuMode(AGENT_ALL_SIMUMODE_t _simuMode)
 {
 	if (g_am && g_am->_curModel) {
-		g_am->_curModel->setSimuMode(simuMode);
+		g_am->_curModel->setSimuMode(_simuMode);
 	}
 }
 
@@ -268,25 +268,25 @@ void agentModel::runProcess(int processID, int arg)
 
 /* agentModelPattern - Rotor */
 
-long agentModel::requestPos(void)
+long agentModel::receivePosTicksAbs(void)
 {
 	if (g_am && g_am->_curModel) {
-		return g_am->_curModel->requestPos();
+		return g_am->_curModel->receivePosTicksAbs();
 	}
 	return MAXINT32;
 }
 
-void agentModel::setLastTickPos(long tickPos)
+void agentModel::setCurPosTicksAbs(long tickPos)
 {
 	if (g_am && g_am->_curModel) {
-		g_am->_curModel->setLastTickPos(tickPos);
+		g_am->_curModel->setCurPosTicksAbs(tickPos);
 	}
 }
 
-long agentModel::getLastTickPos(void)
+long agentModel::getCurPosTicksAbs(void)
 {
 	if (g_am && g_am->_curModel) {
-		return g_am->_curModel->getLastTickPos();
+		return g_am->_curModel->getCurPosTicksAbs();
 	}
 	else {
 		return 0;

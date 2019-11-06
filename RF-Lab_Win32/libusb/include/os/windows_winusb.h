@@ -97,7 +97,7 @@ struct windows_usb_api_backend {
 	const char * const designation;
 	const char * const * const driver_name_list; // Driver name, without .sys, e.g. "usbccgp"
 	const uint8_t nb_driver_names;
-	int (*init)(struct libusb_context *pLinkUsb_sr_ctx);
+	int (*init)(struct libusb_context *_pLinkUsb_sr_ctx);
 	void (*exit)(void);
 	int (*open)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle);
 	void (*close)(int sub_api, struct libusb_device_handle *pLinkUsb_dev_handle);

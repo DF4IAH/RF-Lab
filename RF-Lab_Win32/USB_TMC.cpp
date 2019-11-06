@@ -27,10 +27,10 @@ inline void* varcpy(void* dest, void* src, size_t size)
 
 USB_TMC *g_usb_tmc = nullptr;
 
-USB_TMC::USB_TMC(unbounded_buffer<AgentUsbReq_t>* pAgtUsbTmcReq, unbounded_buffer<AgentUsbRsp_t>* pAgtUsbTmcRsp) :
-	devs(NULL)
-	, pAgtUsbTmcReq(pAgtUsbTmcReq)
-	, pAgtUsbTmcRsp(pAgtUsbTmcRsp)
+USB_TMC::USB_TMC(unbounded_buffer<AgentUsbReq_t>* _pAgtUsbTmcReq, unbounded_buffer<AgentUsbRsp_t>* _pAgtUsbTmcRsp) :
+	_devs(NULL)
+	, _pAgtUsbTmcReq(_pAgtUsbTmcReq)
+	, _pAgtUsbTmcRsp(_pAgtUsbTmcRsp)
 	, _isStarted(false)
 	, _running(false)
 	, _runState(C_USB_TMC_RUNSTATES_NOOP)
@@ -91,7 +91,7 @@ void USB_TMC::run(void)
 		AgentUsbReq_t usbReqData;
 
 		try {
-			usbReqData = receive(*pAgtUsbTmcReq);
+			usbReqData = receive(*_pAgtUsbTmcReq);
 
 			switch (usbReqData.cmd) {
 			case C_USBREQ_DO_REGISTRATION:
@@ -111,7 +111,7 @@ void USB_TMC::run(void)
 
 				usbRspData.stat = C_USBRSP_REGISTRATION_DONE;
 				usbRspData.data1 = 0UL;
-				send(pAgtUsbTmcRsp, usbRspData);
+				send(_pAgtUsbTmcRsp, usbRspData);
 
 				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
@@ -126,7 +126,7 @@ void USB_TMC::run(void)
 					const bool							absent		= false;
 					const bool							connected	= true;
 					AgentComReqUsbDev_t*				rd			= (AgentComReqUsbDev_t*)usbReqData.data1;
-					libusb_device**						thisDev		= devs;
+					libusb_device**						thisDev		= _devs;
 					struct libusb_device_descriptor		desc;
 
 					usbRspData.stat = C_USBRSP_IS_DEV_CONNECTED;
@@ -149,7 +149,7 @@ void USB_TMC::run(void)
 					}
 				}
 
-				send(pAgtUsbTmcRsp, usbRspData);
+				send(_pAgtUsbTmcRsp, usbRspData);
 				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
 			break;
@@ -160,7 +160,7 @@ void USB_TMC::run(void)
 				AgentComReqUsbDev_t* rd	= (AgentComReqUsbDev_t*)usbReqData.data1;
 
 				if (_isOpen) {
-					libusb_device**	thisDev = devs;
+					libusb_device**	thisDev = _devs;
 					struct libusb_device_descriptor	desc;
 					int	usbDevIdx = 0;
 
@@ -196,7 +196,7 @@ void USB_TMC::run(void)
 				}
 
 				usbRspData.thisInst = usbReqData.thisInst;
-				send(pAgtUsbTmcRsp, usbRspData);
+				send(_pAgtUsbTmcRsp, usbRspData);
 				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
 			break;
@@ -216,7 +216,7 @@ void USB_TMC::run(void)
 
 				usbRspData.stat = C_USBRSP_OK;
 				usbRspData.thisInst = thisInst;
-				send(pAgtUsbTmcRsp, usbRspData);
+				send(_pAgtUsbTmcRsp, usbRspData);
 				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
 			break;
@@ -245,7 +245,7 @@ void USB_TMC::run(void)
 
 				/* Current instrument state to be returned */
 				usbRspData.thisInst = usbReqData.thisInst;
-				send(pAgtUsbTmcRsp, usbRspData);
+				send(_pAgtUsbTmcRsp, usbRspData);
 
 				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
@@ -270,7 +270,7 @@ void USB_TMC::run(void)
 					usbRspData.stat = C_USBRSP_ERR;
 
 					usbRspData.thisInst = usbReqData.thisInst;
-					send(pAgtUsbTmcRsp, usbRspData);
+					send(_pAgtUsbTmcRsp, usbRspData);
 
 					_runState = C_USB_TMC_RUNSTATES_RUN;
 					break;
@@ -289,7 +289,7 @@ void USB_TMC::run(void)
 
 				/* Current instrument state to be returned */
 				usbRspData.thisInst = usbReqData.thisInst;
-				send(pAgtUsbTmcRsp, usbRspData);
+				send(_pAgtUsbTmcRsp, usbRspData);
 
 				_runState = C_USB_TMC_RUNSTATES_RUN;
 			}
@@ -305,7 +305,7 @@ void USB_TMC::run(void)
 
 				usbRspData.stat = C_USBRSP_END;
 				usbRspData.data1 = nullptr;
-				send(pAgtUsbTmcRsp, usbRspData);
+				send(_pAgtUsbTmcRsp, usbRspData);
 
 				_running = false;
 				_runState = C_USB_TMC_RUNSTATES_NOOP;
@@ -338,20 +338,20 @@ int USB_TMC::init_libusb(bool show)
 	int r;
 	ssize_t cnt = 0LL;
 
-	version = libusb_get_version();
+	_version = libusb_get_version();
 
-	r = libusb_init(&pLinkUsb_sr_ctx);
+	r = libusb_init(&_pLinkUsb_sr_ctx);
 	if (r < 0) {
 		return r;
 	}
 
-	cnt = libusb_get_device_list(NULL, &devs);
+	cnt = libusb_get_device_list(NULL, &_devs);
 	if (cnt < 0LL) {
 		return (int)cnt;
 	}
 
 	if (show) {
-		print_devs_libusb(devs);
+		print_devs_libusb(_devs);
 	}
 
 	return (int)cnt;
@@ -360,14 +360,14 @@ int USB_TMC::init_libusb(bool show)
 void USB_TMC::shutdown_libusb(void)
 {
 	/* Release the device list */
-	if (devs) {
-		libusb_free_device_list(devs, 1);
-		devs = NULL;
+	if (_devs) {
+		libusb_free_device_list(_devs, 1);
+		_devs = NULL;
 	}
 
-	if (pLinkUsb_sr_ctx) {
-		libusb_exit(pLinkUsb_sr_ctx);
-		pLinkUsb_sr_ctx = NULL;
+	if (_pLinkUsb_sr_ctx) {
+		libusb_exit(_pLinkUsb_sr_ctx);
+		_pLinkUsb_sr_ctx = NULL;
 	}
 }
 
@@ -823,7 +823,7 @@ bool USB_TMC::openUsb(Instrument_t *inst)
 		return false;
 	}
 
-	libusb_device							*pLinkUsb_dev			= devs[inst->linkUsb_devs_idx];
+	libusb_device							*pLinkUsb_dev			= _devs[inst->linkUsb_devs_idx];
 	libusb_device_handle					*pLinkUsb_dev_handle	= NULL;
 	libusb_device_descriptor				 dev_desc;
 	libusb_bos_descriptor					*bos_desc	= NULL;
@@ -1292,7 +1292,7 @@ INSTRUMENT_ENUM_t USB_TMC::usbTmcCheck(int linkUsb_devs_idx, struct libusb_devic
 	static int									nextFreeRxId = INSTRUMENT_RECEIVERS_USB__GENERIC;
 	struct libusb_config_descriptor			   *confDes;
 	const struct libusb_interface_descriptor   *intfDes;
-	libusb_device							   *pLinkUsb_dev = devs[linkUsb_devs_idx];
+	libusb_device							   *pLinkUsb_dev = _devs[linkUsb_devs_idx];
 	int											r;
 	bool										isUsbTmc = false;
 	C_USB_TMC_INSTRUMENT_TYPE_t					instType = C_USB_TMC_INSTRUMENT_NONE;

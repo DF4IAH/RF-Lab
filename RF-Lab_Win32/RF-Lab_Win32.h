@@ -7,17 +7,17 @@
 #define C_BUFSIZE 256
 
 
-BOOL CALLBACK RotorPosX_CB(	HWND   hWnd,
+BOOL CALLBACK RotorPosX_CB(	HWND   _hWnd,
 							UINT   message,
 							WPARAM wParam,
 							LPARAM lParam);
 
-BOOL CALLBACK AskTxSettings_CB(HWND   hWnd,
+BOOL CALLBACK AskTxSettings_CB(HWND   _hWnd,
 	UINT   message,
 	WPARAM wParam,
 	LPARAM lParam);
 
-BOOL CALLBACK AskRxSettings_CB(HWND   hWnd,
+BOOL CALLBACK AskRxSettings_CB(HWND   _hWnd,
 	UINT   message,
 	WPARAM wParam,
 	LPARAM lParam);

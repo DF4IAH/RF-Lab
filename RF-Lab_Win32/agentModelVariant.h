@@ -42,16 +42,16 @@ public:
 
 
 	/* agentModelPattern - GENERAL */
-	virtual void	setSimuMode(AGENT_ALL_SIMUMODE_t simuMode);
+	virtual void	setSimuMode(AGENT_ALL_SIMUMODE_t _simuMode);
 	virtual AGENT_ALL_SIMUMODE_t getSimuMode(void);
 	virtual void	getMeasData(MeasData** md);
 	virtual void	runProcess(int processID, int arg);
 	virtual void	initDevices(void);
 
 	/* agentModelPattern - Rotor */
-	virtual long	requestPos(void);
-	virtual void	setLastTickPos(long tickPos);
-	virtual long	getLastTickPos(void);
+	virtual long	receivePosTicksAbs(void);
+	virtual void	setCurPosTicksAbs(long tickPos);
+	virtual long	getCurPosTicksAbs(void);
 
 	/* agentModelPattern - TX */
 	virtual void	setTxOnState(bool checked);

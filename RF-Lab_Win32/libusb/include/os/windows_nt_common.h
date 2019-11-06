@@ -48,9 +48,9 @@ extern enum windows_version windows_version;
 extern BOOL (WINAPI *pCancelIoEx)(HANDLE, LPOVERLAPPED);
 
 struct windows_backend {
-	int (*init)(struct libusb_context *pLinkUsb_sr_ctx);
-	void (*exit)(struct libusb_context *pLinkUsb_sr_ctx);
-	int (*get_device_list)(struct libusb_context *pLinkUsb_sr_ctx,
+	int (*init)(struct libusb_context *_pLinkUsb_sr_ctx);
+	void (*exit)(struct libusb_context *_pLinkUsb_sr_ctx);
+	int (*get_device_list)(struct libusb_context *_pLinkUsb_sr_ctx,
 		struct discovered_devs **discdevs);
 	int (*open)(struct libusb_device_handle *pLinkUsb_dev_handle);
 	void (*close)(struct libusb_device_handle *pLinkUsb_dev_handle);

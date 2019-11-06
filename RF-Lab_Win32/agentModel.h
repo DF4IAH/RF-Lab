@@ -180,7 +180,7 @@ private:
 
 
 public:
-	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, HWND hWnd, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode);
+	explicit agentModel(ISource<agentModelReq_t> *src, ITarget<agentModelRsp_t> *tgt, class WinSrv *winSrv, HWND _hWnd, AGENT_MODELS am_variant, AGENT_ALL_SIMUMODE_t mode);
 	~agentModel(void);
 
 protected:
@@ -218,7 +218,7 @@ public:
 
 	/* agentModelPattern - GENERAL */
 	       void		setupInstrumentList(void);
-	static void		setSimuMode(AGENT_ALL_SIMUMODE_t simuMode);
+	static void		setSimuMode(AGENT_ALL_SIMUMODE_t _simuMode);
 	static AGENT_ALL_SIMUMODE_t	getSimuMode(void);
 	static void     getMeasData(MeasData** md);
 	static void		sendModelStatus(LPVOID status1, LPVOID status2);
@@ -226,9 +226,9 @@ public:
 	static void		runProcess(int processID, int arg);
 
 	/* agentModelPattern - Rotor */
-	static long		requestPos(void);
-	static void		setLastTickPos(long tickPos);
-	static long		getLastTickPos(void);
+	static long		receivePosTicksAbs(void);
+	static void		setCurPosTicksAbs(long tickPos);
+	static long		getCurPosTicksAbs(void);
 
 	/* agentModelPattern - TX */
 	static void		setTxOnState(bool checked);

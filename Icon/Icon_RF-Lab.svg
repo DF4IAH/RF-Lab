@@ -17,7 +17,10 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="Icon_RF-Lab.svg">
+   sodipodi:docname="Icon_RF-Lab.svg"
+   inkscape:export-filename="C:\Users\habel\git\RF-Lab\Icon\Icon_RF-Lab_256x256.png"
+   inkscape:export-xdpi="28.389261"
+   inkscape:export-ydpi="28.389261">
   <defs
      id="defs4">
     <inkscape:perspective
@@ -91,8 +94,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
-     inkscape:cx="102.78813"
-     inkscape:cy="557.53672"
+     inkscape:cx="240.87486"
+     inkscape:cy="365.80155"
      inkscape:document-units="px"
      inkscape:current-layer="g6669"
      showgrid="false"
@@ -110,7 +113,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>

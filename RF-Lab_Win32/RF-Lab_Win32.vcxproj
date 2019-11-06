@@ -196,6 +196,12 @@
     <ResourceCompile Include="RF-Lab_Win32.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icon1.ico" />
+    <Image Include="icon2.ico" />
+    <Image Include="Icon_RF-Lab_256x256.ico" />
+    <Image Include="Icon_RF-Lab_32x32.ico" />
+    <Image Include="Icon_RF-Lab_48x48.ico" />
+    <Image Include="Icon_Small.ico" />
     <Image Include="RF-Lab_Win32.ico" />
     <Image Include="small.ico" />
   </ItemGroup>

@@ -1966,7 +1966,7 @@ void agentModelPattern::setStatusPosition(double posDeg)
 	PWCHAR l_status2 = (PWCHAR)LocalLock(l_status2_alloc);
 
 	if (!_noWinMsg) {
-		swprintf(l_status2, l_status_size, L"Current rotor azimuth: %+04.0lf °", posDeg);
+		swprintf(l_status2, l_status_size, L"Current rotor azimuth:  %+04.0lf °", posDeg);
 		_pAgtMod->getWinSrv()->reportStatus(NULL, l_status2, NULL);
 	}
 
@@ -1982,7 +1982,7 @@ void agentModelPattern::setStatusRxPower_dBm(double rxPwr)
 	PWCHAR l_status3 = (PWCHAR)LocalLock(l_status3_alloc);
 
 	if (!_noWinMsg) {
-		swprintf(l_status3, l_status_size, L"Current RX power:       %+3.2lf dBm", rxPwr);
+		swprintf(l_status3, l_status_size, L"Current RX level:  %+3.2lf dBm", rxPwr);
 		_pAgtMod->getWinSrv()->reportStatus(NULL, NULL, l_status3);
 	}
 
@@ -2787,8 +2787,15 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 
 			/* Resting RX: meassure */
 			double testX = 0.0;
-			double testY = 0.0;
-			getRxMarkerPeak(&testX, &testY);
+			double testY = 0.0, testY_sample = 0.0;
+
+			/* Multiple samples to be averaged */
+			const int LoopCnt = 5;
+			for (int loopIdx = 0; loopIdx < LoopCnt; ++loopIdx) {
+				getRxMarkerPeak(&testX, &testY_sample);
+				testY += testY_sample;
+			}
+			testY /= LoopCnt;
 
 			swprintf(strbuf, sizeof(strbuf)>>1, L"> Pos = %03d°: f = %E Hz, \tP = %E dBm.\n", (int)degPosIter, testX, testY);
 			OutputDebugString(strbuf);

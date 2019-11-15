@@ -192,6 +192,9 @@ LRESULT CALLBACK WndProc(HWND _hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					/* Save the data */
 					WinSrv::saveCurrentDataset();
+
+					/* Remove temporary fall-back data */
+					// TODO
 				}
 				break;
 
@@ -209,10 +212,10 @@ LRESULT CALLBACK WndProc(HWND _hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					wchar_t* pos = wcsrchr(fileBuf, L'.');
 					fileBuf[pos - fileBuf] = L'\0';
 #else
-					wcscpy_s(fileBuf, WinSrv::getLastFilePath());
+					wcscpy_s(fileBuf, WinSrv::getCurrentFilePath());
 #pragma warning(disable:4996)
-					wcscpy(fileBuf + lstrlenW(WinSrv::getLastFilePath()), L"\\");
-					wcscpy(fileBuf + lstrlenW(WinSrv::getLastFilePath()) + 1, WinSrv::getLastFileName());
+					wcscpy(fileBuf + lstrlenW(WinSrv::getCurrentFilePath()), L"\\");
+					wcscpy(fileBuf + lstrlenW(WinSrv::getCurrentFilePath()) + 1, WinSrv::getCurrentFileName());
 #pragma warning(default:4996)
 #endif
 
@@ -240,10 +243,14 @@ LRESULT CALLBACK WndProc(HWND _hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 					if (ofn.nFileOffset) {
 						/* Save button pressed */
-						WinSrv::setLastFilePath(ofn.lpstrFile);
+						WinSrv::setLastFilePathName(ofn.lpstrFile);
+						WinSrv::setCurrentFilePathName(ofn.lpstrFile);
 
 						/* Save the data */
 						WinSrv::saveCurrentDataset();
+
+						/* Remove temporary fall-back data */
+						// TODO
 					}
 				}
 				break;

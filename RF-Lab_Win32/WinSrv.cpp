@@ -79,8 +79,14 @@ WinSrv::WinSrv() : _hWnd(nullptr)
 				 , _pAgtModel(nullptr)
 				 , _winExitReceived(FALSE)
 				 , _ready(FALSE)
-				 , _cLastFilePath(L"C:\\Users\\Labor\\Downloads")
-				 , _cLastFileName(L"Ant-Richtdiagramm.csv")
+				 , _cTmpTemplateFilePath(L"C:\\Users\\Labor\\Downloads"                                                                     )
+				 , _cTmpTemplateFileName(L"Ant-Richtdiagramm_Span-$SPAN$deg_Step-$STEP$deg_Level-$LEVEL$dBm_$YYYY$$Mm$$DD$_$HH$$MM$$SS$.csv")
+				 , _cTmpFilePath        (L"")
+				 , _cTmpFileName        (L"")
+				 , _cLastFilePath       (L"C:\\Users\\Labor\\Downloads"                                                                     )
+				 , _cLastFileName       (L"Ant-Richtdiagramm.csv"                                                                           )
+				 , _cCurrentFilePath    (L"")
+				 , _cCurrentFileName    (L"")
 {
 	g_winSrv = this;
 
@@ -1039,10 +1045,10 @@ void WinSrv::saveCurrentDataset(void)
 
 		/* Create last path and file name */
 		wchar_t lineBuf[MAX_PATH] = { 0 };
-		wchar_t* pos = lineBuf + lstrlenW(g_instance->_cLastFilePath);
-		StrCpyNW(lineBuf, g_instance->_cLastFilePath, sizeof(lineBuf));
+		wchar_t* pos = lineBuf + lstrlenW(g_instance->_cCurrentFilePath);
+		StrCpyNW(lineBuf, g_instance->_cCurrentFilePath, sizeof(lineBuf));
 		StrCpyNW(pos, L"\\", 2);
-		StrCpyNW(pos + 1, g_instance->_cLastFileName, (int)(1 + lstrlenW(g_instance->_cLastFileName)));
+		StrCpyNW(pos + 1, g_instance->_cCurrentFileName, (int)(1 + lstrlenW(g_instance->_cCurrentFileName)));
 		
 		/* Get local time */
 		SYSTEMTIME systemTime;
@@ -1052,7 +1058,7 @@ void WinSrv::saveCurrentDataset(void)
 		getMeasType(&measType);
 
 		/* Retrieve file type */
-		FILETYPE_ENUM ft = getFileType(g_instance->_cLastFileName);
+		FILETYPE_ENUM ft = getFileType(g_instance->_cCurrentFileName);
 
 		/* Decide which document type is chosen */
 		switch (ft) {
@@ -1198,8 +1204,140 @@ void WinSrv::saveCurrentDataset(void)
 }
 
 
+void WinSrv::evalTmpTemplateFile(int rotSpan, int rotStep, int pwrRef)
+{
+	// TODO: Check new code
+	if (g_instance && g_instance->isReady()) {
+		wchar_t filename[MAX_PATH << 2] = { 0 };
+
+		/* Concatenate complete file path and name */
+		StrCat(filename, g_instance->_cTmpTemplateFilePath);
+		StrCat(filename, L"\\");
+		StrCat(filename, g_instance->_cTmpTemplateFileName);
+
+		/* Get current date and time in local time */
+		SYSTEMTIME systemTime;
+		GetLocalTime(&systemTime);
+
+		// $SPAN$ $STEP$ $LEVEL$ $YYYY$ $Mm$ $DD$ $HH$ $MM$ $SS$
+		PCTSTR p;
+		do {
+			wchar_t replace[MAX_PATH] = { 0 };
+			long skip = 0;
+
+			/* Substitution markers */
+			p = StrStrW(filename, L"$SPAN$");
+			skip = lstrlenW(L"$SPAN$");
+			if (!p) {
+				p = StrStrW(filename, L"$STEP$");
+				skip = lstrlenW(L"$STEP$");
+			}
+			if (!p) {
+				p = StrStrW(filename, L"$LEVEL$");
+				skip = lstrlenW(L"$LEVEL$");
+			}
+			if (!p) {
+				p = StrStrW(filename, L"$YYYY$");
+				skip = lstrlenW(L"$YYYY$");
+				swprintf_s(replace, L"%04d", systemTime.wYear);
+			}
+			if (!p) {
+				p = StrStrW(filename, L"$Mm$");
+				skip = lstrlenW(L"$Mm$");
+				swprintf_s(replace, L"%02d", systemTime.wMonth);
+			}
+			if (!p) {
+				p = StrStrW(filename, L"$DD$");
+				skip = lstrlenW(L"$DD$");
+				swprintf_s(replace, L"%02d", systemTime.wDay);
+			}
+			if (!p) {
+				p = StrStrW(filename, L"$HH$");
+				skip = lstrlenW(L"$HH$");
+				swprintf_s(replace, L"%02d", systemTime.wHour);
+			}
+			if (!p) {
+				p = StrStrW(filename, L"$MM$");
+				skip = lstrlenW(L"$MM$");
+				swprintf_s(replace, L"%02d", systemTime.wMinute);
+			}
+			if (!p) {
+				p = StrStrW(filename, L"$SS$");
+				skip = lstrlenW(L"$SS$");
+				swprintf_s(replace, L"%02d", systemTime.wSecond);
+			}
+
+			if (p) {
+				wchar_t work[MAX_PATH << 2] = { 0 };
+
+				int headLen = (int) (p - filename);
+				int expandLen = (int) lstrlenW(replace);
+
+				/* Head */
+				StrCpyNW(work, filename, headLen);
+
+				/* Expanded token */
+				StrCpyNW(work + headLen, replace, expandLen + 1);
+
+				/* Tail */
+				StrCpyNW(work + headLen + expandLen, filename + skip, MAX_PATH);
+
+				/* Copy back */
+				StrCpyW(filename, work);
+			}
+
+			/* Until all of string is expanded */
+		} while (p);
+
+		/* Split into target path and filename parts */
+		wchar_t* pos = wcsrchr(filename, L'\\');
+		if (pos) {
+			StrCpyNW(g_instance->_cTmpFilePath, filename, (int)(pos - filename) + 1);
+			StrCpyNW(g_instance->_cTmpFileName, pos + 1, (int)(lstrlenW(filename) - (pos - filename)));
+		}
+		else {
+			StrCpyW(g_instance->_cTmpFileName, filename);
+		}
+	}
+}
+
+
 
 /* Getters & Setters */
+
+/* Temporary file: template and expanded template */
+void WinSrv::setTmpTemplateFilePathName(wchar_t* s)
+{
+	if (g_instance && g_instance->isReady() && s) {
+		if (lstrlenW(s)) {
+			wchar_t* pos = wcsrchr(s, L'\\');
+			StrCpyNW(g_instance->_cTmpTemplateFilePath, s, (int)(pos - s) + 1);
+			StrCpyNW(g_instance->_cTmpTemplateFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
+		}
+	}
+}
+
+void WinSrv::copyTmpFilePathName2currentFilePathName(void)
+{
+	if (g_instance && g_instance->isReady()) {
+		StrCpyW(g_instance->_cCurrentFilePath, g_instance->_cTmpFilePath);
+		StrCpyW(g_instance->_cCurrentFileName, g_instance->_cTmpFileName);
+	}
+}
+
+
+/* User defined file name */
+void WinSrv::setLastFilePathName(wchar_t* s)
+{
+	if (g_instance && g_instance->isReady() && s) {
+		if (lstrlenW(s)) {
+			wchar_t* pos = wcsrchr(s, L'\\');
+			StrCpyNW(g_instance->_cLastFilePath, s, (int)(pos - s) + 1);
+			StrCpyNW(g_instance->_cLastFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
+		}
+	}
+}
+
 wchar_t* WinSrv::getLastFilePath(void)
 {
 	if (g_instance && g_instance->isReady()) {
@@ -1220,16 +1358,39 @@ wchar_t* WinSrv::getLastFileName(void)
 	}
 }
 
-void WinSrv::setLastFilePath(wchar_t* s)
+
+/* Last setting used by the file exporter */
+wchar_t* WinSrv::getCurrentFilePath(void)
+{
+	if (g_instance && g_instance->isReady()) {
+		return g_instance->_cCurrentFilePath;
+	}
+	else {
+		return L"";
+	}
+}
+
+wchar_t* WinSrv::getCurrentFileName(void)
+{
+	if (g_instance && g_instance->isReady()) {
+		return g_instance->_cCurrentFileName;
+	}
+	else {
+		return L"";
+	}
+}
+
+void WinSrv::setCurrentFilePathName(wchar_t* s)
 {
 	if (g_instance && g_instance->isReady() && s) {
 		if (lstrlenW(s)) {
 			wchar_t* pos = wcsrchr(s, L'\\');
-			StrCpyNW(g_instance->_cLastFilePath, s, (int)(pos - s) + 1);
-			StrCpyNW(g_instance->_cLastFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
+			StrCpyNW(g_instance->_cCurrentFilePath, s, (int)(pos - s) + 1);
+			StrCpyNW(g_instance->_cCurrentFileName, pos + 1, (int)(lstrlenW(s) - (pos - s)));
 		}
 	}
 }
+
 
 void WinSrv::getMeasType(MEASTYPE* measType)
 {

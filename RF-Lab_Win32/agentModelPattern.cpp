@@ -2883,6 +2883,14 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 	/* Move data to the global entries */
 	measDataFinalize(&md, &_measDataEntries);
 
+	/* Expand temporary file name template */
+	// TODO
+	int rotSpan = 0;
+	int rotStep = 0;
+	int pwrRef  = 0;
+	WinSrv::evalTmpTemplateFile(rotSpan, rotStep, pwrRef);
+	WinSrv::copyTmpFilePathName2currentFilePathName();
+
 	return 0;
 
 

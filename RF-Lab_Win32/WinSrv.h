@@ -79,8 +79,22 @@ private:
 	bool								 _winExitReceived;
 	bool								 _ready;
 
+
+	/* Temporary file: template */
+	wchar_t								 _cTmpTemplateFilePath[MAX_PATH];
+	wchar_t								 _cTmpTemplateFileName[MAX_PATH];
+
+	/* Temporary file: expanded template */
+	wchar_t								 _cTmpFilePath[MAX_PATH];
+	wchar_t								 _cTmpFileName[MAX_PATH];
+
+	/* User defined file name */
 	wchar_t								 _cLastFilePath[MAX_PATH];
 	wchar_t								 _cLastFileName[MAX_PATH];
+
+	/* Last setting used by the file exporter */
+	wchar_t								 _cCurrentFilePath[MAX_PATH];
+	wchar_t								 _cCurrentFileName[MAX_PATH];
 
 
 public:
@@ -125,9 +139,18 @@ public:
 	static FILETYPE_ENUM getFileType(wchar_t* filename);
 	static void		saveCurrentDataset(void);
 
+	static void		setTmpTemplateFilePathName(wchar_t* s);
+	static void		evalTmpTemplateFile(int rotSpan, int rotStep, int pwrRef);
+	static void		copyTmpFilePathName2currentFilePathName(void);
+
+	static void		setLastFilePathName(wchar_t* s);
 	static wchar_t*	getLastFilePath(void);
 	static wchar_t*	getLastFileName(void);
-	static void		setLastFilePath(wchar_t* s);
+
+	static void		setCurrentFilePathName(wchar_t* s);
+	static wchar_t*	getCurrentFilePath(void);
+	static wchar_t*	getCurrentFileName(void);
+
 	static void     getMeasType(MEASTYPE* measType);
 
 };

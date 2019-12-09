@@ -80,7 +80,7 @@ WinSrv::WinSrv() : _hWnd(nullptr)
 				 , _winExitReceived(FALSE)
 				 , _ready(FALSE)
 				 , _cTmpTemplateFilePath(L"C:\\Users\\Labor\\Downloads"                                                                     )
-				 , _cTmpTemplateFileName(L"Ant-Richtdiagramm_Span-$SPAN$deg_Step-$STEP$deg_Level-$LEVEL$dBm_$YYYY$$Mm$$DD$_$HH$$MM$$SS$.csv")
+				 , _cTmpTemplateFileName(L"Ant-Richtdiagramm_Bereich$SPAN$Grad_Stufung$STEP$Grad_Pegel$LEVEL$dBm_HE-Ebene_$YYYY$$Mm$$DD$_$HH$$MM$$SS$.csv")
 				 , _cTmpFilePath        (L"")
 				 , _cTmpFileName        (L"")
 				 , _cLastFilePath       (L"C:\\Users\\Labor\\Downloads"                                                                     )
@@ -1206,7 +1206,6 @@ void WinSrv::saveCurrentDataset(void)
 
 void WinSrv::evalTmpTemplateFile(int rotSpan, int rotStep, int pwrRef)
 {
-	// TODO: Check new code
 	if (g_instance && g_instance->isReady()) {
 		wchar_t filename[MAX_PATH << 2] = { 0 };
 
@@ -1227,14 +1226,19 @@ void WinSrv::evalTmpTemplateFile(int rotSpan, int rotStep, int pwrRef)
 
 			/* Substitution markers */
 			p = StrStrW(filename, L"$SPAN$");
-			skip = lstrlenW(L"$SPAN$");
+			if (p) {
+				skip = lstrlenW(L"$SPAN$");
+				swprintf_s(replace, L"%03d", rotSpan);
+			}
 			if (!p) {
 				p = StrStrW(filename, L"$STEP$");
 				skip = lstrlenW(L"$STEP$");
+				swprintf_s(replace, L"%02d", rotStep);
 			}
 			if (!p) {
 				p = StrStrW(filename, L"$LEVEL$");
 				skip = lstrlenW(L"$LEVEL$");
+				swprintf_s(replace, L"%+02d", pwrRef);
 			}
 			if (!p) {
 				p = StrStrW(filename, L"$YYYY$");
@@ -1270,17 +1274,17 @@ void WinSrv::evalTmpTemplateFile(int rotSpan, int rotStep, int pwrRef)
 			if (p) {
 				wchar_t work[MAX_PATH << 2] = { 0 };
 
-				int headLen = (int) (p - filename);
+				int headLen = 1 + ((int) (p - filename));
 				int expandLen = (int) lstrlenW(replace);
 
 				/* Head */
 				StrCpyNW(work, filename, headLen);
 
 				/* Expanded token */
-				StrCpyNW(work + headLen, replace, expandLen + 1);
+				StrCpyNW(work + headLen - 1, replace, expandLen + 1);
 
 				/* Tail */
-				StrCpyNW(work + headLen + expandLen, filename + skip, MAX_PATH);
+				StrCpyNW(work + headLen + expandLen - 1, filename + headLen + skip - 1, MAX_PATH);
 
 				/* Copy back */
 				StrCpyW(filename, work);

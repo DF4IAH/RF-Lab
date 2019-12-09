@@ -154,13 +154,8 @@ enum C_MODELPATTERN_PROCESSES_ENUM {
 	C_MODELPATTERN_PROCESS_END,
 	C_MODELPATTERN_PROCESS_STOP,
 	C_MODELPATTERN_PROCESS_GOTO_X,
-	C_MODELPATTERN_PROCESS_RECORD_PATTERN000,
-	C_MODELPATTERN_PROCESS_RECORD_PATTERN010_STEP001,
-	C_MODELPATTERN_PROCESS_RECORD_PATTERN010_STEP005,
-	C_MODELPATTERN_PROCESS_RECORD_PATTERN180_STEP001,
-	C_MODELPATTERN_PROCESS_RECORD_PATTERN180_STEP005,
-	C_MODELPATTERN_PROCESS_RECORD_PATTERN360_STEP001,
-	C_MODELPATTERN_PROCESS_RECORD_PATTERN360_STEP005,
+	C_MODELPATTERN_PROCESS_RECORD_REFERENCE,
+	C_MODELPATTERN_PROCESS_RECORD_PATTERN,
 
 };
 
@@ -200,7 +195,9 @@ private:
 	MeasData							 _measDataEntries;
 
 	volatile int						 _processing_ID;
-	volatile int						 _processing_arg1;
+	volatile double						 _processing_arg1;
+	volatile double						 _processing_arg2;
+	volatile double						 _processing_arg3;
 	volatile AGENT_ALL_SIMUMODE_t		 _simuMode;
 
 	volatile int						 _initState;
@@ -251,7 +248,7 @@ public:
 	void					setSimuMode(AGENT_ALL_SIMUMODE_t _simuMode);
 	AGENT_ALL_SIMUMODE_t	getSimuMode(void);
 	void					getMeasData(MeasData** md);
-	void					runProcess(int processID, int arg);
+	void					runProcess(int processID, double arg1, double arg2, double arg3);
 	void					connectDevices(void);
 	void					initDevices(void);
 	void					perfomInitValues(InstList_t::iterator it);

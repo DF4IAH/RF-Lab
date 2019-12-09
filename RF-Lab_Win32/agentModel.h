@@ -124,12 +124,7 @@ enum MEASDATA_SETUP_ENUM {
 	MEASDATA_SETUP__NONE = 0,
 
 	MEASDATA_SETUP__REFMEAS_GEN_SPEC,
-	MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC,
-	MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC,
-	MEASDATA_SETUP__PATTERN180_STEP001_GEN_SPEC,
-	MEASDATA_SETUP__PATTERN180_STEP005_GEN_SPEC,
-	MEASDATA_SETUP__PATTERN360_STEP001_GEN_SPEC,
-	MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC,
+	MEASDATA_SETUP__PATTERN_GEN_SPEC,
 
 };
 
@@ -143,7 +138,10 @@ typedef struct {
 
 	volatile double							rxRefPwr;
 
+	volatile double							posFrom;
+	volatile double							posTo;
 	volatile double							posStep;
+
 	volatile int							entriesCount;
 	std::list<double>					   *posDeg;
 	std::list<double>					   *rxPwrMag;

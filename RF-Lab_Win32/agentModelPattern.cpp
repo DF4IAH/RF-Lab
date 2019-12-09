@@ -58,7 +58,10 @@ agentModelPattern::agentModelPattern(ISource<agentModelReq_t> *src, ITarget<agen
 
 				 , _measDataEntries()
 
-				 , _processing_ID(0)
+				 , _processing_ID(C_MODELPATTERN_PROCESS_NOOP)
+				 , _processing_arg1(0.0)
+				 , _processing_arg2(0.0)
+				 , _processing_arg3(0.0)
 				 , _simuMode(mode)
 
 				 , _initState(0)
@@ -238,6 +241,14 @@ void agentModelPattern::run(void)
 				/* Setting up servers */
 			case C_MODELPATTERN_RUNSTATES_BEGIN:
 			{
+//#define TEST_NEW_CODE_JUMP
+#ifdef TEST_NEW_CODE_JUMP
+				const int rotSpan = 180;
+				const int rotStep =   5;
+				const int pwrRef  = -10;
+				WinSrv::evalTmpTemplateFile(rotSpan, rotStep, pwrRef);
+#endif
+
 				/* In case of a REINIT, clear this flag */
 				_runReinit = false;
 
@@ -1554,7 +1565,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 				if (!_noWinMsg) {
 					_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"COM: 1 ~ rotor turns to  0°  position", L"RUNNING ...");
 				}
-				runProcess(C_MODELPATTERN_PROCESS_GOTO_X, 0);
+				runProcess(C_MODELPATTERN_PROCESS_GOTO_X, AGENT_PATTERN_000_POS_DEGREE_START, 0.0, 0.0);
 			}
 			break;
 
@@ -1579,19 +1590,19 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 					}
 
 					/* Start rotor */
-					runProcess(C_MODELPATTERN_PROCESS_GOTO_X, *pi);
+					runProcess(C_MODELPATTERN_PROCESS_GOTO_X, *pi, 0.0, 0.0);
 				}
 			}
 			break;
 
 		case ID_ROTOR_STOP:
 		case ID_MODEL_PATTERN_STOP:
-			runProcess(C_MODELPATTERN_PROCESS_STOP, 0);
+			runProcess(C_MODELPATTERN_PROCESS_STOP, 0.0, 0.0, 0.0);
 			break;
 
 		case ID_MODEL_PATTERN_REF_START:
 			// Start recording of pattern
-			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN000, 0);
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_REFERENCE, AGENT_PATTERN_000_POS_DEGREE_START, AGENT_PATTERN_000_POS_DEGREE_END, AGENT_PATTERN_STEP_001);
 			break;
 
 		case ID_MODEL_PATTERN010_STEP001_START:
@@ -1599,7 +1610,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			// xxx();
 
 			// Start recording of pattern
-			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN010_STEP001, 0);
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN, AGENT_PATTERN_010_POS_DEGREE_START, AGENT_PATTERN_010_POS_DEGREE_END, AGENT_PATTERN_STEP_001);
 			break;
 
 		case ID_MODEL_PATTERN010_STEP005_START:
@@ -1607,7 +1618,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			// xxx();
 
 			// Start recording of pattern
-			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN010_STEP005, 0);
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN, AGENT_PATTERN_010_POS_DEGREE_START, AGENT_PATTERN_010_POS_DEGREE_END, AGENT_PATTERN_STEP_005);
 			break;
 
 		case ID_MODEL_PATTERN180_STEP001_START:
@@ -1615,7 +1626,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			// xxx();
 
 			// Start recording of pattern
-			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN180_STEP001, 0);
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN, AGENT_PATTERN_180_POS_DEGREE_START, AGENT_PATTERN_180_POS_DEGREE_END, AGENT_PATTERN_STEP_001);
 			break;
 
 		case ID_MODEL_PATTERN180_STEP005_START:
@@ -1623,7 +1634,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			// xxx();
 
 			// Start recording of pattern
-			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN180_STEP005, 0);
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN, AGENT_PATTERN_180_POS_DEGREE_START, AGENT_PATTERN_180_POS_DEGREE_END, AGENT_PATTERN_STEP_005);
 			break;
 
 		case ID_MODEL_PATTERN360_STEP001_START:
@@ -1631,7 +1642,7 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			// xxx();
 
 			// Start recording of pattern
-			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN360_STEP001, 0);
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN, AGENT_PATTERN_360_POS_DEGREE_START, AGENT_PATTERN_360_POS_DEGREE_END, AGENT_PATTERN_STEP_001);
 			break;
 
 		case ID_MODEL_PATTERN360_STEP005_START:
@@ -1639,20 +1650,17 @@ void agentModelPattern::wmCmd(int wmId, LPVOID arg)
 			// xxx();
 
 			// Start recording of pattern
-			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN360_STEP005, 0);
+			runProcess(C_MODELPATTERN_PROCESS_RECORD_PATTERN, AGENT_PATTERN_360_POS_DEGREE_START, AGENT_PATTERN_360_POS_DEGREE_END, AGENT_PATTERN_STEP_005);
 			break;
 
-
-			/* HF-Generator settings */
-
-			// nothing yet
-
-
-			/* HF-Generator settings */
-
-			// nothing yet
-
 		}  // switch (message)
+
+
+		/* RF-Generator settings */
+		// nothing yet
+
+		/* RF-Analyzer settings */
+		// nothing yet
 	}
 }
 
@@ -1670,8 +1678,8 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 
 		case C_MODELPATTERN_PROCESS_GOTO_X:
 		{  /* Go to new direction */
-			int gotoMilliDegPos = m->o->_processing_arg1;
-			m->o->_processing_arg1 = 0;
+			const double gotoMilliDegPos = m->o->_processing_arg1;
+			m->o->_processing_arg1 = 0.0;
 
 			long _curPosTicksAbs = m->o->getCurPosTicksAbs();
 			long gotoPosTicksAbs = (long)(gotoMilliDegPos * (AGENT_PATTERN_ROT_TICKS_PER_DEGREE / 1000.0));
@@ -1687,14 +1695,17 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		}
 		break;
 
-		case C_MODELPATTERN_PROCESS_RECORD_PATTERN000:
+		case C_MODELPATTERN_PROCESS_RECORD_REFERENCE:
 		{  /* Do a reference meassurement at current rotor position */
+			const double gotoMilliDegPos = m->o->_processing_arg1;
+			m->o->_processing_arg1 = 0.0;
+			
 			m->o->_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Reference", L"RUN");
 
 			int ret = m->o->runningProcessPattern(
 				MEASDATA_SETUP__REFMEAS_GEN_SPEC,
-				AGENT_PATTERN_000_POS_DEGREE_START,
-				AGENT_PATTERN_000_POS_DEGREE_END,
+				gotoMilliDegPos,
+				gotoMilliDegPos,
 				AGENT_PATTERN_STEP_001
 			);
 			if (ret == -1) {
@@ -1705,105 +1716,24 @@ void agentModelPattern::procThreadProcessID(void* pContext)
 		}
 		break;
 
-		case C_MODELPATTERN_PROCESS_RECORD_PATTERN010_STEP001:
+		case C_MODELPATTERN_PROCESS_RECORD_PATTERN:
 		{  /* Run a 10° antenna pattern from left = -5° to the right = +5°, 1° steps */
-			m->o->_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 10° Pattern", L"Goto START position");
+			wchar_t buf[MAX_PATH];
+			const int rotStart	= (int)(0.01 + m->o->_processing_arg1);
+			const int rotEnd	= (int)(0.01 + m->o->_processing_arg2);
+			const int rotStep	= (int)(0.01 + m->o->_processing_arg3);
+			m->o->_processing_arg1 = 0.0;
+			m->o->_processing_arg2 = 0.0;
+			m->o->_processing_arg3 = 0.0;
+
+			wsprintf(buf, L"Measure: Running %d° Pattern with %d° steps", abs(rotEnd - rotStart), rotStep);
+			m->o->_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", buf, L"Goto START position");
 
 			int ret = m->o->runningProcessPattern(
-				MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC,
-				AGENT_PATTERN_010_POS_DEGREE_START,
-				AGENT_PATTERN_010_POS_DEGREE_END,
-				AGENT_PATTERN_STEP_001
-			);
-			if (ret == -1) {
-				break; // process STOPPED
-			}
-
-			m->o->_processing_ID = C_MODELPATTERN_PROCESS_NOOP;
-		}
-		break;
-
-		case C_MODELPATTERN_PROCESS_RECORD_PATTERN010_STEP005:
-		{  /* Run a 10° antenna pattern from left = -5° to the right = +5°, 5° steps */
-			m->o->_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 10° Pattern", L"Goto START position");
-
-			int ret = m->o->runningProcessPattern(
-				MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC,
-				AGENT_PATTERN_010_POS_DEGREE_START,
-				AGENT_PATTERN_010_POS_DEGREE_END,
-				AGENT_PATTERN_STEP_005
-			);
-			if (ret == -1) {
-				break; // process STOPPED
-			}
-
-			m->o->_processing_ID = C_MODELPATTERN_PROCESS_NOOP;
-		}
-		break;
-
-		case C_MODELPATTERN_PROCESS_RECORD_PATTERN180_STEP001:
-		{  /* Run a 180° antenna pattern from left = -90° to the right = +90°, 1° steps */
-			m->o->_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 180° Pattern", L"Goto START position");
-
-			int ret = m->o->runningProcessPattern(
-				MEASDATA_SETUP__PATTERN180_STEP001_GEN_SPEC,
-				AGENT_PATTERN_180_POS_DEGREE_START,
-				AGENT_PATTERN_180_POS_DEGREE_END,
-				AGENT_PATTERN_STEP_001
-			);
-			if (ret == -1) {
-				break; // process STOPPED
-			}
-
-			m->o->_processing_ID = C_MODELPATTERN_PROCESS_NOOP;
-		}
-		break;
-
-		case C_MODELPATTERN_PROCESS_RECORD_PATTERN180_STEP005:
-		{  /* Run a 180° antenna pattern from left = -90° to the right = +90°, 5° steps */
-			m->o->_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 180° Pattern", L"Goto START position");
-
-			int ret = m->o->runningProcessPattern(
-				MEASDATA_SETUP__PATTERN180_STEP005_GEN_SPEC,
-				AGENT_PATTERN_180_POS_DEGREE_START,
-				AGENT_PATTERN_180_POS_DEGREE_END,
-				AGENT_PATTERN_STEP_005
-			);
-			if (ret == -1) {
-				break; // process STOPPED
-			}
-
-			m->o->_processing_ID = C_MODELPATTERN_PROCESS_NOOP;
-		}
-		break;
-
-		case C_MODELPATTERN_PROCESS_RECORD_PATTERN360_STEP001:
-		{  /* Run a 360° antenna pattern from left = -180° to the right = +180°, 1° steps */
-			m->o->_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 360° Pattern", L"Goto START position");
-
-			int ret = m->o->runningProcessPattern(
-				MEASDATA_SETUP__PATTERN360_STEP001_GEN_SPEC,
-				AGENT_PATTERN_360_POS_DEGREE_START,
-				AGENT_PATTERN_360_POS_DEGREE_END,
-				AGENT_PATTERN_STEP_001
-			);
-			if (ret == -1) {
-				break; // process STOPPED
-			}
-
-			m->o->_processing_ID = C_MODELPATTERN_PROCESS_NOOP;
-		}
-		break;
-
-		case C_MODELPATTERN_PROCESS_RECORD_PATTERN360_STEP005:
-		{  /* Run a 360° antenna pattern from left = -180° to the right = +180°, 5° steps */
-			m->o->_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Measure: Running 360° Pattern", L"Goto START position");
-
-			int ret = m->o->runningProcessPattern(
-				MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC,
-				AGENT_PATTERN_360_POS_DEGREE_START,
-				AGENT_PATTERN_360_POS_DEGREE_END,
-				AGENT_PATTERN_STEP_005
+				MEASDATA_SETUP__PATTERN_GEN_SPEC,
+				rotStart,
+				rotEnd,
+				rotStep
 			);
 			if (ret == -1) {
 				break; // process STOPPED
@@ -1882,7 +1812,7 @@ void agentModelPattern::connectDevices(void)
 		_pAgtMod->getWinSrv()->instActivateMenuItem(ID_SPEK_ITEM0_, true);
 
 		/* Init the connections */
-		runProcess(C_MODELPATTERN_PROCESS_CONNECT_DEVICES, 0);
+		runProcess(C_MODELPATTERN_PROCESS_CONNECT_DEVICES, 0.0, 0.0, 0.0);
 	}
 }
 
@@ -1896,22 +1826,13 @@ void agentModelPattern::initDevices(void)
 	}
 }
 
-void agentModelPattern::runProcess(int processID, int arg)
+void agentModelPattern::runProcess(int processID, double arg1, double arg2, double arg3)
 {
-	/* STOP at once processing ID */
-	if (processID == C_MODELPATTERN_PROCESS_STOP) {
-		_processing_arg1 = arg;
-
-		/* Make sure out-of-order execution is not relevant */
-		Sleep(1);
-
-		_processing_ID = processID;
-		return;
-	}
-
-	/* Cue in process ID to be done */
-	if (_processing_ID == C_MODELPATTERN_PROCESS_NOOP) {
-		_processing_arg1 = arg;
+	/* STOP at once processing ID  or  no process running */
+	if (processID == C_MODELPATTERN_PROCESS_STOP || _processing_ID == C_MODELPATTERN_PROCESS_NOOP) {
+		_processing_arg1 = arg1;
+		_processing_arg2 = arg2;
+		_processing_arg3 = arg3;
 
 		/* Make sure out-of-order execution is not relevant */
 		Sleep(1);
@@ -1996,7 +1917,14 @@ void agentModelPattern::setStatusRxPower_dBm(double rxPwr)
 
 MeasData agentModelPattern::measDataInit(MEASDATA_SETUP_ENUM measVar, std::list<double> initList)
 {
-	MeasData md = { measVar, 0.0, 1e-12, 0.0, 1e-12, 0.0, 0, nullptr, nullptr, nullptr };
+	/* Secure default values */
+	MeasData md = {
+		measVar,
+		2.4e+9, -30.0, 100e+6,
+		-30.0,
+		0.0, 0.0, 1.0,
+		0, nullptr, nullptr, nullptr
+	};
 
 	switch (measVar)
 	{
@@ -2011,17 +1939,14 @@ MeasData agentModelPattern::measDataInit(MEASDATA_SETUP_ENUM measVar, std::list<
 		}
 		break;
 
-	case MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN180_STEP001_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN180_STEP005_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN360_STEP001_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC:
+	case MEASDATA_SETUP__PATTERN_GEN_SPEC:
 	{
 			std::list<double>::iterator it = initList.begin();
 			md.txQrg		= *(it++);
 			md.txPwr		= *(it++);
 			md.rxSpan		= *(it++);
+			md.posFrom		= *(it++);
+			md.posTo		= *(it++);
 			md.posStep		= *it;
 
 			md.entriesCount	= 0;
@@ -2051,12 +1976,7 @@ void agentModelPattern::measDataAdd(MeasData* md, std::list<double> dataList)
 		}
 		break;
 
-	case MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN010_STEP005_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN180_STEP001_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN180_STEP005_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN360_STEP001_GEN_SPEC:
-	case MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC:
+	case MEASDATA_SETUP__PATTERN_GEN_SPEC:
 	{
 			std::list<double>::iterator it = dataList.begin();
 			const double pos = *(it++);
@@ -2069,7 +1989,7 @@ void agentModelPattern::measDataAdd(MeasData* md, std::list<double> dataList)
 			md->rxPwrPhase->push_back(phase);
 
 			/* Reference Power when directing straight ahead */
-			if (-0.1 <= pos && pos <= +0.1) {
+			if (-0.01 <= pos && pos <= +0.01) {
 				md->rxRefPwr = power;
 			}
 
@@ -2711,15 +2631,14 @@ bool agentModelPattern::getRxMarkerPeak(double* retX, double* retY)
 
 /* TOOLS */
 
-int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, double degStartPos, double degEndPos, double degResolution)
+int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, double degStartPos, double degEndPos, double degStep)
 {  /* run a antenna pattern from left = degStartPos to the right = degEndPos */
 
-	/* Go to Start Position only on rotary meassurements */
+	/* Go to Start Position only on rotary measurements */
 	{
 		long prevPosTicksAbs = getCurPosTicksAbs();
 		long startPosTicksAbs = calcDeg2Ticks(degStartPos);
-		if (measVariant >= MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC &&
-			measVariant <= MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC) {
+		if (measVariant == MEASDATA_SETUP__PATTERN_GEN_SPEC) {
 			/* Send Home position and wait */
 			if (!_noWinMsg) {
 				_pAgtMod->getWinSrv()->reportStatus(L"Model: Pattern", L"Going to start position", L"WAIT");
@@ -2771,9 +2690,10 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 		init.push_back(_pConInstruments[C_CONNECTED_TX]->txCurRfPwr);
 		init.push_back(_pConInstruments[C_CONNECTED_RX]->rxCurRfSpan);
 
-		if (measVariant >= MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC && 
-			measVariant <= MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC) {
-			init.push_back(degResolution);
+		if (measVariant == MEASDATA_SETUP__PATTERN_GEN_SPEC) {
+			init.push_back(degStartPos);
+			init.push_back(degEndPos);
+			init.push_back(degStep);
 		}
 		md = measDataInit(measVariant, init);
 	}
@@ -2817,13 +2737,13 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 		}
 
 		/* Calc new position (turning right / left) */
-		degPosIter += degResolution;
-		if (degResolution > 0.0) {
+		degPosIter += degStep;
+		if (degStep > 0.0) {
 			if (degPosIter > (degEndPos + 0.0005)) {
 				break;
 			}
 		}
-		else if (degResolution < 0.0) {
+		else if (degStep < 0.0) {
 			if (degPosIter < (degEndPos - 0.0005)) {
 				break;
 			}
@@ -2860,8 +2780,7 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 	}
 
 	else
-	if (measVariant >= MEASDATA_SETUP__PATTERN010_STEP001_GEN_SPEC &&
-		measVariant <= MEASDATA_SETUP__PATTERN360_STEP005_GEN_SPEC) {
+	if (measVariant == MEASDATA_SETUP__PATTERN_GEN_SPEC) {
 		/* Return ROTOR to center position */
 		if (!_noWinMsg) {
 			_pAgtMod->getWinSrv()->reportStatus(NULL, NULL, L"Going to HOME position");
@@ -2884,10 +2803,9 @@ int agentModelPattern::runningProcessPattern(MEASDATA_SETUP_ENUM measVariant, do
 	measDataFinalize(&md, &_measDataEntries);
 
 	/* Expand temporary file name template */
-	// TODO
-	int rotSpan = 0;
-	int rotStep = 0;
-	int pwrRef  = 0;
+	const int rotSpan = (int) (0.1 + degEndPos - degStartPos);
+	const int rotStep = (int) (0.1 + degStep);
+	const int pwrRef  = (int) _pConInstruments[C_CONNECTED_TX]->txCurRfPwr;
 	WinSrv::evalTmpTemplateFile(rotSpan, rotStep, pwrRef);
 	WinSrv::copyTmpFilePathName2currentFilePathName();
 
